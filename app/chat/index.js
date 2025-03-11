@@ -1,83 +1,145 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { View, FlatList, StyleSheet, KeyboardAvoidingView, Platform, SafeAreaView } from 'react-native';
+import { 
+  View, 
+  FlatList, 
+  StyleSheet, 
+  KeyboardAvoidingView, 
+  Platform, 
+  SafeAreaView,
+  StatusBar,
+  Text,
+  TouchableOpacity,
+} from 'react-native';
+import { Playlist, DotsThreeVertical } from 'phosphor-react-native';
 import ChatMessage from '../../components/chat/ChatMessage';
 import MessageInput from '../../components/chat/MessageInput';
-import { sendMessageMock } from '../../services/api';
+import GradientBackground from '../../components/GradientBackground';
+import Sidebar from '../../components/Sidebar';
+import chatStore from '../../services/chatStore';
+import { colors, spacing, typography } from '../../constants/Theme';
 
 const ChatScreen = () => {
-  const [messages, setMessages] = useState([
-    {
-      role: 'assistant',
-      content: "Hello! I'm August, your AI super agent. How can I help you today?"
-    }
-  ]);
+  // Use the chat store to manage chats
+  const [activeChat, setActiveChat] = useState(chatStore.getActiveChat());
+  const [chats, setChats] = useState(chatStore.getChats());
   const [isLoading, setIsLoading] = useState(false);
+  const [sidebarVisible, setSidebarVisible] = useState(false);
+  
   const flatListRef = useRef(null);
 
   // Scroll to bottom when messages change
   useEffect(() => {
-    if (flatListRef.current && messages.length > 0) {
+    if (flatListRef.current && activeChat.messages.length > 0) {
       flatListRef.current.scrollToEnd({ animated: true });
     }
-  }, [messages]);
+  }, [activeChat.messages.length]);
 
   const handleSendMessage = async (content) => {
-    // Add user message to the chat
-    const userMessage = { role: 'user', content };
-    setMessages(prevMessages => [...prevMessages, userMessage]);
-    
     // Set loading state
     setIsLoading(true);
     
     try {
-      // Get all messages for context
-      const allMessages = [...messages, userMessage];
+      // Send the message using the chat store
+      await chatStore.sendMessage(content);
       
-      // Send to API (using mock for demo)
-      const response = await sendMessageMock(allMessages);
-      
-      // Add assistant response
-      setMessages(prevMessages => [...prevMessages, response]);
+      // Update state with the latest chat
+      setActiveChat({...chatStore.getActiveChat()});
+      setChats([...chatStore.getChats()]);
     } catch (error) {
-      // Handle error
       console.error('Error in chat:', error);
-      setMessages(prevMessages => [
-        ...prevMessages, 
-        { 
-          role: 'assistant', 
-          content: 'Sorry, I encountered an error. Please try again.' 
-        }
-      ]);
     } finally {
       setIsLoading(false);
     }
   };
 
+  const handleNewChat = () => {
+    chatStore.createChat();
+    setActiveChat({...chatStore.getActiveChat()});
+    setChats([...chatStore.getChats()]);
+    setSidebarVisible(false);
+  };
+
+  const handleSelectChat = (chatId) => {
+    chatStore.setActiveChat(chatId);
+    setActiveChat({...chatStore.getActiveChat()});
+    setSidebarVisible(false);
+  };
+
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <KeyboardAvoidingView
-        style={styles.container}
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        keyboardVerticalOffset={100}
-      >
-        <FlatList
-          ref={flatListRef}
-          data={messages}
-          renderItem={({ item }) => <ChatMessage message={item} />}
-          keyExtractor={(_, index) => index.toString()}
-          style={styles.messageList}
-          contentContainerStyle={styles.messageListContent}
+    <GradientBackground colors={[colors.black, colors.darkGray]}>
+      <StatusBar barStyle="light-content" />
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.menuButton} 
+            onPress={() => setSidebarVisible(true)}
+          >
+            <Playlist size={24} color={colors.white} weight="regular" />
+          </TouchableOpacity>
+          
+          <Text style={styles.headerTitle}>August</Text>
+          
+          <TouchableOpacity style={styles.optionsButton}>
+            <DotsThreeVertical size={24} color={colors.white} weight="regular" />
+          </TouchableOpacity>
+        </View>
+        
+        <KeyboardAvoidingView
+          style={styles.container}
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          keyboardVerticalOffset={100}
+        >
+          <FlatList
+            ref={flatListRef}
+            data={activeChat.messages}
+            renderItem={({ item }) => <ChatMessage message={item} />}
+            keyExtractor={(_, index) => index.toString()}
+            style={styles.messageList}
+            contentContainerStyle={styles.messageListContent}
+          />
+          <MessageInput onSendMessage={handleSendMessage} isLoading={isLoading} />
+        </KeyboardAvoidingView>
+        
+        <Sidebar 
+          visible={sidebarVisible}
+          onClose={() => setSidebarVisible(false)}
+          onNewChat={handleNewChat}
+          onSelectChat={handleSelectChat}
+          chats={chats}
+          activeChat={activeChat.id}
         />
-        <MessageInput onSendMessage={handleSendMessage} isLoading={isLoading} />
-      </KeyboardAvoidingView>
-    </SafeAreaView>
+      </SafeAreaView>
+    </GradientBackground>
   );
 };
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: 'white',
+  },
+  header: {
+    flexDirection: 'row',
+    padding: spacing.md,
+    paddingTop: Platform.OS === 'android' ? spacing.xl : spacing.md,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerTitle: {
+    color: colors.white,
+    fontSize: typography.fontSize.xl,
+    fontWeight: 'bold',
+  },
+  menuButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  optionsButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   container: {
     flex: 1,
@@ -86,7 +148,7 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   messageListContent: {
-    paddingVertical: 10,
+    paddingVertical: spacing.sm,
   },
 });
 

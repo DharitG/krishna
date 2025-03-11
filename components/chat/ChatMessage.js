@@ -1,33 +1,44 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import GlassCard from '../GlassCard';
+import {
+  colors,
+  spacing,
+  borderRadius,
+  shadows,
+  typography
+} from '../../constants/Theme';
 
 const ChatMessage = ({ message }) => {
   const isUser = message.role === 'user';
   
+  if (isUser) {
+    return (
+      <View style={[styles.container, styles.userContainer]}>
+        <View style={[styles.bubble, styles.userBubble]}>
+          <Text style={[styles.text, styles.userText]}>
+            {message.content}
+          </Text>
+        </View>
+      </View>
+    );
+  }
+  
   return (
-    <View style={[
-      styles.container, 
-      isUser ? styles.userContainer : styles.botContainer
-    ]}>
-      <View style={[
-        styles.bubble, 
-        isUser ? styles.userBubble : styles.botBubble
-      ]}>
-        <Text style={[
-          styles.text,
-          isUser ? styles.userText : styles.botText
-        ]}>
+    <View style={[styles.container, styles.botContainer]}>
+      <GlassCard style={[styles.bubble, styles.botBubble]}>
+        <Text style={[styles.text, styles.botText]}>
           {message.content}
         </Text>
-      </View>
+      </GlassCard>
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: 10,
-    marginVertical: 5,
+    padding: spacing.md,
+    marginVertical: spacing.xs,
   },
   userContainer: {
     alignItems: 'flex-end',
@@ -36,27 +47,32 @@ const styles = StyleSheet.create({
     alignItems: 'flex-start',
   },
   bubble: {
-    padding: 15,
-    borderRadius: 20,
+    padding: spacing.md,
+    borderRadius: borderRadius.lg,
     maxWidth: '80%',
+    ...shadows.sm,
   },
   userBubble: {
-    backgroundColor: '#007AFF',
-    borderBottomRightRadius: 5,
+    borderBottomRightRadius: spacing.xs,
+    backgroundColor: colors.emerald,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
   },
   botBubble: {
-    backgroundColor: '#E5E5EA',
-    borderBottomLeftRadius: 5,
+    borderBottomLeftRadius: spacing.xs,
+    backgroundColor: 'rgba(45, 45, 52, 0.7)',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
   },
   text: {
-    fontSize: 16,
-    lineHeight: 24,
+    fontSize: typography.fontSize.md,
+    lineHeight: typography.lineHeight.md,
   },
   userText: {
-    color: 'white',
+    color: colors.white,
   },
   botText: {
-    color: 'black',
+    color: colors.white,
   },
 });
 

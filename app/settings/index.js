@@ -1,6 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, StatusBar, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import GradientBackground from '../../components/GradientBackground';
+import GlassCard from '../../components/GlassCard';
+import { colors, spacing, borderRadius, typography, shadows } from '../../constants/Theme';
 
 const SettingsScreen = () => {
   // These would be connected to real settings in a full app
@@ -9,7 +12,7 @@ const SettingsScreen = () => {
       title: 'General',
       items: [
         { label: 'API Key', icon: 'key-outline', hasDetail: true, value: '••••••••••••••••' },
-        { label: 'Theme', icon: 'color-palette-outline', hasDetail: true, value: 'Light' },
+        { label: 'Theme', icon: 'color-palette-outline', hasDetail: true, value: 'Dark' },
       ]
     },
     {
@@ -19,6 +22,14 @@ const SettingsScreen = () => {
         { label: 'Clear Conversation', icon: 'trash-outline', hasDetail: false },
         { label: 'Chat History', icon: 'time-outline', hasDetail: true },
         { label: 'Speech Output', icon: 'volume-high-outline', hasDetail: true, value: 'Off' },
+      ]
+    },
+    {
+      title: 'Features',
+      items: [
+        { label: 'Image Generation', icon: 'image-outline', hasDetail: true, value: 'On' },
+        { label: 'Voice Commands', icon: 'mic-outline', hasDetail: true, value: 'Off' },
+        { label: 'Web Search', icon: 'search-outline', hasDetail: true, value: 'On' },
       ]
     },
     {
@@ -32,78 +43,89 @@ const SettingsScreen = () => {
   ];
 
   return (
-    <SafeAreaView style={styles.safeArea}>
-      <ScrollView style={styles.container}>
-        <Text style={styles.title}>Settings</Text>
+    <GradientBackground colors={[colors.black, colors.darkGray]}>
+      <StatusBar barStyle="light-content" />
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <Text style={styles.headerTitle}>Settings</Text>
+        </View>
         
-        {settings.map((section, sectionIndex) => (
-          <View key={sectionIndex} style={styles.section}>
-            <Text style={styles.sectionTitle}>{section.title}</Text>
-            
-            <View style={styles.sectionContent}>
-              {section.items.map((item, itemIndex) => (
-                <TouchableOpacity 
-                  key={itemIndex} 
-                  style={[
-                    styles.item,
-                    itemIndex === section.items.length - 1 ? styles.lastItem : null
-                  ]}
-                >
-                  <View style={styles.itemLeft}>
-                    <Ionicons name={item.icon} size={22} color="#007AFF" style={styles.itemIcon} />
-                    <Text style={styles.itemLabel}>{item.label}</Text>
-                  </View>
-                  
-                  <View style={styles.itemRight}>
-                    {item.value && <Text style={styles.itemValue}>{item.value}</Text>}
-                    {item.hasDetail && <Ionicons name="chevron-forward" size={18} color="#C7C7CC" />}
-                  </View>
-                </TouchableOpacity>
-              ))}
+        <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+          {settings.map((section, sectionIndex) => (
+            <View key={sectionIndex} style={styles.section}>
+              <Text style={styles.sectionTitle}>{section.title}</Text>
+              
+              <GlassCard style={styles.sectionContent}>
+                {section.items.map((item, itemIndex) => (
+                  <TouchableOpacity 
+                    key={itemIndex} 
+                    style={[
+                      styles.item,
+                      itemIndex === section.items.length - 1 ? styles.lastItem : null
+                    ]}
+                  >
+                    <View style={styles.itemLeft}>
+                      <Ionicons name={item.icon} size={22} color={colors.emerald} style={styles.itemIcon} />
+                      <Text style={styles.itemLabel}>{item.label}</Text>
+                    </View>
+                    
+                    <View style={styles.itemRight}>
+                      {item.value && <Text style={styles.itemValue}>{item.value}</Text>}
+                      {item.hasDetail && <Ionicons name="chevron-forward" size={18} color={colors.lightGray} />}
+                    </View>
+                  </TouchableOpacity>
+                ))}
+              </GlassCard>
             </View>
-          </View>
-        ))}
-      </ScrollView>
-    </SafeAreaView>
+          ))}
+        </ScrollView>
+      </SafeAreaView>
+    </GradientBackground>
   );
 };
 
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
+  },
+  header: {
+    padding: spacing.md,
+    paddingTop: Platform.OS === 'android' ? spacing.xl : spacing.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  headerTitle: {
+    color: colors.white,
+    fontSize: typography.fontSize.xxl,
+    fontWeight: 'bold',
   },
   container: {
     flex: 1,
-    padding: 16,
   },
-  title: {
-    fontSize: 34,
-    fontWeight: 'bold',
-    marginBottom: 20,
-    color: '#000',
+  contentContainer: {
+    padding: spacing.md,
+    paddingBottom: spacing.xxl,
   },
   section: {
-    marginBottom: 20,
+    marginBottom: spacing.lg,
   },
   sectionTitle: {
-    fontSize: 18,
+    fontSize: typography.fontSize.lg,
     fontWeight: '600',
-    marginBottom: 8,
-    color: '#3A3A3C',
+    marginBottom: spacing.sm,
+    color: colors.white,
+    marginLeft: spacing.sm,
   },
   sectionContent: {
-    backgroundColor: 'white',
-    borderRadius: 10,
     overflow: 'hidden',
   },
   item: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: 14,
-    borderBottomWidth: 0.5,
-    borderBottomColor: '#E5E5EA',
+    padding: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   lastItem: {
     borderBottomWidth: 0,
@@ -113,20 +135,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   itemIcon: {
-    marginRight: 12,
+    marginRight: spacing.md,
   },
   itemLabel: {
-    fontSize: 16,
-    color: '#000',
+    fontSize: typography.fontSize.md,
+    fontWeight: '500',
+    color: colors.white,
   },
   itemRight: {
     flexDirection: 'row',
     alignItems: 'center',
   },
   itemValue: {
-    fontSize: 16,
-    color: '#8E8E93',
-    marginRight: 6,
+    fontSize: typography.fontSize.md,
+    color: colors.lightGray,
+    marginRight: spacing.xs,
   },
 });
 

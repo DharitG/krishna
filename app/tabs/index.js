@@ -1,7 +1,6 @@
 import React from 'react';
-import { Redirect } from 'expo-router';
+import ChatScreen from '../chat';
 
 export default function TabsIndex() {
-  // Redirect to the chat screen when landing on /tabs
-  return <Redirect href="/tabs/chat" />;
+  return <ChatScreen />;
 }

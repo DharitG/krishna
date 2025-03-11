@@ -1,39 +1,22 @@
-import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { Ionicons } from '@expo/vector-icons';
-import ChatScreen from '../chat';
-import SettingsScreen from '../settings';
-
-const Tab = createBottomTabNavigator();
+import { Tabs } from 'expo-router';
+import { StyleSheet } from 'react-native';
+import { colors } from '../../constants/Theme';
+import { ChatCircle } from 'phosphor-react-native';
 
 export default function TabLayout() {
   return (
-    <Tab.Navigator
+    <Tabs
       screenOptions={{
-        tabBarActiveTintColor: '#007AFF',
-        tabBarStyle: {
-          backgroundColor: 'white',
-        },
         headerShown: false,
+        tabBarStyle: { display: 'none' }, // Hide the tab bar entirely
       }}
     >
-      <Tab.Screen
-        name="Chat"
-        component={ChatScreen}
+      <Tabs.Screen
+        name="index"
         options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="chatbubble" color={color} size={size} />
-          ),
+          title: "Chat",
         }}
       />
-      <Tab.Screen
-        name="Settings"
-        component={SettingsScreen}
-        options={{
-          tabBarIcon: ({ color, size }) => (
-            <Ionicons name="settings-outline" color={color} size={size} />
-          ),
-        }}
-      />
-    </Tab.Navigator>
+    </Tabs>
   );
 }

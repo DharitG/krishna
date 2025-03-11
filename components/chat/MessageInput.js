@@ -1,8 +1,17 @@
 import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { LinearGradient } from 'expo-linear-gradient';
+import GlassCard from '../GlassCard';
+import {
+  colors,
+  spacing,
+  borderRadius,
+  shadows,
+  typography
+} from '../../constants/Theme';
 
-const MessageInput = ({ onSendMessage }) => {
+const MessageInput = ({ onSendMessage, isLoading }) => {
   const [message, setMessage] = useState('');
 
   const handleSend = () => {
@@ -13,50 +22,76 @@ const MessageInput = ({ onSendMessage }) => {
   };
 
   return (
-    <View style={styles.container}>
+    <GlassCard style={styles.container}>
       <TextInput
         style={styles.input}
         value={message}
         onChangeText={setMessage}
         placeholder="Type a message..."
+        placeholderTextColor="rgba(255, 255, 255, 0.6)"
         multiline
         maxHeight={100}
         returnKeyType="send"
         onSubmitEditing={handleSend}
       />
-      <TouchableOpacity
-        style={styles.sendButton}
-        onPress={handleSend}
-        disabled={message.trim().length === 0}
-      >
-        <Ionicons 
-          name="send" 
-          size={24} 
-          color={message.trim().length > 0 ? "#007AFF" : "#C7C7CC"} 
-        />
-      </TouchableOpacity>
-    </View>
+      
+      {isLoading ? (
+        <View style={styles.loadingButton}>
+          <ActivityIndicator color={colors.emerald} size="small" />
+        </View>
+      ) : (
+        <TouchableOpacity
+          style={styles.sendButtonContainer}
+          onPress={handleSend}
+          disabled={message.trim().length === 0}
+        >
+          <LinearGradient
+            colors={message.trim().length > 0 ? colors.gradients.primary : [colors.gray, colors.gray]}
+            style={styles.sendButton}
+          >
+            <Ionicons 
+              name="send" 
+              size={20} 
+              color={colors.white} 
+            />
+          </LinearGradient>
+        </TouchableOpacity>
+      )}
+    </GlassCard>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     flexDirection: 'row',
-    padding: 10,
+    padding: spacing.sm,
     borderTopWidth: 1,
-    borderTopColor: '#E5E5EA',
-    backgroundColor: 'white',
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(30, 30, 34, 0.8)',
+    alignItems: 'center',
   },
   input: {
     flex: 1,
-    backgroundColor: '#F2F2F7',
-    borderRadius: 20,
-    paddingHorizontal: 15,
-    paddingVertical: 10,
-    marginRight: 10,
-    fontSize: 16,
+    borderRadius: borderRadius.md,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    marginRight: spacing.sm,
+    fontSize: typography.fontSize.md,
+    color: colors.white,
+    maxHeight: 100,
+  },
+  sendButtonContainer: {
+    borderRadius: borderRadius.round,
+    overflow: 'hidden',
   },
   sendButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 44,
+    height: 44,
+    borderRadius: borderRadius.round,
+  },
+  loadingButton: {
     justifyContent: 'center',
     alignItems: 'center',
     width: 44,
