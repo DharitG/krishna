@@ -1,4 +1,5 @@
 // Modern design system for August AI
+// Enhanced with component styles inspired by the settings page
 
 export const colors = {
   // Base colors

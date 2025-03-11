@@ -1,11 +1,19 @@
 import React from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, ScrollView, SafeAreaView, StatusBar, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, StatusBar } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import GradientBackground from '../../components/GradientBackground';
 import GlassCard from '../../components/GlassCard';
-import { colors, spacing, borderRadius, typography, shadows } from '../../constants/Theme';
+import { colors } from '../../constants/Theme';
+import { layoutStyles, headerStyles, cardStyles, textStyles } from '../../constants/StyleGuide';
 
 const SettingsScreen = () => {
+  const router = useRouter();
+  
+  const handleBack = () => {
+    router.back();
+  };
+  
   // These would be connected to real settings in a full app
   const settings = [
     {
@@ -45,32 +53,51 @@ const SettingsScreen = () => {
   return (
     <GradientBackground colors={[colors.black, colors.darkGray]}>
       <StatusBar barStyle="light-content" />
-      <SafeAreaView style={styles.safeArea}>
-        <View style={styles.header}>
-          <Text style={styles.headerTitle}>Settings</Text>
+      <SafeAreaView style={layoutStyles.safeArea}>
+        <View style={headerStyles.headerWithBack}>
+          <TouchableOpacity 
+            style={headerStyles.headerLeft} 
+            onPress={handleBack}
+          >
+            <Ionicons name="arrow-back" size={24} color={colors.white} />
+          </TouchableOpacity>
+          
+          <View style={headerStyles.headerCenter}>
+            <Text style={headerStyles.headerTitleLarge}>Settings</Text>
+          </View>
+          
+          <View style={headerStyles.headerRight} />
         </View>
         
-        <ScrollView style={styles.container} contentContainerStyle={styles.contentContainer}>
+        <ScrollView 
+          style={layoutStyles.container} 
+          contentContainerStyle={layoutStyles.contentContainer}
+        >
           {settings.map((section, sectionIndex) => (
-            <View key={sectionIndex} style={styles.section}>
-              <Text style={styles.sectionTitle}>{section.title}</Text>
+            <View key={sectionIndex} style={layoutStyles.section}>
+              <Text style={textStyles.sectionTitle}>{section.title}</Text>
               
-              <GlassCard style={styles.sectionContent}>
+              <GlassCard style={cardStyles.glassCard}>
                 {section.items.map((item, itemIndex) => (
                   <TouchableOpacity 
                     key={itemIndex} 
                     style={[
-                      styles.item,
-                      itemIndex === section.items.length - 1 ? styles.lastItem : null
+                      cardStyles.cardItem,
+                      itemIndex === section.items.length - 1 ? cardStyles.cardItemLast : null
                     ]}
                   >
-                    <View style={styles.itemLeft}>
-                      <Ionicons name={item.icon} size={22} color={colors.emerald} style={styles.itemIcon} />
-                      <Text style={styles.itemLabel}>{item.label}</Text>
+                    <View style={cardStyles.cardItemLeft}>
+                      <Ionicons 
+                        name={item.icon} 
+                        size={22} 
+                        color={colors.emerald} 
+                        style={cardStyles.cardItemIcon} 
+                      />
+                      <Text style={cardStyles.cardItemLabel}>{item.label}</Text>
                     </View>
                     
-                    <View style={styles.itemRight}>
-                      {item.value && <Text style={styles.itemValue}>{item.value}</Text>}
+                    <View style={cardStyles.cardItemRight}>
+                      {item.value && <Text style={cardStyles.cardItemValue}>{item.value}</Text>}
                       {item.hasDetail && <Ionicons name="chevron-forward" size={18} color={colors.lightGray} />}
                     </View>
                   </TouchableOpacity>
@@ -84,73 +111,6 @@ const SettingsScreen = () => {
   );
 };
 
-const styles = StyleSheet.create({
-  safeArea: {
-    flex: 1,
-  },
-  header: {
-    padding: spacing.md,
-    paddingTop: Platform.OS === 'android' ? spacing.xl : spacing.md,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  headerTitle: {
-    color: colors.white,
-    fontSize: typography.fontSize.xxl,
-    fontWeight: 'bold',
-  },
-  container: {
-    flex: 1,
-  },
-  contentContainer: {
-    padding: spacing.md,
-    paddingBottom: spacing.xxl,
-  },
-  section: {
-    marginBottom: spacing.lg,
-  },
-  sectionTitle: {
-    fontSize: typography.fontSize.lg,
-    fontWeight: '600',
-    marginBottom: spacing.sm,
-    color: colors.white,
-    marginLeft: spacing.sm,
-  },
-  sectionContent: {
-    overflow: 'hidden',
-  },
-  item: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
-  },
-  lastItem: {
-    borderBottomWidth: 0,
-  },
-  itemLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  itemIcon: {
-    marginRight: spacing.md,
-  },
-  itemLabel: {
-    fontSize: typography.fontSize.md,
-    fontWeight: '500',
-    color: colors.white,
-  },
-  itemRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  itemValue: {
-    fontSize: typography.fontSize.md,
-    color: colors.lightGray,
-    marginRight: spacing.xs,
-  },
-});
+// We're using the StyleGuide.js for all styles now
 
 export default SettingsScreen;
