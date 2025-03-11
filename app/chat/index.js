@@ -10,7 +10,7 @@ import {
   Text,
   TouchableOpacity,
 } from 'react-native';
-import { Playlist, DotsThreeVertical } from 'phosphor-react-native';
+import { SidebarSimple, Plus } from 'phosphor-react-native';
 import ChatMessage from '../../components/chat/ChatMessage';
 import MessageInput from '../../components/chat/MessageInput';
 import GradientBackground from '../../components/GradientBackground';
@@ -74,13 +74,13 @@ const ChatScreen = () => {
             style={styles.menuButton} 
             onPress={() => setSidebarVisible(true)}
           >
-            <Playlist size={24} color={colors.white} weight="regular" />
+            <SidebarSimple size={24} color={colors.white} weight="regular" />
           </TouchableOpacity>
           
           <Text style={styles.headerTitle}>August</Text>
           
-          <TouchableOpacity style={styles.optionsButton}>
-            <DotsThreeVertical size={24} color={colors.white} weight="regular" />
+          <TouchableOpacity style={styles.optionsButton} onPress={handleNewChat}>
+            <Plus size={24} color={colors.white} weight="regular" />
           </TouchableOpacity>
         </View>
         

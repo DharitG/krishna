@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -6,7 +6,8 @@ import {
   TouchableOpacity, 
   ScrollView,
   Dimensions,
-  Modal
+  Modal,
+  Animated
 } from 'react-native';
 import { 
   ChatCircle, 
@@ -23,6 +24,24 @@ const { width } = Dimensions.get('window');
 const SIDEBAR_WIDTH = width * 0.85;
 
 const Sidebar = ({ visible, onClose, onNewChat, onSelectChat, chats = [], activeChat }) => {
+  const slideAnim = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
+  
+  useEffect(() => {
+    if (visible) {
+      Animated.timing(slideAnim, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    } else {
+      Animated.timing(slideAnim, {
+        toValue: -SIDEBAR_WIDTH,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
+  }, [visible, slideAnim]);
+
   const renderChatItem = (chat, index) => {
     const isActive = activeChat === chat.id;
     return (
@@ -49,7 +68,7 @@ const Sidebar = ({ visible, onClose, onNewChat, onSelectChat, chats = [], active
     <Modal
       transparent={true}
       visible={visible}
-      animationType="slide"
+      animationType="fade"
       onRequestClose={onClose}
     >
       <View style={styles.modalContainer}>
@@ -59,7 +78,11 @@ const Sidebar = ({ visible, onClose, onNewChat, onSelectChat, chats = [], active
           onPress={onClose}
         />
         
-        <View style={styles.container}>
+        <Animated.View 
+          style={[
+            styles.container, 
+            { transform: [{ translateX: slideAnim }] }
+          ]}>
           <View style={styles.header}>
             <Text style={styles.title}>August</Text>
             <TouchableOpacity style={styles.closeButton} onPress={onClose}>
@@ -89,7 +112,13 @@ const Sidebar = ({ visible, onClose, onNewChat, onSelectChat, chats = [], active
               <Text style={styles.footerButtonText}>Account</Text>
             </TouchableOpacity>
             
-            <TouchableOpacity style={styles.footerButton}>
+            <TouchableOpacity 
+              style={styles.footerButton}
+              onPress={() => {
+                onClose();
+                import('expo-router').then(({ router }) => router.push('/settings'));
+              }}
+            >
               <Gear size={22} color={colors.white} weight="regular" />
               <Text style={styles.footerButtonText}>Settings</Text>
             </TouchableOpacity>
@@ -99,7 +128,7 @@ const Sidebar = ({ visible, onClose, onNewChat, onSelectChat, chats = [], active
               <Text style={styles.footerButtonText}>Sign Out</Text>
             </TouchableOpacity>
           </View>
-        </View>
+        </Animated.View>
       </View>
     </Modal>
   );
@@ -115,6 +144,9 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.5)',
   },
   container: {
+    position: 'absolute',
+    left: 0,
+    top: 0,
     width: SIDEBAR_WIDTH,
     backgroundColor: colors.darkGray,
     borderRightWidth: 1,
