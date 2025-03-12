@@ -8,7 +8,8 @@ import {
   Dimensions,
   Modal,
   Animated,
-  TextInput
+  TextInput,
+  Platform
 } from 'react-native';
 import { 
   ChatCircle, 
@@ -222,13 +223,15 @@ const styles = StyleSheet.create({
     borderRightWidth: 1,
     borderRightColor: 'rgba(255, 255, 255, 0.1)',
     height: '100%',
+    paddingTop: Platform.OS === 'ios' ? 50 : 40, // Extra padding for notches
+    paddingBottom: Platform.OS === 'ios' ? 30 : 20, // Extra padding for bottom
   },
   header: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     padding: spacing.md,
-    paddingTop: spacing.xl,
+    marginBottom: spacing.sm,
   },
   title: {
     fontSize: typography.fontSize.xl,
@@ -293,6 +296,7 @@ const styles = StyleSheet.create({
   },
   chatsContainer: {
     flex: 1,
+    marginBottom: spacing.md,
   },
   chatItem: {
     flexDirection: 'row',
@@ -345,8 +349,10 @@ const styles = StyleSheet.create({
   },
   footer: {
     padding: spacing.md,
+    paddingBottom: spacing.md,
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.1)',
+    marginTop: 'auto', // Push to bottom of container
   },
   footerButton: {
     flexDirection: 'row',
