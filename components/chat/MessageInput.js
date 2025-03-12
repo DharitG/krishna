@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { ArrowUp } from 'phosphor-react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import GlassCard from '../GlassCard';
 import {
@@ -49,10 +49,10 @@ const MessageInput = ({ onSendMessage, isLoading }) => {
             colors={message.trim().length > 0 ? colors.gradients.primary : [colors.gray, colors.gray]}
             style={styles.sendButton}
           >
-            <Ionicons 
-              name="send" 
-              size={20} 
-              color={colors.white} 
+            <ArrowUp
+              size={20}
+              color={colors.white}
+              weight="bold"
             />
           </LinearGradient>
         </TouchableOpacity>

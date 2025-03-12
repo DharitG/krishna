@@ -79,7 +79,10 @@ const ChatScreen = () => {
           
           <Text style={styles.headerTitle}>August</Text>
           
-          <TouchableOpacity style={styles.optionsButton} onPress={handleNewChat}>
+          <TouchableOpacity 
+            style={styles.headerButton} 
+            onPress={handleNewChat}
+          >
             <Plus size={24} color={colors.white} weight="regular" />
           </TouchableOpacity>
         </View>
@@ -135,7 +138,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  optionsButton: {
+  headerButton: {
     width: 40,
     height: 40,
     justifyContent: 'center',

@@ -65,6 +65,31 @@ class ChatStore {
   getChats() {
     return [...this.chats].sort((a, b) => b.updatedAt - a.updatedAt);
   }
+  
+  // Search across all chats
+  searchMessages(query) {
+    if (!query || query.trim() === '') {
+      return [];
+    }
+    
+    const normalizedQuery = query.toLowerCase().trim();
+    const results = [];
+    
+    this.chats.forEach(chat => {
+      chat.messages.forEach((message, messageIndex) => {
+        if (message.content.toLowerCase().includes(normalizedQuery)) {
+          results.push({
+            chatId: chat.id,
+            messageIndex,
+            message,
+            chatTitle: chat.title,
+          });
+        }
+      });
+    });
+    
+    return results;
+  }
 
   // Get active chat
   getActiveChat() {

@@ -21,6 +21,7 @@ const SettingsScreen = () => {
       items: [
         { label: 'API Key', icon: 'key-outline', hasDetail: true, value: '••••••••••••••••' },
         { label: 'Theme', icon: 'color-palette-outline', hasDetail: true, value: 'Dark' },
+        { label: 'Sign Out', icon: 'log-out-outline', hasDetail: false },
       ]
     },
     {
@@ -38,6 +39,14 @@ const SettingsScreen = () => {
         { label: 'Image Generation', icon: 'image-outline', hasDetail: true, value: 'On' },
         { label: 'Voice Commands', icon: 'mic-outline', hasDetail: true, value: 'Off' },
         { label: 'Web Search', icon: 'search-outline', hasDetail: true, value: 'On' },
+      ]
+    },
+    {
+      title: 'Subscription',
+      items: [
+        { label: 'Current Plan', icon: 'ribbon-outline', hasDetail: true, value: 'Nirvana' },
+        { label: 'Manage Subscription', icon: 'card-outline', hasDetail: true },
+        { label: 'Upgrade', icon: 'arrow-up-circle-outline', hasDetail: true },
       ]
     },
     {
