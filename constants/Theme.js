@@ -85,7 +85,9 @@ export const typography = {
   fontFamily: {
     regular: 'System',
     medium: 'System',
-    bold: 'System'
+    bold: 'System',
+    mono: 'SpaceMono-Regular',
+    brand: 'SpaceMono-Regular' // Using Space Mono for now as our brand font
   },
   fontSize: {
     xs: 12,

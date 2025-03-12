@@ -241,8 +241,11 @@ const styles = StyleSheet.create({
   },
   title: {
     fontSize: typography.fontSize.xl,
+    fontFamily: typography.fontFamily.brand,
     fontWeight: 'bold',
     color: colors.white,
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
   closeButton: {
     width: 40,

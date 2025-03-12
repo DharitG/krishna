@@ -130,7 +130,10 @@ const styles = StyleSheet.create({
   headerTitle: {
     color: colors.white,
     fontSize: typography.fontSize.xl,
+    fontFamily: typography.fontFamily.brand,
     fontWeight: 'bold',
+    letterSpacing: 1,
+    textTransform: 'uppercase',
   },
   menuButton: {
     width: 40,

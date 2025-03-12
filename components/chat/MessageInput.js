@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { View, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator } from 'react-native';
 import { ArrowUp } from 'phosphor-react-native';
-import { LinearGradient } from 'expo-linear-gradient';
 import GlassCard from '../GlassCard';
 import {
   colors,
@@ -41,20 +40,19 @@ const MessageInput = ({ onSendMessage, isLoading }) => {
         </View>
       ) : (
         <TouchableOpacity
-          style={styles.sendButtonContainer}
+          style={[
+            styles.sendButtonContainer, 
+            styles.sendButton, 
+            { backgroundColor: message.trim().length > 0 ? colors.emerald : colors.gray }
+          ]}
           onPress={handleSend}
           disabled={message.trim().length === 0}
         >
-          <LinearGradient
-            colors={message.trim().length > 0 ? colors.gradients.primary : [colors.gray, colors.gray]}
-            style={styles.sendButton}
-          >
-            <ArrowUp
-              size={20}
-              color={colors.white}
-              weight="bold"
-            />
-          </LinearGradient>
+          <ArrowUp
+            size={20}
+            color={colors.white}
+            weight="bold"
+          />
         </TouchableOpacity>
       )}
     </GlassCard>
