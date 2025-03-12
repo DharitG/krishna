@@ -9,6 +9,7 @@ import {
   StatusBar,
   Text,
   TouchableOpacity,
+  Keyboard,
 } from 'react-native';
 import { SidebarSimple, Plus } from 'phosphor-react-native';
 import Constants from 'expo-constants';
@@ -92,21 +93,26 @@ const ChatScreen = () => {
           </TouchableOpacity>
         </View>
         
-        <KeyboardAvoidingView
-          style={styles.container}
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          keyboardVerticalOffset={100}
-        >
-          <FlatList
-            ref={flatListRef}
-            data={activeChat.messages}
-            renderItem={({ item }) => <ChatMessage message={item} />}
-            keyExtractor={(_, index) => index.toString()}
-            style={styles.messageList}
-            contentContainerStyle={styles.messageListContent}
-          />
-          <MessageInput onSendMessage={handleSendMessage} isLoading={isLoading} />
-        </KeyboardAvoidingView>
+        <View style={styles.chatContainer}>
+          <KeyboardAvoidingView
+            style={styles.keyboardAvoidContainer}
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+          >
+            <FlatList
+              ref={flatListRef}
+              data={activeChat.messages}
+              renderItem={({ item }) => <ChatMessage message={item} />}
+              keyExtractor={(_, index) => index.toString()}
+              style={styles.messageList}
+              contentContainerStyle={styles.messageListContent}
+              keyboardDismissMode="on-drag"
+              onScrollBeginDrag={Keyboard.dismiss}
+            />
+            
+            <MessageInput onSendMessage={handleSendMessage} isLoading={isLoading} />
+          </KeyboardAvoidingView>
+        </View>
         
         <Sidebar 
           visible={sidebarVisible}
@@ -156,14 +162,20 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  container: {
+  chatContainer: {
     flex: 1,
+    position: 'relative',
+  },
+  keyboardAvoidContainer: {
+    flex: 1,
+    position: 'relative',
   },
   messageList: {
     flex: 1,
   },
   messageListContent: {
     paddingVertical: spacing.sm,
+    paddingBottom: 160, // Extra bottom padding to account for the message input height
   },
 });
 
