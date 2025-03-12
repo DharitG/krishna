@@ -45,8 +45,18 @@ const SettingsScreen = () => {
       title: 'Subscription',
       items: [
         { label: 'Current Plan', icon: 'ribbon-outline', hasDetail: true, value: 'Nirvana' },
-        { label: 'Manage Subscription', icon: 'card-outline', hasDetail: true },
-        { label: 'Upgrade', icon: 'arrow-up-circle-outline', hasDetail: true },
+        { 
+          label: 'Manage Subscription', 
+          icon: 'card-outline', 
+          hasDetail: true,
+          onPress: () => router.push('/subscription') 
+        },
+        { 
+          label: 'Upgrade', 
+          icon: 'arrow-up-circle-outline', 
+          hasDetail: true,
+          onPress: () => router.push('/subscription')
+        },
       ]
     },
     {
@@ -94,6 +104,7 @@ const SettingsScreen = () => {
                       cardStyles.cardItem,
                       itemIndex === section.items.length - 1 ? cardStyles.cardItemLast : null
                     ]}
+                    onPress={item.onPress}
                   >
                     <View style={cardStyles.cardItemLeft}>
                       <Ionicons 

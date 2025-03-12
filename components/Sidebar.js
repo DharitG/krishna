@@ -195,7 +195,13 @@ const Sidebar = ({ visible, onClose, onNewChat, onSelectChat, chats = [], active
               <Text style={styles.footerButtonText}>Settings</Text>
             </TouchableOpacity>
             
-            <TouchableOpacity style={styles.upgradeButton}>
+            <TouchableOpacity 
+              style={styles.upgradeButton}
+              onPress={() => {
+                onClose();
+                import('expo-router').then(({ router }) => router.push('/subscription'));
+              }}
+            >
               <Text style={styles.upgradeButtonText}>Upgrade to Pro</Text>
             </TouchableOpacity>
           </View>
