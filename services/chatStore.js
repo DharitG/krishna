@@ -1,4 +1,26 @@
-import { sendMessageMock } from './api';
+import { sendMessage, sendMessageMock } from './api';
+import Constants from 'expo-constants';
+
+// Get environment variables
+const { 
+  AZURE_OPENAI_API_KEY,
+  AZURE_OPENAI_ENDPOINT,
+  AZURE_OPENAI_DEPLOYMENT_NAME 
+} = Constants.expoConfig?.extra || {};
+
+// Check if all required Azure config is present
+const isAzureConfigured = !!(
+  AZURE_OPENAI_API_KEY && 
+  AZURE_OPENAI_ENDPOINT && 
+  AZURE_OPENAI_DEPLOYMENT_NAME
+);
+
+console.log('Azure configuration status:', { 
+  isConfigured: isAzureConfigured,
+  hasApiKey: !!AZURE_OPENAI_API_KEY,
+  hasEndpoint: !!AZURE_OPENAI_ENDPOINT,
+  hasDeploymentName: !!AZURE_OPENAI_DEPLOYMENT_NAME
+});
 
 // Simple chat store for managing multiple chat sessions
 class ChatStore {
@@ -145,8 +167,10 @@ class ChatStore {
     chat.messages.push(userMessage);
     
     try {
-      // Send to API
-      const response = await sendMessageMock(chat.messages);
+      // Send to API - use Azure if configured, otherwise use mock
+      const response = isAzureConfigured 
+        ? await sendMessage(chat.messages)
+        : await sendMessageMock(chat.messages);
       
       // Add assistant response
       chat.messages.push(response);
@@ -167,7 +191,7 @@ class ChatStore {
       // Add error message
       const errorMessage = {
         role: 'assistant',
-        content: 'Sorry, I encountered an error. Please try again.'
+        content: 'Sorry, I encountered an error connecting to Azure OpenAI. Please check your configuration or try again later.'
       };
       chat.messages.push(errorMessage);
       

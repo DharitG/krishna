@@ -1,50 +1,68 @@
-# Welcome to your Expo app 👋
+# August - AI Super Agent
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+August is a React Native mobile app that provides a clean, interactive chat interface with Azure OpenAI service integration.
 
-## Get started
+## Features
 
-1. Install dependencies
+- Modern, intuitive chat interface
+- Multiple chat conversations
+- Integration with Azure OpenAI service
+- Easy to extend with agentic capabilities
 
+## Prerequisites
+
+- Node.js and npm
+- Expo CLI: `npm install -g expo-cli`
+- An Azure account with access to Azure OpenAI Service
+
+## Setup
+
+1. Clone the repository
+2. Install dependencies:
    ```bash
    npm install
    ```
+3. Create a `.env` file in the root directory (copy from `.env.example`)
+4. Configure Azure OpenAI:
+   - Follow the instructions in `AZURE_SETUP.md`
+   - Add your Azure OpenAI API key, endpoint, and deployment name to the `.env` file
 
-2. Start the app
-
-   ```bash
-    npx expo start
-   ```
-
-In the output, you'll find options to open the app in a
-
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
-
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
-
-## Get a fresh project
-
-When you're ready, run:
+## Running the App
 
 ```bash
-npm run reset-project
+npm start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+This will start the Expo development server. You can then run the app on:
+- iOS simulator (requires macOS and Xcode)
+- Android emulator (requires Android Studio)
+- Physical device using the Expo Go app (scan the QR code)
 
-## Learn more
+## Using August
 
-To learn more about developing your project with Expo, look at the following resources:
+- Start a new chat by pressing the "+" button
+- Navigate between chats using the sidebar
+- Type your messages in the input field at the bottom
+- If Azure OpenAI is configured, you'll see an "Azure" badge in the header
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Environment Configuration
 
-## Join the community
+August supports the following environment variables:
 
-Join our community of developers creating universal apps.
+- `AZURE_OPENAI_API_KEY`: Your Azure OpenAI API key
+- `AZURE_OPENAI_ENDPOINT`: Your Azure OpenAI endpoint URL
+- `AZURE_OPENAI_DEPLOYMENT_NAME`: Your model deployment name
+- `MODEL_TEMPERATURE`: Temperature parameter for responses (default: 0.7)
+- `MODEL_MAX_TOKENS`: Maximum tokens for responses (default: 800)
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+## Future Extensions
+
+August is designed to be extended with:
+- Multi-modal capabilities (image, voice)
+- Function calling and tool use
+- Agentic behavior with different personas
+- Integration with external systems
+
+## License
+
+[MIT License](LICENSE)

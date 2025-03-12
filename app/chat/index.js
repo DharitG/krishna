@@ -10,13 +10,17 @@ import {
   Text,
   TouchableOpacity,
 } from 'react-native';
-import { SidebarSimple, Plus } from 'phosphor-react-native';
+import { SidebarSimple, Plus, Cloud } from 'phosphor-react-native';
+import Constants from 'expo-constants';
 import ChatMessage from '../../components/chat/ChatMessage';
 import MessageInput from '../../components/chat/MessageInput';
 import GradientBackground from '../../components/GradientBackground';
 import Sidebar from '../../components/Sidebar';
 import chatStore from '../../services/chatStore';
 import { colors, spacing, typography } from '../../constants/Theme';
+
+// Check if Azure is configured
+const isAzureConfigured = !!Constants.expoConfig?.extra?.AZURE_OPENAI_API_KEY;
 
 const ChatScreen = () => {
   // Use the chat store to manage chats
@@ -77,7 +81,15 @@ const ChatScreen = () => {
             <SidebarSimple size={24} color={colors.white} weight="regular" />
           </TouchableOpacity>
           
-          <Text style={styles.headerTitle}>August</Text>
+          <View style={styles.headerTitleContainer}>
+            <Text style={styles.headerTitle}>August</Text>
+            {isAzureConfigured && (
+              <View style={styles.azureBadge}>
+                <Cloud size={12} color={colors.white} weight="fill" />
+                <Text style={styles.azureBadgeText}>Azure</Text>
+              </View>
+            )}
+          </View>
           
           <TouchableOpacity 
             style={styles.headerButton} 
@@ -127,6 +139,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
   },
+  headerTitleContainer: {
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
   headerTitle: {
     color: colors.white,
     fontSize: typography.fontSize.xl,
@@ -134,6 +150,21 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     letterSpacing: 1,
     textTransform: 'uppercase',
+  },
+  azureBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: colors.emerald,
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: 10,
+    marginTop: 4,
+  },
+  azureBadgeText: {
+    color: colors.white,
+    fontSize: 10,
+    fontWeight: 'bold',
+    marginLeft: 2,
   },
   menuButton: {
     width: 40,
