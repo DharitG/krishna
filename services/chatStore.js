@@ -250,6 +250,11 @@ class ChatStore {
       // Send to API - use Azure if configured, otherwise use mock
       let response;
       
+      // Initialize authentication status if not present
+      if (!chat.authStatus) {
+        chat.authStatus = {};
+      }
+      
       if (isAzureConfigured) {
         // Only use tools if both Azure and Composio are configured
         const canUseTools = isComposioConfigured && chat.useTools;
@@ -257,7 +262,8 @@ class ChatStore {
         response = await sendMessage(
           chat.messages, 
           chat.enabledTools.length > 0 ? chat.enabledTools : undefined,
-          canUseTools
+          canUseTools,
+          chat.authStatus
         );
       } else {
         response = await sendMessageMock(chat.messages);
@@ -288,6 +294,25 @@ class ChatStore {
       
       return errorMessage;
     }
+  }
+  
+  // Update authentication status for a service in a chat
+  updateAuthStatus(chatId, service, isAuthenticated) {
+    const chat = this.chats.find(c => c.id === chatId);
+    if (!chat) return false;
+    
+    // Initialize authStatus if not present
+    if (!chat.authStatus) {
+      chat.authStatus = {};
+    }
+    
+    // Update authentication status
+    chat.authStatus[service] = isAuthenticated;
+    
+    console.log(`Updated auth status for ${service} to ${isAuthenticated} in chat ${chatId}`);
+    console.log('Current auth status:', chat.authStatus);
+    
+    return true;
   }
 }
 

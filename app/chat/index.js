@@ -19,6 +19,7 @@ import GradientBackground from '../../components/GradientBackground';
 import Sidebar from '../../components/Sidebar';
 import chatStore from '../../services/chatStore';
 import { colors, spacing, typography } from '../../constants/Theme';
+import * as Linking from 'expo-linking';
 
 // App is now configured to use Azure OpenAI
 
@@ -102,7 +103,21 @@ const ChatScreen = () => {
             <FlatList
               ref={flatListRef}
               data={activeChat.messages}
-              renderItem={({ item }) => <ChatMessage message={item} />}
+              renderItem={({ item }) => (
+                <ChatMessage 
+                  message={item} 
+                  onAuthSuccess={(service) => {
+                    // Update authentication status in the chat store
+                    chatStore.updateAuthStatus(activeChat.id, service, true);
+                    
+                    // Update the active chat in the state
+                    setActiveChat({...chatStore.getActiveChat()});
+                    
+                    // Send a message to acknowledge authentication
+                    handleSendMessage(`I've successfully authenticated with ${service}`);
+                  }}
+                />
+              )}
               keyExtractor={(_, index) => index.toString()}
               style={styles.messageList}
               contentContainerStyle={styles.messageListContent}

@@ -40,9 +40,15 @@ const DEFAULT_ENABLED_TOOLS = [
  * @param {Array} messages - Chat messages array
  * @param {Array} enabledTools - Array of tool names to enable (optional)
  * @param {Boolean} useTools - Whether to use tools or not
+ * @param {Object} authStatus - Status of authenticated services
  * @returns {Object} - The assistant's response message
  */
-export const sendMessage = async (messages, enabledTools = DEFAULT_ENABLED_TOOLS, useTools = true) => {
+export const sendMessage = async (
+  messages, 
+  enabledTools = DEFAULT_ENABLED_TOOLS, 
+  useTools = true,
+  authStatus = {}
+) => {
   try {
     // Log environment variables (sanitized) for debugging
     console.log('Azure OpenAI Configuration:', {
@@ -64,9 +70,43 @@ export const sendMessage = async (messages, enabledTools = DEFAULT_ENABLED_TOOLS
     // Get tools from Composio if enabled
     const tools = useTools ? composioService.getTools(enabledTools) : [];
     
+    // Add system message about authentication status if tools are enabled
+    let modifiedMessages = [...messages];
+    
+    if (useTools && tools.length > 0) {
+      // Check if we have the latest system message about auth status
+      const authStatusMessage = {
+        role: 'system',
+        content: `Authentication status: ${Object.entries(authStatus)
+          .map(([service, status]) => `${service}: ${status ? 'authenticated' : 'not authenticated'}`)
+          .join(', ')}. 
+          
+          If you need to use a service that's not authenticated, please include an authentication prompt in your response using this format: 
+          "To help with this, I'll need access to your [service] account. [AUTH_REQUEST:service] 
+          
+          Once you grant access, I'll be able to help you with this task."
+          
+          Replace [service] with the actual service name (gmail, github, slack, etc.).`
+      };
+      
+      // Check if last system message is about auth status
+      const lastSystemIndex = modifiedMessages
+        .map((msg, i) => msg.role === 'system' ? i : -1)
+        .filter(i => i !== -1)
+        .pop();
+      
+      if (lastSystemIndex !== undefined && modifiedMessages[lastSystemIndex].content.includes('Authentication status:')) {
+        // Replace the last auth status message
+        modifiedMessages[lastSystemIndex] = authStatusMessage;
+      } else {
+        // Add a new auth status message
+        modifiedMessages.unshift(authStatusMessage);
+      }
+    }
+    
     // Prepare the request payload
     const payload = {
-      messages,
+      messages: modifiedMessages,
       temperature,
       max_tokens: maxTokens,
       top_p: 0.95,
@@ -83,7 +123,7 @@ export const sendMessage = async (messages, enabledTools = DEFAULT_ENABLED_TOOLS
     
     // Log the request payload (excluding message content for privacy)
     console.log('Request params:', {
-      messageCount: messages.length,
+      messageCount: modifiedMessages.length,
       temperature,
       max_tokens: maxTokens,
       top_p: 0.95,
@@ -95,27 +135,60 @@ export const sendMessage = async (messages, enabledTools = DEFAULT_ENABLED_TOOLS
     console.log('Response status:', response.status);
     console.log('Response has data:', !!response.data);
     
+    // Get the assistant's message
+    const assistantMessage = response.data.choices[0].message;
+    
     // Check if the response contains tool calls
-    const hasToolCalls = response.data.choices[0].message.tool_calls?.length > 0;
+    const hasToolCalls = assistantMessage.tool_calls?.length > 0;
     
     if (hasToolCalls) {
       console.log('Response contains tool calls');
       
-      // Process tool calls with Composio
-      const result = await composioService.handleToolCalls(response.data);
-      console.log('Tool call results:', result);
+      // Check if we have authentication for the tools being called
+      const toolNames = assistantMessage.tool_calls.map(tc => {
+        // Extract the service name from the function name
+        // Example: "GMAIL_SEND_EMAIL" -> "gmail"
+        const serviceName = tc.function.name.split('_')[0].toLowerCase();
+        return serviceName;
+      });
       
-      // Add a message about the tool use to help the user understand what happened
-      const toolMessage = {
-        role: 'assistant',
-        content: `I've used tools to help with your request: ${response.data.choices[0].message.tool_calls.map(tc => tc.function.name).join(', ')}. ${result.result}`
-      };
+      // Check if any required service is not authenticated
+      const unauthenticatedServices = toolNames.filter(service => !authStatus[service]);
       
-      return toolMessage;
+      if (unauthenticatedServices.length > 0) {
+        // We need authentication for these services
+        const authRequests = unauthenticatedServices.map(service => 
+          `[AUTH_REQUEST:${service}]`
+        ).join('\n');
+        
+        // Create a message asking for authentication
+        return {
+          role: 'assistant',
+          content: `I need to access certain services to help you with this request. Please authenticate with the following services:\n\n${authRequests}\n\nOnce authenticated, I'll be able to complete your request.`
+        };
+      }
+      
+      // All required services are authenticated, proceed with tool calls
+      try {
+        const result = await composioService.handleToolCalls(response.data);
+        console.log('Tool call results:', result);
+        
+        // Add a message about the tool use to help the user understand what happened
+        return {
+          role: 'assistant',
+          content: `I've used tools to help with your request: ${assistantMessage.tool_calls.map(tc => tc.function.name).join(', ')}. ${result.result}`
+        };
+      } catch (error) {
+        // Handle tool call failure
+        return {
+          role: 'assistant',
+          content: `I tried to use tools to help with your request, but encountered an error: ${error.message}. Could you try again or rephrase your request?`
+        };
+      }
     }
     
     // Return the standard message if no tool calls
-    return response.data.choices[0].message;
+    return assistantMessage;
   } catch (error) {
     console.error('Error sending message to Azure OpenAI:', error.message);
     if (error.response) {
