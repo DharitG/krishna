@@ -36,6 +36,9 @@ export default {
     MODEL_TEMPERATURE: process.env.MODEL_TEMPERATURE,
     MODEL_MAX_TOKENS: process.env.MODEL_MAX_TOKENS,
     
+    // Composio Configuration
+    COMPOSIO_API_KEY: process.env.COMPOSIO_API_KEY,
+    
     eas: {
       projectId: "your-project-id"
     }

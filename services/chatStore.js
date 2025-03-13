@@ -1,11 +1,12 @@
-import { sendMessage, sendMessageMock } from './api';
+import { sendMessage, sendMessageMock, authenticateService } from './api';
 import Constants from 'expo-constants';
 
 // Get environment variables
 const { 
   AZURE_OPENAI_API_KEY,
   AZURE_OPENAI_ENDPOINT,
-  AZURE_OPENAI_DEPLOYMENT_NAME 
+  AZURE_OPENAI_DEPLOYMENT_NAME,
+  COMPOSIO_API_KEY
 } = Constants.expoConfig?.extra || {};
 
 // Check if all required Azure config is present
@@ -15,11 +16,19 @@ const isAzureConfigured = !!(
   AZURE_OPENAI_DEPLOYMENT_NAME
 );
 
+// Check if Composio is configured
+const isComposioConfigured = !!COMPOSIO_API_KEY;
+
 console.log('Azure configuration status:', { 
   isConfigured: isAzureConfigured,
   hasApiKey: !!AZURE_OPENAI_API_KEY,
   hasEndpoint: !!AZURE_OPENAI_ENDPOINT,
   hasDeploymentName: !!AZURE_OPENAI_DEPLOYMENT_NAME
+});
+
+console.log('Composio configuration status:', {
+  isConfigured: isComposioConfigured,
+  hasApiKey: !!COMPOSIO_API_KEY
 });
 
 // Simple chat store for managing multiple chat sessions
@@ -33,11 +42,13 @@ class ChatStore {
         messages: [
           {
             role: 'assistant',
-            content: "Hello! I'm August, your AI super agent. How can I help you today?"
+            content: "Hello! I'm August, your AI super agent with tool capabilities. How can I help you today?"
           }
         ],
         createdAt: new Date(),
-        updatedAt: new Date()
+        updatedAt: new Date(),
+        enabledTools: [], // Tools enabled for this chat
+        useTools: true // Whether to use tools or not
       },
       {
         id: '2',
@@ -57,7 +68,9 @@ class ChatStore {
           }
         ],
         createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000)
+        updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        enabledTools: [],
+        useTools: false
       },
       {
         id: '3',
@@ -77,10 +90,35 @@ class ChatStore {
           }
         ],
         createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
-        updatedAt: new Date(Date.now() - 24 * 60 * 60 * 1000)
+        updatedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        enabledTools: [],
+        useTools: false
       }
     ];
     this.activeChat = '1';
+    
+    // Add a tool-enabled chat example if Composio is configured
+    if (isComposioConfigured) {
+      this.chats.push({
+        id: '4',
+        title: 'Tool-enabled chat',
+        messages: [
+          {
+            role: 'assistant',
+            content: "Hello! I'm August, your AI super agent with tool capabilities. I can help you with GitHub, Gmail, and Slack integrations. What would you like to do today?"
+          }
+        ],
+        createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
+        updatedAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
+        enabledTools: [
+          'GITHUB_STAR_A_REPOSITORY_FOR_THE_AUTHENTICATED_USER',
+          'GITHUB_CREATE_AN_ISSUE',
+          'SLACK_SEND_MESSAGE',
+          'GMAIL_SEND_EMAIL'
+        ],
+        useTools: true
+      });
+    }
   }
 
   // Get all chats
@@ -125,7 +163,7 @@ class ChatStore {
   }
 
   // Create a new chat
-  createChat() {
+  createChat(useTools = true) {
     const newChatId = Date.now().toString();
     const newChat = {
       id: newChatId,
@@ -133,11 +171,13 @@ class ChatStore {
       messages: [
         {
           role: 'assistant',
-          content: "Hello! I'm August, your AI super agent. How can I help you today?"
+          content: `Hello! I'm August, your AI super agent${useTools ? ' with tool capabilities' : ''}. How can I help you today?`
         }
       ],
       createdAt: new Date(),
-      updatedAt: new Date()
+      updatedAt: new Date(),
+      enabledTools: [],
+      useTools: useTools
     };
     
     this.chats.unshift(newChat);
@@ -157,6 +197,46 @@ class ChatStore {
     return this.getChats();
   }
 
+  // Toggle tool usage for a chat
+  toggleToolsForChat(chatId, useTools) {
+    const chat = this.chats.find(c => c.id === chatId);
+    if (chat) {
+      chat.useTools = useTools;
+      return true;
+    }
+    return false;
+  }
+
+  // Update enabled tools for a chat
+  updateEnabledTools(chatId, enabledTools) {
+    const chat = this.chats.find(c => c.id === chatId);
+    if (chat) {
+      chat.enabledTools = enabledTools;
+      return true;
+    }
+    return false;
+  }
+
+  // Authenticate with a third-party service for tools
+  async authenticateService(serviceName) {
+    if (!isComposioConfigured) {
+      return {
+        error: true,
+        message: 'Composio is not configured. Please set up your COMPOSIO_API_KEY.'
+      };
+    }
+    
+    try {
+      return await authenticateService(serviceName);
+    } catch (error) {
+      console.error(`Error authenticating with ${serviceName}:`, error);
+      return {
+        error: true,
+        message: `Failed to authenticate with ${serviceName}: ${error.message}`
+      };
+    }
+  }
+
   // Send a message in the active chat
   async sendMessage(content) {
     const chat = this.getActiveChat();
@@ -168,9 +248,20 @@ class ChatStore {
     
     try {
       // Send to API - use Azure if configured, otherwise use mock
-      const response = isAzureConfigured 
-        ? await sendMessage(chat.messages)
-        : await sendMessageMock(chat.messages);
+      let response;
+      
+      if (isAzureConfigured) {
+        // Only use tools if both Azure and Composio are configured
+        const canUseTools = isComposioConfigured && chat.useTools;
+        
+        response = await sendMessage(
+          chat.messages, 
+          chat.enabledTools.length > 0 ? chat.enabledTools : undefined,
+          canUseTools
+        );
+      } else {
+        response = await sendMessageMock(chat.messages);
+      }
       
       // Add assistant response
       chat.messages.push(response);

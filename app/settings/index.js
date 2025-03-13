@@ -1,17 +1,70 @@
-import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, StatusBar } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, StatusBar, Switch, Alert, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import GradientBackground from '../../components/GradientBackground';
 import GlassCard from '../../components/GlassCard';
 import { colors } from '../../constants/Theme';
 import { layoutStyles, headerStyles, cardStyles, textStyles } from '../../constants/StyleGuide';
+import Constants from 'expo-constants';
+import chatStore from '../../services/chatStore';
 
 const SettingsScreen = () => {
   const router = useRouter();
   
+  // Check if Composio is configured
+  const { COMPOSIO_API_KEY } = Constants.expoConfig?.extra || {};
+  const isComposioConfigured = !!COMPOSIO_API_KEY;
+  
+  // State for toggles
+  const [useTools, setUseTools] = useState(true);
+  const [features, setFeatures] = useState({
+    github: true,
+    slack: true,
+    gmail: true,
+  });
+  
   const handleBack = () => {
     router.back();
+  };
+  
+  const handleAuthenticateService = async (serviceName) => {
+    try {
+      const result = await chatStore.authenticateService(serviceName);
+      
+      if (result.error) {
+        Alert.alert('Authentication Error', result.message);
+        return;
+      }
+      
+      // If we have a redirect URL, open it for authentication
+      if (result.redirectUrl) {
+        Alert.alert(
+          'Authenticate with ' + serviceName,
+          'You will be redirected to authenticate with ' + serviceName,
+          [
+            { text: 'Cancel', style: 'cancel' },
+            { text: 'Continue', onPress: () => Linking.openURL(result.redirectUrl) }
+          ]
+        );
+      } else {
+        Alert.alert('Success', `Authentication initiated for ${serviceName}`);
+      }
+    } catch (error) {
+      Alert.alert('Error', `Failed to authenticate with ${serviceName}: ${error.message}`);
+    }
+  };
+  
+  const handleToggleGithub = (value) => {
+    setFeatures(prev => ({ ...prev, github: value }));
+  };
+  
+  const handleToggleSlack = (value) => {
+    setFeatures(prev => ({ ...prev, slack: value }));
+  };
+  
+  const handleToggleGmail = (value) => {
+    setFeatures(prev => ({ ...prev, gmail: value }));
   };
   
   // These would be connected to real settings in a full app
@@ -31,6 +84,108 @@ const SettingsScreen = () => {
         { label: 'Clear Conversation', icon: 'trash-outline', hasDetail: false },
         { label: 'Chat History', icon: 'time-outline', hasDetail: true },
         { label: 'Speech Output', icon: 'volume-high-outline', hasDetail: true, value: 'Off' },
+      ]
+    },
+    {
+      title: 'Composio Integration',
+      items: [
+        {
+          label: 'Use Tools',
+          icon: 'construct-outline',
+          hasDetail: false,
+          renderItem: () => (
+            <View style={cardStyles.cardItemRight}>
+              <Switch
+                trackColor={{ false: colors.darkGray, true: colors.emeraldTransparent }}
+                thumbColor={useTools ? colors.emerald : colors.lightGray}
+                ios_backgroundColor={colors.darkGray}
+                onValueChange={setUseTools}
+                value={useTools}
+                disabled={!isComposioConfigured}
+              />
+            </View>
+          ),
+        },
+        ...(!isComposioConfigured ? [{
+          label: 'Composio API Key Not Configured',
+          icon: 'alert-circle-outline',
+          hasDetail: false,
+          labelStyle: { color: colors.warning },
+        }] : []),
+        ...(isComposioConfigured ? [
+          {
+            label: 'GitHub',
+            icon: 'logo-github',
+            hasDetail: false,
+            renderItem: () => (
+              <View style={cardStyles.cardItemRight}>
+                <Switch
+                  trackColor={{ false: colors.darkGray, true: colors.emeraldTransparent }}
+                  thumbColor={features.github ? colors.emerald : colors.lightGray}
+                  ios_backgroundColor={colors.darkGray}
+                  onValueChange={handleToggleGithub}
+                  value={features.github}
+                  disabled={!useTools}
+                />
+              </View>
+            ),
+          },
+          {
+            label: 'Authenticate GitHub',
+            icon: 'key-outline',
+            hasDetail: false,
+            onPress: () => handleAuthenticateService('github'),
+            disabled: !features.github || !useTools,
+          },
+          {
+            label: 'Slack',
+            icon: 'logo-slack',
+            hasDetail: false,
+            renderItem: () => (
+              <View style={cardStyles.cardItemRight}>
+                <Switch
+                  trackColor={{ false: colors.darkGray, true: colors.emeraldTransparent }}
+                  thumbColor={features.slack ? colors.emerald : colors.lightGray}
+                  ios_backgroundColor={colors.darkGray}
+                  onValueChange={handleToggleSlack}
+                  value={features.slack}
+                  disabled={!useTools}
+                />
+              </View>
+            ),
+          },
+          {
+            label: 'Authenticate Slack',
+            icon: 'key-outline',
+            hasDetail: false,
+            onPress: () => handleAuthenticateService('slack'),
+            disabled: !features.slack || !useTools,
+          },
+          {
+            label: 'Gmail',
+            icon: 'mail-outline',
+            hasDetail: false,
+            renderItem: () => (
+              <View style={cardStyles.cardItemRight}>
+                <Switch
+                  trackColor={{ false: colors.darkGray, true: colors.emeraldTransparent }}
+                  thumbColor={features.gmail ? colors.emerald : colors.lightGray}
+                  ios_backgroundColor={colors.darkGray}
+                  onValueChange={handleToggleGmail}
+                  value={features.gmail}
+                  disabled={!useTools}
+                />
+              </View>
+            ),
+          },
+          {
+            label: 'Authenticate Gmail',
+            icon: 'key-outline',
+            hasDetail: false,
+            onPress: () => handleAuthenticateService('gmail'),
+            disabled: !features.gmail || !useTools,
+          }
+        ] : []),
       ]
     },
     {
@@ -102,23 +257,31 @@ const SettingsScreen = () => {
                     key={itemIndex} 
                     style={[
                       cardStyles.cardItem,
-                      itemIndex === section.items.length - 1 ? cardStyles.cardItemLast : null
+                      itemIndex === section.items.length - 1 ? cardStyles.cardItemLast : null,
+                      item.disabled ? { opacity: 0.5 } : null
                     ]}
                     onPress={item.onPress}
+                    disabled={item.disabled}
                   >
                     <View style={cardStyles.cardItemLeft}>
                       <Ionicons 
                         name={item.icon} 
                         size={22} 
-                        color={colors.emerald} 
+                        color={item.labelStyle?.color || colors.emerald} 
                         style={cardStyles.cardItemIcon} 
                       />
-                      <Text style={cardStyles.cardItemLabel}>{item.label}</Text>
+                      <Text style={[cardStyles.cardItemLabel, item.labelStyle]}>
+                        {item.label}
+                      </Text>
                     </View>
                     
                     <View style={cardStyles.cardItemRight}>
-                      {item.value && <Text style={cardStyles.cardItemValue}>{item.value}</Text>}
-                      {item.hasDetail && <Ionicons name="chevron-forward" size={18} color={colors.lightGray} />}
+                      {item.renderItem ? item.renderItem() : (
+                        <>
+                          {item.value && <Text style={cardStyles.cardItemValue}>{item.value}</Text>}
+                          {item.hasDetail && <Ionicons name="chevron-forward" size={18} color={colors.lightGray} />}
+                        </>
+                      )}
                     </View>
                   </TouchableOpacity>
                 ))}
@@ -130,7 +293,5 @@ const SettingsScreen = () => {
     </GradientBackground>
   );
 };
-
-// We're using the StyleGuide.js for all styles now
 
 export default SettingsScreen;

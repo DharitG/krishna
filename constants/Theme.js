@@ -13,8 +13,15 @@ export const colors = {
   // Accent colors
   emerald: '#10B981',
   emeraldLight: '#34D399',
+  emeraldTransparent: 'rgba(16, 185, 129, 0.25)',
   purple: '#8B5CF6',
   purpleDark: '#6D28D9',
+  
+  // Status colors
+  warning: '#F59E0B',
+  error: '#EF4444',
+  success: '#10B981',
+  info: '#3B82F6',
   
   // Gradient definitions
   gradients: {
