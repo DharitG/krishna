@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import React, { useState, useEffect } from 'react';
+import { View, Text, StyleSheet, Animated } from 'react-native';
+import Markdown from 'react-native-markdown-display';
 import GlassCard from '../GlassCard';
 import AuthButton from './AuthButton';
 import chatStore from '../../services/chatStore';
@@ -8,16 +9,35 @@ import {
   spacing,
   borderRadius,
   shadows,
-  typography
+  typography,
+  animation
 } from '../../constants/Theme';
 
 // Regex pattern to detect auth requests in the message
 // Format: [AUTH_REQUEST:service]
 const AUTH_REQUEST_PATTERN = /\[AUTH_REQUEST:(\w+)\]/g;
 
-const ChatMessage = ({ message, onAuthSuccess }) => {
+const ChatMessage = ({ message, onAuthSuccess, index }) => {
   const isUser = message.role === 'user';
   const [authStates, setAuthStates] = useState({});
+  const fadeAnim = useState(new Animated.Value(0))[0];
+  const translateY = useState(new Animated.Value(20))[0];
+  
+  // Animate message appearance
+  useEffect(() => {
+    Animated.parallel([
+      Animated.timing(fadeAnim, {
+        toValue: 1,
+        duration: animation.normal,
+        useNativeDriver: true,
+      }),
+      Animated.timing(translateY, {
+        toValue: 0,
+        duration: animation.normal,
+        useNativeDriver: true,
+      })
+    ]).start();
+  }, []);
   
   // Function to handle authentication
   const handleAuth = async (service) => {
@@ -64,11 +84,98 @@ const ChatMessage = ({ message, onAuthSuccess }) => {
     }
   };
   
+  // Markdown styles
+  const markdownStyles = {
+    body: {
+      color: isUser ? colors.white : colors.white,
+      fontSize: typography.fontSize.md,
+      lineHeight: typography.lineHeight.md,
+    },
+    heading1: {
+      color: isUser ? colors.white : colors.white,
+      fontSize: typography.fontSize.xl,
+      fontWeight: 'bold',
+      marginTop: spacing.md,
+      marginBottom: spacing.sm,
+    },
+    heading2: {
+      color: isUser ? colors.white : colors.white,
+      fontSize: typography.fontSize.lg,
+      fontWeight: 'bold',
+      marginTop: spacing.md,
+      marginBottom: spacing.sm,
+    },
+    heading3: {
+      color: isUser ? colors.white : colors.white,
+      fontSize: typography.fontSize.md,
+      fontWeight: 'bold',
+      marginTop: spacing.md,
+      marginBottom: spacing.sm,
+    },
+    paragraph: {
+      marginVertical: spacing.xs,
+    },
+    list_item: {
+      marginVertical: spacing.xs / 2,
+    },
+    code_block: {
+      backgroundColor: 'rgba(0, 0, 0, 0.3)',
+      padding: spacing.sm,
+      borderRadius: borderRadius.sm,
+      fontFamily: typography.fontFamily.mono,
+      fontSize: typography.fontSize.sm,
+    },
+    code_inline: {
+      backgroundColor: 'rgba(0, 0, 0, 0.3)',
+      padding: spacing.xs,
+      borderRadius: borderRadius.sm,
+      fontFamily: typography.fontFamily.mono,
+      fontSize: typography.fontSize.sm,
+    },
+    blockquote: {
+      borderLeftWidth: 4,
+      borderLeftColor: colors.emerald,
+      paddingLeft: spacing.md,
+      marginLeft: spacing.sm,
+      opacity: 0.8,
+    },
+    link: {
+      color: colors.emerald,
+      textDecorationLine: 'underline',
+    },
+    hr: {
+      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      height: 1,
+      marginVertical: spacing.md,
+    },
+    table: {
+      borderWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.2)',
+      borderRadius: borderRadius.sm,
+      marginVertical: spacing.md,
+    },
+    tr: {
+      borderBottomWidth: 1,
+      borderColor: 'rgba(255, 255, 255, 0.2)',
+    },
+    th: {
+      padding: spacing.sm,
+      backgroundColor: 'rgba(0, 0, 0, 0.3)',
+    },
+    td: {
+      padding: spacing.sm,
+    },
+  };
+  
   // Function to parse message content and render auth buttons
   const renderMessageContent = (content) => {
     if (!content.includes('[AUTH_REQUEST:')) {
-      // No auth requests in this message, just return the text
-      return <Text style={[styles.text, isUser ? styles.userText : styles.botText]}>{content}</Text>;
+      // No auth requests, render as markdown
+      return (
+        <Markdown style={markdownStyles}>
+          {content}
+        </Markdown>
+      );
     }
     
     // Split the content into parts
@@ -86,9 +193,12 @@ const ChatMessage = ({ message, onAuthSuccess }) => {
       // Add text before the auth request
       if (match.index > lastIndex) {
         parts.push(
-          <Text key={`text-${lastIndex}`} style={[styles.text, isUser ? styles.userText : styles.botText]}>
+          <Markdown 
+            key={`text-${lastIndex}`} 
+            style={markdownStyles}
+          >
             {content.slice(lastIndex, match.index)}
-          </Text>
+          </Markdown>
         );
       }
       
@@ -110,33 +220,41 @@ const ChatMessage = ({ message, onAuthSuccess }) => {
     // Add any remaining text after the last auth request
     if (lastIndex < content.length) {
       parts.push(
-        <Text key={`text-${lastIndex}`} style={[styles.text, isUser ? styles.userText : styles.botText]}>
+        <Markdown 
+          key={`text-${lastIndex}`} 
+          style={markdownStyles}
+        >
           {content.slice(lastIndex)}
-        </Text>
+        </Markdown>
       );
     }
     
     return parts;
   };
   
+  const animatedStyle = {
+    opacity: fadeAnim,
+    transform: [{ translateY }],
+  };
+  
   if (isUser) {
     return (
-      <View style={[styles.container, styles.userContainer]}>
+      <Animated.View style={[styles.container, styles.userContainer, animatedStyle]}>
         <View style={[styles.bubble, styles.userBubble]}>
-          <Text style={[styles.text, styles.userText]}>
+          <Markdown style={markdownStyles}>
             {message.content}
-          </Text>
+          </Markdown>
         </View>
-      </View>
+      </Animated.View>
     );
   }
   
   return (
-    <View style={[styles.container, styles.botContainer]}>
+    <Animated.View style={[styles.container, styles.botContainer, animatedStyle]}>
       <GlassCard style={[styles.bubble, styles.botBubble]}>
         {renderMessageContent(message.content)}
       </GlassCard>
-    </View>
+    </Animated.View>
   );
 };
 
@@ -162,12 +280,16 @@ const styles = StyleSheet.create({
     backgroundColor: colors.emerald,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.2)',
   },
   botBubble: {
     borderBottomLeftRadius: spacing.xs,
-    backgroundColor: 'rgba(45, 45, 52, 0.7)',
+    backgroundColor: 'rgba(0, 0, 0, 0.3)',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(128, 128, 128, 0.5)',
   },
   text: {
     fontSize: typography.fontSize.md,

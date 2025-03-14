@@ -1,8 +1,8 @@
-import React, { useEffect } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import React, { useEffect, useRef } from 'react';
+import { View, ActivityIndicator, StyleSheet, Animated } from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
 import { useAuth } from '../services/authContext';
-import { colors } from '../constants/Theme';
+import { colors, animation } from '../constants/Theme';
 
 /**
  * Component to protect routes that require authentication
@@ -12,6 +12,7 @@ export default function ProtectedRoute({ children }) {
   const { isAuthenticated, loading } = useAuth();
   const router = useRouter();
   const segments = useSegments();
+  const fadeAnim = useRef(new Animated.Value(0)).current;
 
   useEffect(() => {
     if (loading) return;
@@ -27,6 +28,24 @@ export default function ProtectedRoute({ children }) {
     }
   }, [isAuthenticated, loading, segments]);
 
+  useEffect(() => {
+    // Fade in animation when component mounts
+    Animated.timing(fadeAnim, {
+      toValue: 1,
+      duration: animation.slow,
+      useNativeDriver: true,
+    }).start();
+
+    return () => {
+      // Fade out animation when component unmounts
+      Animated.timing(fadeAnim, {
+        toValue: 0,
+        duration: animation.fast,
+        useNativeDriver: true,
+      }).start();
+    };
+  }, []);
+
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
@@ -35,7 +54,11 @@ export default function ProtectedRoute({ children }) {
     );
   }
 
-  return <>{children}</>;
+  return (
+    <Animated.View style={{ flex: 1, opacity: fadeAnim }}>
+      {children}
+    </Animated.View>
+  );
 }
 
 const styles = StyleSheet.create({
