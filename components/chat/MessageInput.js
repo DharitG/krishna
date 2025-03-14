@@ -1,5 +1,16 @@
-import React, { useState } from 'react';
-import { View, TextInput, TouchableOpacity, StyleSheet, ActivityIndicator, Platform } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { 
+  View, 
+  TextInput, 
+  TouchableOpacity, 
+  StyleSheet, 
+  ActivityIndicator, 
+  Platform, 
+  Keyboard,
+  Dimensions,
+  LayoutAnimation,
+  UIManager
+} from 'react-native';
 import { ArrowUp, Plus } from 'phosphor-react-native';
 import {
   colors,
@@ -9,8 +20,44 @@ import {
   typography
 } from '../../constants/Theme';
 
+// Enable LayoutAnimation for Android
+if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
+  UIManager.setLayoutAnimationEnabledExperimental(true);
+}
+
 const MessageInput = ({ onSendMessage, isLoading }) => {
   const [message, setMessage] = useState('');
+  const [keyboardVisible, setKeyboardVisible] = useState(false);
+  const [keyboardHeight, setKeyboardHeight] = useState(0);
+  const [inputHeight, setInputHeight] = useState(0);
+  const inputRef = useRef(null);
+  const { height: screenHeight } = Dimensions.get('window');
+
+  // Monitor keyboard visibility and height
+  useEffect(() => {
+    const keyboardWillShowListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillShow' : 'keyboardDidShow',
+      (e) => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setKeyboardVisible(true);
+        setKeyboardHeight(e.endCoordinates.height);
+      }
+    );
+    
+    const keyboardWillHideListener = Keyboard.addListener(
+      Platform.OS === 'ios' ? 'keyboardWillHide' : 'keyboardDidHide',
+      () => {
+        LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+        setKeyboardVisible(false);
+        setKeyboardHeight(0);
+      }
+    );
+
+    return () => {
+      keyboardWillShowListener.remove();
+      keyboardWillHideListener.remove();
+    };
+  }, []);
 
   const handleSend = () => {
     if (message.trim().length > 0) {
@@ -25,10 +72,33 @@ const MessageInput = ({ onSendMessage, isLoading }) => {
     console.log('Open attachment options');
   };
 
+  // Handle input layout to calculate its height
+  const onInputLayout = (event) => {
+    setInputHeight(event.nativeEvent.layout.height);
+  };
+
+  // Focus the input when needed
+  const focusInput = () => {
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
+
   return (
-    <View style={styles.container}>
+    <View 
+      style={[
+        styles.container,
+        keyboardVisible && { 
+          bottom: Platform.OS === 'ios' ? 0 : 'auto',
+          position: Platform.OS === 'ios' ? 'absolute' : 'relative',
+          transform: [{ translateY: Platform.OS === 'android' && keyboardVisible ? -10 : 0 }]
+        }
+      ]}
+      onLayout={onInputLayout}
+    >
       <View style={styles.inputArea}>
         <TextInput
+          ref={inputRef}
           style={styles.integrated}
           value={message}
           onChangeText={setMessage}
@@ -38,6 +108,7 @@ const MessageInput = ({ onSendMessage, isLoading }) => {
           maxHeight={100}
           returnKeyType="send"
           onSubmitEditing={handleSend}
+          blurOnSubmit={false}
         />
         
         <View style={styles.buttonRow}>
@@ -82,23 +153,32 @@ const styles = StyleSheet.create({
   container: {
     borderTopLeftRadius: borderRadius.lg,
     borderTopRightRadius: borderRadius.lg,
-    backgroundColor: 'rgba(30, 30, 35, 0.98)', // Lighter than the chat area for distinction
+    backgroundColor: 'rgba(40, 40, 45, 0.98)', // Lighter background for more contrast
     position: 'absolute',
     bottom: 0,
     left: 0,
     right: 0,
     ...shadows.lg,
+    zIndex: 10,
+    elevation: 5, // For Android shadow
+  },
+  containerWithKeyboard: {
+    position: 'relative', // Change from absolute to relative when keyboard is visible on Android
+    bottom: 0,
   },
   inputArea: {
     padding: spacing.md,
     paddingBottom: Platform.OS === 'ios' ? 34 : 20, // Extra padding for bottom safe area
   },
   integrated: {
-    fontSize: typography.fontSize.md,
+    fontSize: typography.fontSize.lg,
+    fontFamily: 'Roboto',
     color: colors.white,
     maxHeight: 100,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
+    lineHeight: typography.lineHeight.lg,
+    letterSpacing: 0.2,
   },
   buttonRow: {
     flexDirection: 'row',

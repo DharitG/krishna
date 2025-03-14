@@ -167,7 +167,7 @@ const ChatScreen = () => {
   // Show loading spinner while initializing
   if (isInitializing || !activeChat) {
     return (
-      <GradientBackground colors={[colors.black, colors.darkGray]}>
+      <GradientBackground colors={['#0A0A0C', '#121214']}>
         <StatusBar barStyle="light-content" />
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.loadingContainer}>
@@ -180,7 +180,7 @@ const ChatScreen = () => {
   }
 
   return (
-    <GradientBackground colors={[colors.black, colors.darkGray]}>
+    <GradientBackground colors={['#0A0A0C', '#121214']}>
       <StatusBar barStyle="light-content" />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
@@ -207,7 +207,8 @@ const ChatScreen = () => {
           <KeyboardAvoidingView
             style={styles.keyboardAvoidContainer}
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 0 : 20}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 80}
+            contentContainerStyle={{flex: 1}}
           >
             <FlatList
               ref={flatListRef}
@@ -230,7 +231,8 @@ const ChatScreen = () => {
               keyExtractor={(_, index) => index.toString()}
               style={styles.messageList}
               contentContainerStyle={styles.messageListContent}
-              keyboardDismissMode="on-drag"
+              keyboardDismissMode="interactive"
+              keyboardShouldPersistTaps="handled"
               onScrollBeginDrag={Keyboard.dismiss}
             />
             
@@ -309,7 +311,7 @@ const styles = StyleSheet.create({
   },
   messageListContent: {
     paddingVertical: spacing.sm,
-    paddingBottom: 160, // Extra bottom padding to account for the message input height
+    paddingBottom: 180, // Extra bottom padding to account for the message input height
   },
 });
 
