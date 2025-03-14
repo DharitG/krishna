@@ -1,6 +1,42 @@
 import { Redirect } from 'expo-router';
+import { useEffect, useState } from 'react';
+import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { useAuth } from '../services/authContext';
+import { colors } from '../constants/Theme';
 
 export default function Index() {
-  // Redirect to the tabs layout, which will show the chat screen
-  return <Redirect href="/tabs" />;
+  const { isAuthenticated, loading } = useAuth();
+  const [isInitializing, setIsInitializing] = useState(true);
+
+  // Wait for auth to initialize
+  useEffect(() => {
+    if (!loading) {
+      // Wait a bit more to ensure everything is loaded
+      const timer = setTimeout(() => {
+        setIsInitializing(false);
+      }, 500);
+      
+      return () => clearTimeout(timer);
+    }
+  }, [loading]);
+
+  if (loading || isInitializing) {
+    return (
+      <View style={styles.loadingContainer}>
+        <ActivityIndicator size="large" color={colors.emerald} />
+      </View>
+    );
+  }
+
+  // Redirect based on authentication status
+  return isAuthenticated ? <Redirect href="/tabs" /> : <Redirect href="/auth/login" />;
 }
+
+const styles = StyleSheet.create({
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: colors.black,
+  },
+});

@@ -10,6 +10,7 @@ import {
   Text,
   TouchableOpacity,
   Keyboard,
+  ActivityIndicator,
 } from 'react-native';
 import { SidebarSimple, Plus } from 'phosphor-react-native';
 import Constants from 'expo-constants';
@@ -20,24 +21,46 @@ import Sidebar from '../../components/Sidebar';
 import chatStore from '../../services/chatStore';
 import { colors, spacing, typography } from '../../constants/Theme';
 import * as Linking from 'expo-linking';
-
-// App is now configured to use Azure OpenAI
+import { useAuth } from '../../services/authContext';
 
 const ChatScreen = () => {
-  // Use the chat store to manage chats
-  const [activeChat, setActiveChat] = useState(chatStore.getActiveChat());
-  const [chats, setChats] = useState(chatStore.getChats());
+  const { user } = useAuth();
+  
+  // Initialize state
+  const [activeChat, setActiveChat] = useState(null);
+  const [chats, setChats] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isInitializing, setIsInitializing] = useState(true);
   const [sidebarVisible, setSidebarVisible] = useState(false);
   
   const flatListRef = useRef(null);
 
+  // Initialize chat store
+  useEffect(() => {
+    const loadChatData = async () => {
+      try {
+        await chatStore.initialize();
+        const activeChatData = await chatStore.getActiveChat();
+        const chatsData = await chatStore.getChats();
+        
+        setActiveChat(activeChatData);
+        setChats(chatsData);
+      } catch (error) {
+        console.error('Error loading chat data:', error);
+      } finally {
+        setIsInitializing(false);
+      }
+    };
+    
+    loadChatData();
+  }, [user?.id]);
+
   // Scroll to bottom when messages change
   useEffect(() => {
-    if (flatListRef.current && activeChat.messages.length > 0) {
+    if (flatListRef.current && activeChat?.messages?.length > 0) {
       flatListRef.current.scrollToEnd({ animated: true });
     }
-  }, [activeChat.messages.length]);
+  }, [activeChat?.messages?.length]);
 
   const handleSendMessage = async (content) => {
     // Set loading state
@@ -69,6 +92,21 @@ const ChatScreen = () => {
     setActiveChat({...chatStore.getActiveChat()});
     setSidebarVisible(false);
   };
+
+  // Show loading spinner while initializing
+  if (isInitializing || !activeChat) {
+    return (
+      <GradientBackground colors={[colors.black, colors.darkGray]}>
+        <StatusBar barStyle="light-content" />
+        <SafeAreaView style={styles.safeArea}>
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color={colors.emerald} />
+            <Text style={styles.loadingText}>Loading chats...</Text>
+          </View>
+        </SafeAreaView>
+      </GradientBackground>
+    );
+  }
 
   return (
     <GradientBackground colors={[colors.black, colors.darkGray]}>
@@ -108,7 +146,7 @@ const ChatScreen = () => {
                   message={item} 
                   onAuthSuccess={(service) => {
                     // Update authentication status in the chat store
-                    chatStore.updateAuthStatus(activeChat.id, service, true);
+                    chatStore.updateAuthStatus(service, true);
                     
                     // Update the active chat in the state
                     setActiveChat({...chatStore.getActiveChat()});
@@ -145,6 +183,16 @@ const ChatScreen = () => {
 const styles = StyleSheet.create({
   safeArea: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  loadingText: {
+    color: colors.lightGray,
+    marginTop: spacing.md,
+    fontSize: typography.fontSize.md,
   },
   header: {
     flexDirection: 'row',

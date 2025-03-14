@@ -1,5 +1,7 @@
 import { sendMessage, sendMessageMock, authenticateService } from './api';
+import * as chatService from './chatService';
 import Constants from 'expo-constants';
+import { useAuth } from './authContext';
 
 // Get environment variables
 const { 
@@ -31,9 +33,83 @@ console.log('Composio configuration status:', {
   hasApiKey: !!COMPOSIO_API_KEY
 });
 
-// Simple chat store for managing multiple chat sessions
+// Chat store for managing chat sessions with persistent storage
 class ChatStore {
   constructor() {
+    this.chats = [];
+    this.activeChat = null;
+    this.isLoaded = false;
+    this.authStatus = {}; // Service authentication status
+  }
+
+  // Initialize the store with data from Supabase
+  async initialize() {
+    if (this.isLoaded) return;
+    
+    try {
+      // Load chats from the database
+      const chats = await chatService.getChats();
+      
+      if (chats.length === 0) {
+        // Create a default chat if no chats exist
+        const newChat = await chatService.createChat('New Chat');
+        
+        // Add welcome message
+        await chatService.addMessage(
+          newChat.id, 
+          'assistant', 
+          `Hello! I'm August, your AI super agent with tool capabilities. How can I help you today?`
+        );
+        
+        this.chats = [
+          {
+            ...newChat,
+            messages: [
+              {
+                role: 'assistant',
+                content: `Hello! I'm August, your AI super agent with tool capabilities. How can I help you today?`
+              }
+            ],
+            enabledTools: [], 
+            useTools: true
+          }
+        ];
+      } else {
+        // Load first chat with its messages
+        const firstChat = await chatService.getChatById(chats[0].id);
+        
+        this.chats = chats.map((chat, index) => {
+          if (index === 0) {
+            return {
+              ...chat,
+              messages: firstChat.messages || [],
+              enabledTools: [],
+              useTools: true
+            };
+          }
+          return {
+            ...chat,
+            messages: [], // We'll lazy-load messages for other chats
+            enabledTools: [],
+            useTools: true
+          };
+        });
+      }
+      
+      this.activeChat = this.chats.length > 0 ? this.chats[0].id : null;
+      this.isLoaded = true;
+      
+      return true;
+    } catch (error) {
+      console.error('Error initializing chat store:', error.message);
+      // Fallback to mock data if initialization fails
+      this._initializeMockData();
+      return false;
+    }
+  }
+
+  // Fallback to mock data if Supabase is not configured
+  _initializeMockData() {
     // Pre-populated chats for demo purposes
     this.chats = [
       {
@@ -45,8 +121,8 @@ class ChatStore {
             content: "Hello! I'm August, your AI super agent with tool capabilities. How can I help you today?"
           }
         ],
-        createdAt: new Date(),
-        updatedAt: new Date(),
+        created_at: new Date(),
+        updated_at: new Date(),
         enabledTools: [], // Tools enabled for this chat
         useTools: true // Whether to use tools or not
       },
@@ -67,67 +143,29 @@ class ChatStore {
             content: "I don't have real-time weather data, but I can help you check the forecast using a weather service. Would you like me to guide you through checking the weather for your location this weekend?"
           }
         ],
-        createdAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        updatedAt: new Date(Date.now() - 2 * 60 * 60 * 1000),
-        enabledTools: [],
-        useTools: false
-      },
-      {
-        id: '3',
-        title: 'Recipe ideas for dinner',
-        messages: [
-          {
-            role: 'assistant',
-            content: "Hello! I'm August, your AI super agent. How can I help you today?"
-          },
-          {
-            role: 'user',
-            content: "Can you give me some recipe ideas for dinner tonight? I have chicken, vegetables, and pasta."
-          },
-          {
-            role: 'assistant',
-            content: "Certainly! With chicken, vegetables, and pasta, you have quite a few delicious options. Here are a few recipe ideas:\n\n1. **Chicken Primavera Pasta**: Sauté sliced chicken breast with mixed vegetables like bell peppers, zucchini, and cherry tomatoes. Toss with cooked pasta and a light sauce of olive oil, garlic, and parmesan cheese.\n\n2. **Chicken Stir-Fry with Noodles**: Cook sliced chicken with your vegetables in a wok with soy sauce, garlic, and ginger. Serve over thin pasta like spaghettini.\n\n3. **One-Pan Chicken Pasta Bake**: Combine chopped chicken, vegetables, and uncooked pasta in a baking dish. Add chicken broth and seasonings, cover with foil, and bake until pasta is tender.\n\nWhich style of dish appeals to you most tonight?"
-          }
-        ],
-        createdAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
-        updatedAt: new Date(Date.now() - 24 * 60 * 60 * 1000),
+        created_at: new Date(Date.now() - 2 * 60 * 60 * 1000),
+        updated_at: new Date(Date.now() - 2 * 60 * 60 * 1000),
         enabledTools: [],
         useTools: false
       }
     ];
-    this.activeChat = '1';
     
-    // Add a tool-enabled chat example if Composio is configured
-    if (isComposioConfigured) {
-      this.chats.push({
-        id: '4',
-        title: 'Tool-enabled chat',
-        messages: [
-          {
-            role: 'assistant',
-            content: "Hello! I'm August, your AI super agent with tool capabilities. I can help you with GitHub, Gmail, and Slack integrations. What would you like to do today?"
-          }
-        ],
-        createdAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
-        updatedAt: new Date(Date.now() - 1 * 60 * 60 * 1000),
-        enabledTools: [
-          'GITHUB_STAR_A_REPOSITORY_FOR_THE_AUTHENTICATED_USER',
-          'GITHUB_CREATE_AN_ISSUE',
-          'SLACK_SEND_MESSAGE',
-          'GMAIL_SEND_EMAIL'
-        ],
-        useTools: true
-      });
-    }
+    this.activeChat = '1';
+    this.isLoaded = true;
   }
 
   // Get all chats
-  getChats() {
-    return [...this.chats].sort((a, b) => b.updatedAt - a.updatedAt);
+  async getChats() {
+    if (!this.isLoaded) await this.initialize();
+    return [...this.chats].sort((a, b) => 
+      new Date(b.updated_at) - new Date(a.updated_at)
+    );
   }
   
   // Search across all chats
-  searchMessages(query) {
+  async searchMessages(query) {
+    if (!this.isLoaded) await this.initialize();
+    
     if (!query || query.trim() === '') {
       return [];
     }
@@ -135,7 +173,13 @@ class ChatStore {
     const normalizedQuery = query.toLowerCase().trim();
     const results = [];
     
-    this.chats.forEach(chat => {
+    // First, we need to ensure all chats have their messages loaded
+    for (const chat of this.chats) {
+      if (!chat.messages || chat.messages.length === 0) {
+        const fullChat = await chatService.getChatById(chat.id);
+        chat.messages = fullChat.messages || [];
+      }
+      
       chat.messages.forEach((message, messageIndex) => {
         if (message.content.toLowerCase().includes(normalizedQuery)) {
           results.push({
@@ -146,55 +190,140 @@ class ChatStore {
           });
         }
       });
-    });
+    }
     
     return results;
   }
 
   // Get active chat
-  getActiveChat() {
-    return this.chats.find(chat => chat.id === this.activeChat) || this.chats[0];
+  async getActiveChat() {
+    if (!this.isLoaded) await this.initialize();
+    
+    const chat = this.chats.find(chat => chat.id === this.activeChat);
+    
+    // If chat exists but messages aren't loaded, load them
+    if (chat && (!chat.messages || chat.messages.length === 0)) {
+      try {
+        const fullChat = await chatService.getChatById(chat.id);
+        chat.messages = fullChat.messages || [];
+      } catch (error) {
+        console.error('Error loading messages for active chat:', error.message);
+      }
+    }
+    
+    return chat || this.chats[0];
   }
 
   // Set active chat
-  setActiveChat(chatId) {
+  async setActiveChat(chatId) {
+    if (!this.isLoaded) await this.initialize();
+    
     this.activeChat = chatId;
+    
+    // Find the chat
+    const chat = this.chats.find(c => c.id === chatId);
+    
+    // If chat exists but messages aren't loaded, load them
+    if (chat && (!chat.messages || chat.messages.length === 0)) {
+      try {
+        const fullChat = await chatService.getChatById(chat.id);
+        chat.messages = fullChat.messages || [];
+      } catch (error) {
+        console.error('Error loading messages for chat:', error.message);
+      }
+    }
+    
     return this.getActiveChat();
   }
 
   // Create a new chat
-  createChat(useTools = true) {
-    const newChatId = Date.now().toString();
-    const newChat = {
-      id: newChatId,
-      title: 'New Chat',
-      messages: [
-        {
-          role: 'assistant',
-          content: `Hello! I'm August, your AI super agent${useTools ? ' with tool capabilities' : ''}. How can I help you today?`
-        }
-      ],
-      createdAt: new Date(),
-      updatedAt: new Date(),
-      enabledTools: [],
-      useTools: useTools
-    };
+  async createChat(useTools = true) {
+    if (!this.isLoaded) await this.initialize();
     
-    this.chats.unshift(newChat);
-    this.activeChat = newChatId;
-    return newChat;
+    try {
+      // Create chat in database
+      const newChat = await chatService.createChat('New Chat');
+      
+      // Add welcome message
+      await chatService.addMessage(
+        newChat.id, 
+        'assistant', 
+        `Hello! I'm August, your AI super agent${useTools ? ' with tool capabilities' : ''}. How can I help you today?`
+      );
+      
+      // Add to local state
+      const chatWithMessages = {
+        ...newChat,
+        messages: [
+          {
+            role: 'assistant',
+            content: `Hello! I'm August, your AI super agent${useTools ? ' with tool capabilities' : ''}. How can I help you today?`
+          }
+        ],
+        enabledTools: [],
+        useTools: useTools
+      };
+      
+      this.chats.unshift(chatWithMessages);
+      this.activeChat = newChat.id;
+      
+      return chatWithMessages;
+    } catch (error) {
+      console.error('Error creating chat:', error.message);
+      
+      // Fallback to local-only chat if database operation fails
+      const newChatId = Date.now().toString();
+      const newChat = {
+        id: newChatId,
+        title: 'New Chat',
+        messages: [
+          {
+            role: 'assistant',
+            content: `Hello! I'm August, your AI super agent${useTools ? ' with tool capabilities' : ''}. How can I help you today?`
+          }
+        ],
+        created_at: new Date(),
+        updated_at: new Date(),
+        enabledTools: [],
+        useTools: useTools
+      };
+      
+      this.chats.unshift(newChat);
+      this.activeChat = newChatId;
+      
+      return newChat;
+    }
   }
 
   // Delete a chat
-  deleteChat(chatId) {
-    this.chats = this.chats.filter(chat => chat.id !== chatId);
+  async deleteChat(chatId) {
+    if (!this.isLoaded) await this.initialize();
     
-    // If we deleted the active chat, set active to the first remaining chat
-    if (this.activeChat === chatId && this.chats.length > 0) {
-      this.activeChat = this.chats[0].id;
+    try {
+      // Delete from database
+      await chatService.deleteChat(chatId);
+      
+      // Remove from local state
+      this.chats = this.chats.filter(chat => chat.id !== chatId);
+      
+      // If we deleted the active chat, set active to the first remaining chat
+      if (this.activeChat === chatId && this.chats.length > 0) {
+        this.activeChat = this.chats[0].id;
+      }
+      
+      return this.getChats();
+    } catch (error) {
+      console.error('Error deleting chat:', error.message);
+      
+      // Fallback to local-only deletion if database operation fails
+      this.chats = this.chats.filter(chat => chat.id !== chatId);
+      
+      if (this.activeChat === chatId && this.chats.length > 0) {
+        this.activeChat = this.chats[0].id;
+      }
+      
+      return this.getChats();
     }
-    
-    return this.getChats();
   }
 
   // Toggle tool usage for a chat
@@ -239,79 +368,88 @@ class ChatStore {
 
   // Send a message in the active chat
   async sendMessage(content) {
-    const chat = this.getActiveChat();
+    if (!this.isLoaded) await this.initialize();
+    
+    const chat = await this.getActiveChat();
     if (!chat) return null;
     
-    // Add user message
-    const userMessage = { role: 'user', content };
-    chat.messages.push(userMessage);
-    
     try {
-      // Send to API - use Azure if configured, otherwise use mock
-      let response;
+      // Add local user message for immediate UI feedback
+      chat.messages.push({ role: 'user', content });
       
-      // Initialize authentication status if not present
-      if (!chat.authStatus) {
-        chat.authStatus = {};
-      }
+      // Only use tools if both Azure and Composio are configured
+      const canUseTools = isComposioConfigured && chat.useTools;
       
       if (isAzureConfigured) {
-        // Only use tools if both Azure and Composio are configured
-        const canUseTools = isComposioConfigured && chat.useTools;
-        
-        response = await sendMessage(
-          chat.messages, 
+        // Send message to chatService which will persist to database
+        const response = await chatService.sendMessageAndGetResponse(
+          chat.id,
+          content,
           chat.enabledTools.length > 0 ? chat.enabledTools : undefined,
           canUseTools,
-          chat.authStatus
+          this.authStatus
         );
+        
+        // Add assistant response to local state
+        chat.messages.push(response);
+        
+        // Update chat title if this is the first user message
+        if (chat.messages.filter(m => m.role === 'user').length === 1) {
+          // Use the first 20 chars of user's first message as the chat title
+          const newTitle = content.substring(0, 20) + (content.length > 20 ? '...' : '');
+          
+          // Update in database
+          await chatService.updateChatTitle(chat.id, newTitle);
+          
+          // Update local state
+          chat.title = newTitle;
+        }
+        
+        return response;
       } else {
-        response = await sendMessageMock(chat.messages);
+        // Fallback to mock data if Azure is not configured
+        const mockResponse = await sendMessageMock(chat.messages);
+        
+        // Update local state
+        chat.messages.push(mockResponse);
+        
+        // Add to database if possible
+        try {
+          await chatService.addMessage(chat.id, 'user', content);
+          await chatService.addMessage(chat.id, 'assistant', mockResponse.content);
+        } catch (error) {
+          console.error('Error saving mock messages to database:', error.message);
+        }
+        
+        return mockResponse;
       }
-      
-      // Add assistant response
-      chat.messages.push(response);
-      
-      // Update chat metadata
-      chat.updatedAt = new Date();
-      
-      // Update chat title if this is the first user message
-      if (chat.messages.filter(m => m.role === 'user').length === 1) {
-        // Use the first 20 chars of user's first message as the chat title
-        chat.title = content.substring(0, 20) + (content.length > 20 ? '...' : '');
-      }
-      
-      return response;
     } catch (error) {
       console.error('Error sending message:', error);
       
-      // Add error message
+      // Add error message to local state
       const errorMessage = {
         role: 'assistant',
-        content: 'Sorry, I encountered an error connecting to Azure OpenAI. Please check your configuration or try again later.'
+        content: 'Sorry, I encountered an error. Please try again later.'
       };
+      
       chat.messages.push(errorMessage);
+      
+      // Try to save error message to database
+      try {
+        await chatService.addMessage(chat.id, 'assistant', errorMessage.content);
+      } catch (dbError) {
+        console.error('Error saving error message to database:', dbError.message);
+      }
       
       return errorMessage;
     }
   }
   
-  // Update authentication status for a service in a chat
-  updateAuthStatus(chatId, service, isAuthenticated) {
-    const chat = this.chats.find(c => c.id === chatId);
-    if (!chat) return false;
-    
-    // Initialize authStatus if not present
-    if (!chat.authStatus) {
-      chat.authStatus = {};
-    }
-    
-    // Update authentication status
-    chat.authStatus[service] = isAuthenticated;
-    
-    console.log(`Updated auth status for ${service} to ${isAuthenticated} in chat ${chatId}`);
-    console.log('Current auth status:', chat.authStatus);
-    
+  // Update authentication status for a service
+  updateAuthStatus(service, isAuthenticated) {
+    this.authStatus[service] = isAuthenticated;
+    console.log(`Updated auth status for ${service} to ${isAuthenticated}`);
+    console.log('Current auth status:', this.authStatus);
     return true;
   }
 }
