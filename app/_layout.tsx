@@ -2,6 +2,8 @@ import { Stack } from "expo-router";
 import { StatusBar } from "react-native";
 import { useEffect } from "react";
 import * as SplashScreen from 'expo-splash-screen';
+import { AuthProvider } from '../services/authContext';
+import ProtectedRoute from '../components/ProtectedRoute';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -13,13 +15,15 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <>
+    <AuthProvider>
       <StatusBar barStyle="light-content" />
-      <Stack
-        screenOptions={{
-          headerShown: false,
-        }}
-      />
-    </>
+      <ProtectedRoute>
+        <Stack
+          screenOptions={{
+            headerShown: false,
+          }}
+        />
+      </ProtectedRoute>
+    </AuthProvider>
   );
 }

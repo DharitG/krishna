@@ -25,8 +25,20 @@ export default {
   web: {
     favicon: './assets/images/favicon.png'
   },
-  plugins: [],
+  plugins: [
+    [
+      'expo-secure-store',
+      {
+        faceIDPermission: 'Allow August to access your Face ID biometrics'
+      }
+    ]
+  ],
+  scheme: 'august',
   extra: {
+    // Supabase Configuration
+    SUPABASE_URL: process.env.SUPABASE_URL,
+    SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
+    
     // Azure OpenAI Configuration
     AZURE_OPENAI_API_KEY: process.env.AZURE_OPENAI_API_KEY,
     AZURE_OPENAI_ENDPOINT: process.env.AZURE_OPENAI_ENDPOINT,
