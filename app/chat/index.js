@@ -43,10 +43,18 @@ const ChatScreen = () => {
         const activeChatData = await chatStore.getActiveChat();
         const chatsData = await chatStore.getChats();
         
+        // Ensure messages is always an array
+        if (activeChatData && !Array.isArray(activeChatData.messages)) {
+          activeChatData.messages = [];
+        }
+        
         setActiveChat(activeChatData);
         setChats(chatsData);
       } catch (error) {
         console.error('Error loading chat data:', error);
+        // Fallback to empty state if there's an error
+        setActiveChat({ id: 'fallback-chat', messages: [] });
+        setChats([]);
       } finally {
         setIsInitializing(false);
       }
@@ -70,27 +78,90 @@ const ChatScreen = () => {
       // Send the message using the chat store
       await chatStore.sendMessage(content);
       
+      // Get the latest chat data
+      const updatedChat = await chatStore.getActiveChat();
+      const updatedChats = await chatStore.getChats();
+      
+      // Ensure messages is always an array before updating state
+      if (updatedChat && !Array.isArray(updatedChat.messages)) {
+        updatedChat.messages = [];
+      }
+      
       // Update state with the latest chat
-      setActiveChat({...chatStore.getActiveChat()});
-      setChats([...chatStore.getChats()]);
+      setActiveChat(updatedChat);
+      setChats(updatedChats);
     } catch (error) {
       console.error('Error in chat:', error);
+      
+      // Provide a fallback message if there's an error
+      if (activeChat && Array.isArray(activeChat.messages)) {
+        // Add an error message to the local state only
+        const errorMessage = {
+          id: `local-error-${Date.now()}`,
+          role: 'assistant',
+          content: 'Sorry, I encountered an error. Please try again later.',
+          created_at: new Date()
+        };
+        
+        setActiveChat({
+          ...activeChat,
+          messages: [...activeChat.messages, errorMessage]
+        });
+      }
     } finally {
       setIsLoading(false);
     }
   };
 
-  const handleNewChat = () => {
-    chatStore.createChat();
-    setActiveChat({...chatStore.getActiveChat()});
-    setChats([...chatStore.getChats()]);
-    setSidebarVisible(false);
+  const handleNewChat = async () => {
+    try {
+      await chatStore.createChat();
+      const newActiveChat = await chatStore.getActiveChat();
+      const updatedChats = await chatStore.getChats();
+      
+      // Ensure messages is always an array
+      if (newActiveChat && !Array.isArray(newActiveChat.messages)) {
+        newActiveChat.messages = [];
+      }
+      
+      setActiveChat(newActiveChat);
+      setChats(updatedChats);
+    } catch (error) {
+      console.error('Error creating new chat:', error);
+      // Create a local fallback chat if there's an error
+      const fallbackChat = {
+        id: `local-chat-${Date.now()}`,
+        title: 'New Chat',
+        messages: [{
+          role: 'assistant',
+          content: "Hello! I'm August. How can I help you today?"
+        }],
+        created_at: new Date(),
+        updated_at: new Date()
+      };
+      
+      setActiveChat(fallbackChat);
+    } finally {
+      setSidebarVisible(false);
+    }
   };
 
-  const handleSelectChat = (chatId) => {
-    chatStore.setActiveChat(chatId);
-    setActiveChat({...chatStore.getActiveChat()});
-    setSidebarVisible(false);
+  const handleSelectChat = async (chatId) => {
+    try {
+      await chatStore.setActiveChat(chatId);
+      const selectedChat = await chatStore.getActiveChat();
+      
+      // Ensure messages is always an array
+      if (selectedChat && !Array.isArray(selectedChat.messages)) {
+        selectedChat.messages = [];
+      }
+      
+      setActiveChat(selectedChat);
+    } catch (error) {
+      console.error('Error selecting chat:', error);
+    } finally {
+      setSidebarVisible(false);
+    }
   };
 
   // Show loading spinner while initializing
@@ -140,7 +211,7 @@ const ChatScreen = () => {
           >
             <FlatList
               ref={flatListRef}
-              data={activeChat.messages}
+              data={Array.isArray(activeChat.messages) ? activeChat.messages : []}
               renderItem={({ item }) => (
                 <ChatMessage 
                   message={item} 

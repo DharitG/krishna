@@ -2,6 +2,7 @@ import { sendMessage, sendMessageMock, authenticateService } from './api';
 import * as chatService from './chatService';
 import Constants from 'expo-constants';
 import { useAuth } from './authContext';
+import supabase from './supabase'; // Import supabase instance
 
 // Get environment variables
 const { 
@@ -47,6 +48,15 @@ class ChatStore {
     if (this.isLoaded) return;
     
     try {
+      // Check if user is authenticated
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      
+      if (authError || !user) {
+        console.log('User not authenticated, falling back to mock data');
+        this._initializeMockData();
+        return true;
+      }
+      
       // Load chats from the database
       const chats = await chatService.getChats();
       
@@ -113,7 +123,7 @@ class ChatStore {
     // Pre-populated chats for demo purposes
     this.chats = [
       {
-        id: '1',
+        id: 'mock-chat-1',
         title: 'New Chat',
         messages: [
           {
@@ -127,7 +137,7 @@ class ChatStore {
         useTools: true // Whether to use tools or not
       },
       {
-        id: '2',
+        id: 'mock-chat-2',
         title: 'Weather forecast',
         messages: [
           {
@@ -150,7 +160,7 @@ class ChatStore {
       }
     ];
     
-    this.activeChat = '1';
+    this.activeChat = 'mock-chat-1';
     this.isLoaded = true;
   }
 
@@ -201,17 +211,58 @@ class ChatStore {
     
     const chat = this.chats.find(chat => chat.id === this.activeChat);
     
-    // If chat exists but messages aren't loaded, load them
-    if (chat && (!chat.messages || chat.messages.length === 0)) {
-      try {
-        const fullChat = await chatService.getChatById(chat.id);
-        chat.messages = fullChat.messages || [];
-      } catch (error) {
-        console.error('Error loading messages for active chat:', error.message);
+    // If no chat found, return the first chat or a default empty chat
+    if (!chat) {
+      if (this.chats.length > 0) {
+        return this.chats[0];
+      } else {
+        return {
+          id: 'empty-chat',
+          title: 'New Chat',
+          messages: [],
+          created_at: new Date(),
+          updated_at: new Date(),
+          enabledTools: [],
+          useTools: true
+        };
       }
     }
     
-    return chat || this.chats[0];
+    // Ensure messages is always an array
+    if (!chat.messages) {
+      chat.messages = [];
+    } else if (!Array.isArray(chat.messages)) {
+      // If messages exists but is not an array, convert it to an array
+      // This is the critical fix for the iterator error
+      try {
+        // If it's an object with iterator properties but not an array
+        if (typeof chat.messages === 'object' && chat.messages !== null) {
+          // Try to convert to array if possible
+          chat.messages = Array.from(chat.messages);
+        } else {
+          // Otherwise, reset to empty array
+          chat.messages = [];
+        }
+      } catch (error) {
+        console.error('Error converting messages to array:', error);
+        chat.messages = [];
+      }
+    }
+    
+    // If chat exists but messages aren't loaded, load them
+    if (chat.messages.length === 0) {
+      try {
+        const fullChat = await chatService.getChatById(chat.id);
+        // Ensure messages from service is an array
+        chat.messages = Array.isArray(fullChat.messages) ? fullChat.messages : [];
+      } catch (error) {
+        console.error('Error loading messages for active chat:', error.message);
+        // Keep messages as empty array if there's an error
+        chat.messages = [];
+      }
+    }
+    
+    return chat;
   }
 
   // Set active chat
@@ -272,7 +323,7 @@ class ChatStore {
       console.error('Error creating chat:', error.message);
       
       // Fallback to local-only chat if database operation fails
-      const newChatId = Date.now().toString();
+      const newChatId = `mock-chat-${Date.now().toString().slice(-6)}`;
       const newChat = {
         id: newChatId,
         title: 'New Chat',
@@ -374,6 +425,11 @@ class ChatStore {
     if (!chat) return null;
     
     try {
+      // Ensure chat.messages is always an array
+      if (!Array.isArray(chat.messages)) {
+        chat.messages = [];
+      }
+      
       // Add local user message for immediate UI feedback
       chat.messages.push({ role: 'user', content });
       

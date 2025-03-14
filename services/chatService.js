@@ -8,10 +8,25 @@ import { sendMessage as sendMessageToAI } from './api';
  */
 export const createChat = async (title = 'New Chat') => {
   try {
+    // Get the current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError) {
+      console.error('Error getting current user:', userError.message);
+      throw userError;
+    }
+    
+    if (!user) {
+      throw new Error('No authenticated user found');
+    }
+    
     const { data, error } = await supabase
       .from('chats')
       .insert([
-        { title }
+        { 
+          title,
+          user_id: user.id 
+        }
       ])
       .select()
       .single();
@@ -30,9 +45,22 @@ export const createChat = async (title = 'New Chat') => {
  */
 export const getChats = async () => {
   try {
+    // Get the current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError) {
+      console.error('Error getting current user:', userError.message);
+      throw userError;
+    }
+    
+    if (!user) {
+      throw new Error('No authenticated user found');
+    }
+    
     const { data, error } = await supabase
       .from('chats')
       .select('*')
+      .eq('user_id', user.id)
       .order('updated_at', { ascending: false });
 
     if (error) throw error;
@@ -50,10 +78,35 @@ export const getChats = async () => {
  */
 export const getChatById = async (chatId) => {
   try {
+    // Check if this is a mock chat ID
+    if (chatId.startsWith('mock-chat-')) {
+      console.log('Using mock chat ID, returning empty chat structure');
+      return {
+        id: chatId,
+        title: 'Mock Chat',
+        created_at: new Date(),
+        updated_at: new Date(),
+        messages: []
+      };
+    }
+    
+    // Get the current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError) {
+      console.error('Error getting current user:', userError.message);
+      throw userError;
+    }
+    
+    if (!user) {
+      throw new Error('No authenticated user found');
+    }
+    
     const { data: chat, error: chatError } = await supabase
       .from('chats')
       .select('*')
       .eq('id', chatId)
+      .eq('user_id', user.id)
       .single();
 
     if (chatError) throw chatError;
@@ -68,7 +121,7 @@ export const getChatById = async (chatId) => {
 
     return {
       ...chat,
-      messages: messages || [],
+      messages: Array.isArray(messages) ? messages : [],
     };
   } catch (error) {
     console.error('Error getting chat by ID:', error.message);
@@ -128,11 +181,49 @@ export const deleteChat = async (chatId) => {
  */
 export const addMessage = async (chatId, role, content) => {
   try {
+    // Check if this is a mock chat ID (for fallback scenarios)
+    if (chatId.startsWith('mock-chat-')) {
+      console.log('Using mock chat, returning mock message');
+      return {
+        id: `mock-msg-${Date.now().toString().slice(-6)}`,
+        chat_id: chatId,
+        role,
+        content,
+        created_at: new Date()
+      };
+    }
+    
+    // Get the current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+    
+    if (userError) {
+      console.error('Error getting current user:', userError.message);
+      throw userError;
+    }
+    
+    if (!user) {
+      throw new Error('No authenticated user found');
+    }
+    
+    // Verify the chat belongs to the user
+    const { data: chatData, error: chatError } = await supabase
+      .from('chats')
+      .select('*')
+      .eq('id', chatId)
+      .eq('user_id', user.id)
+      .single();
+      
+    if (chatError) {
+      console.error('Error verifying chat ownership:', chatError.message);
+      throw chatError;
+    }
+    
     // Update chat updated_at timestamp
     await supabase
       .from('chats')
       .update({ updated_at: new Date() })
-      .eq('id', chatId);
+      .eq('id', chatId)
+      .eq('user_id', user.id);
 
     // Insert new message
     const { data, error } = await supabase
@@ -168,20 +259,40 @@ export const sendMessageAndGetResponse = async (
   authStatus = {}
 ) => {
   try {
+    // Check if this is a mock chat ID
+    const isMockChat = chatId.startsWith('mock-chat-');
+    
     // Add user message to database
     await addMessage(chatId, 'user', message);
 
     // Get chat history
-    const chat = await getChatById(chatId);
-    const messages = chat.messages.map(({ role, content }) => ({ role, content }));
-
-    // Send to Azure OpenAI
-    const response = await sendMessageToAI(messages, enabledTools, useTools, authStatus);
-
-    // Add assistant response to database
-    await addMessage(chatId, 'assistant', response.content);
-
-    return response;
+    let messages = [];
+    
+    if (isMockChat) {
+      // For mock chats, use the local messages array from chatStore
+      // This will be handled by the caller
+      const mockResponse = {
+        role: 'assistant',
+        content: `This is a mock response. In a real environment, I would process your message: "${message}"`
+      };
+      
+      // Add mock assistant response
+      await addMessage(chatId, 'assistant', mockResponse.content);
+      
+      return mockResponse;
+    } else {
+      // For real chats, get messages from the database
+      const chat = await getChatById(chatId);
+      messages = Array.isArray(chat.messages) ? chat.messages.map(({ role, content }) => ({ role, content })) : [];
+      
+      // Send to Azure OpenAI
+      const response = await sendMessageToAI(messages, enabledTools, useTools, authStatus);
+      
+      // Add assistant response to database
+      await addMessage(chatId, 'assistant', response.content);
+      
+      return response;
+    }
   } catch (error) {
     console.error('Error sending message and getting response:', error.message);
     
