@@ -1,5 +1,5 @@
-import React, { useState, useEffect } from 'react';
-import { View, Text, StyleSheet, Animated } from 'react-native';
+import React, { useState, useEffect, useRef } from 'react';
+import { View, Text, StyleSheet } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import GlassCard from '../GlassCard';
 import AuthButton from './AuthButton';
@@ -9,35 +9,53 @@ import {
   spacing,
   borderRadius,
   shadows,
-  typography,
-  animation
+  typography
 } from '../../constants/Theme';
 
 // Regex pattern to detect auth requests in the message
 // Format: [AUTH_REQUEST:service]
 const AUTH_REQUEST_PATTERN = /\[AUTH_REQUEST:(\w+)\]/g;
 
-const ChatMessage = ({ message, onAuthSuccess, index }) => {
+const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
   const isUser = message.role === 'user';
   const [authStates, setAuthStates] = useState({});
-  const fadeAnim = useState(new Animated.Value(0))[0];
-  const translateY = useState(new Animated.Value(20))[0];
+  const [displayedContent, setDisplayedContent] = useState(message.content || '');
+  const streamInterval = useRef(null);
   
-  // Animate message appearance
   useEffect(() => {
-    Animated.parallel([
-      Animated.timing(fadeAnim, {
-        toValue: 1,
-        duration: animation.normal,
-        useNativeDriver: true,
-      }),
-      Animated.timing(translateY, {
-        toValue: 0,
-        duration: animation.normal,
-        useNativeDriver: true,
-      })
-    ]).start();
-  }, []);
+    // If not streaming or it's a user message, display full content immediately
+    if (!isStreaming || isUser || !message.content) {
+      setDisplayedContent(message.content || '');
+      return;
+    }
+    
+    // Clean up any existing interval
+    if (streamInterval.current) {
+      clearInterval(streamInterval.current);
+    }
+    
+    // Process streaming text
+    let currentPosition = 0;
+    const content = message.content;
+    
+    // Update at a natural reading pace (faster than character-by-character)
+    streamInterval.current = setInterval(() => {
+      // Add chunks of text instead of single characters for more natural flow
+      const chunkSize = Math.floor(Math.random() * 5) + 2; // 2-6 characters per update
+      currentPosition = Math.min(currentPosition + chunkSize, content.length);
+      setDisplayedContent(content.substring(0, currentPosition));
+      
+      if (currentPosition >= content.length) {
+        clearInterval(streamInterval.current);
+      }
+    }, 10); // Fast enough to feel responsive, but still visibly streaming
+    
+    return () => {
+      if (streamInterval.current) {
+        clearInterval(streamInterval.current);
+      }
+    };
+  }, [message.content, isUser, isStreaming]);
   
   // Function to handle authentication
   const handleAuth = async (service) => {
@@ -169,7 +187,7 @@ const ChatMessage = ({ message, onAuthSuccess, index }) => {
   
   // Function to parse message content and render auth buttons
   const renderMessageContent = (content) => {
-    if (!content.includes('[AUTH_REQUEST:')) {
+    if (!content || !content.includes('[AUTH_REQUEST:')) {
       // No auth requests, render as markdown
       return (
         <Markdown style={markdownStyles}>
@@ -232,29 +250,24 @@ const ChatMessage = ({ message, onAuthSuccess, index }) => {
     return parts;
   };
   
-  const animatedStyle = {
-    opacity: fadeAnim,
-    transform: [{ translateY }],
-  };
-  
   if (isUser) {
     return (
-      <Animated.View style={[styles.container, styles.userContainer, animatedStyle]}>
+      <View style={[styles.container, styles.userContainer]}>
         <View style={[styles.bubble, styles.userBubble]}>
           <Markdown style={markdownStyles}>
             {message.content}
           </Markdown>
         </View>
-      </Animated.View>
+      </View>
     );
   }
   
   return (
-    <Animated.View style={[styles.container, styles.botContainer, animatedStyle]}>
+    <View style={[styles.container, styles.botContainer]}>
       <GlassCard style={[styles.bubble, styles.botBubble]}>
-        {renderMessageContent(message.content)}
+        {renderMessageContent(displayedContent)}
       </GlassCard>
-    </Animated.View>
+    </View>
   );
 };
 

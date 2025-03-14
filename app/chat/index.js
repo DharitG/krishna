@@ -16,6 +16,7 @@ import { SidebarSimple, Plus } from 'phosphor-react-native';
 import Constants from 'expo-constants';
 import ChatMessage from '../../components/chat/ChatMessage';
 import MessageInput from '../../components/chat/MessageInput';
+import TypingIndicator from '../../components/chat/TypingIndicator';
 import GradientBackground from '../../components/GradientBackground';
 import Sidebar from '../../components/Sidebar';
 import chatStore from '../../services/chatStore';
@@ -32,6 +33,7 @@ const ChatScreen = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
   const [sidebarVisible, setSidebarVisible] = useState(false);
+  const [streamingMessageId, setStreamingMessageId] = useState(null);
   
   const flatListRef = useRef(null);
 
@@ -75,10 +77,42 @@ const ChatScreen = () => {
     setIsLoading(true);
     
     try {
-      // Send the message using the chat store
-      await chatStore.sendMessage(content);
+      // Add user message immediately for better UX
+      const userMessage = { role: 'user', content, created_at: new Date() };
       
-      // Get the latest chat data
+      // Create a placeholder for the assistant's response
+      const placeholderMessage = {
+        id: `streaming-${Date.now()}`,
+        role: 'assistant',
+        content: '',
+        created_at: new Date()
+      };
+      
+      // Check if activeChat.messages is an array
+      if (activeChat && Array.isArray(activeChat.messages)) {
+        // Update the UI immediately with user message only first
+        setActiveChat({
+          ...activeChat,
+          messages: [...activeChat.messages, userMessage]
+        });
+        
+        // Let UI update with user message and scroll to bottom
+        await new Promise(resolve => setTimeout(resolve, 100));
+        
+        // Then add the assistant's placeholder and start streaming
+        setActiveChat(prevChat => ({
+          ...prevChat,
+          messages: [...prevChat.messages, placeholderMessage]
+        }));
+        
+        // Set the streaming ID to animate this message
+        setStreamingMessageId(placeholderMessage.id);
+      }
+      
+      // Send the message using the chat store (in background)
+      const response = await chatStore.sendMessage(content);
+      
+      // Get the latest chat data after response
       const updatedChat = await chatStore.getActiveChat();
       const updatedChats = await chatStore.getChats();
       
@@ -90,6 +124,9 @@ const ChatScreen = () => {
       // Update state with the latest chat
       setActiveChat(updatedChat);
       setChats(updatedChats);
+      
+      // End streaming for this message
+      setStreamingMessageId(null);
     } catch (error) {
       console.error('Error in chat:', error);
       
@@ -107,6 +144,9 @@ const ChatScreen = () => {
           ...activeChat,
           messages: [...activeChat.messages, errorMessage]
         });
+        
+        // End streaming
+        setStreamingMessageId(null);
       }
     } finally {
       setIsLoading(false);
@@ -216,6 +256,7 @@ const ChatScreen = () => {
               renderItem={({ item }) => (
                 <ChatMessage 
                   message={item} 
+                  isStreaming={item.id === streamingMessageId}
                   onAuthSuccess={(service) => {
                     // Update authentication status in the chat store
                     chatStore.updateAuthStatus(service, true);
