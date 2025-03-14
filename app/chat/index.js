@@ -80,17 +80,9 @@ const ChatScreen = () => {
       // Add user message immediately for better UX
       const userMessage = { role: 'user', content, created_at: new Date() };
       
-      // Create a placeholder for the assistant's response
-      const placeholderMessage = {
-        id: `streaming-${Date.now()}`,
-        role: 'assistant',
-        content: '',
-        created_at: new Date()
-      };
-      
       // Check if activeChat.messages is an array
       if (activeChat && Array.isArray(activeChat.messages)) {
-        // Update the UI immediately with user message only first
+        // Update the UI immediately with user message only
         setActiveChat({
           ...activeChat,
           messages: [...activeChat.messages, userMessage]
@@ -99,33 +91,61 @@ const ChatScreen = () => {
         // Let UI update with user message and scroll to bottom
         await new Promise(resolve => setTimeout(resolve, 100));
         
-        // Then add the assistant's placeholder and start streaming
-        setActiveChat(prevChat => ({
-          ...prevChat,
-          messages: [...prevChat.messages, placeholderMessage]
-        }));
+        // Force-scroll to the bottom
+        if (flatListRef.current) {
+          setTimeout(() => {
+            flatListRef.current.scrollToEnd({ animated: true });
+          }, 50);
+        }
+      }
+      
+      // Stream handler function that updates the UI with each chunk
+      const handleStreamUpdate = (streamMessage) => {
+        setStreamingMessageId(streamMessage.id);
         
-        // Set the streaming ID to animate this message
-        setStreamingMessageId(placeholderMessage.id);
-      }
+        // Update the active chat with the streaming message content
+        setActiveChat(prevChat => {
+          // Create a copy of the current chat state
+          const chatCopy = {...prevChat};
+          
+          // Ensure messages is an array
+          if (!Array.isArray(chatCopy.messages)) {
+            chatCopy.messages = [];
+          }
+          
+          // Find the streaming message by ID
+          const messageIndex = chatCopy.messages.findIndex(msg => 
+            msg.id === streamMessage.id
+          );
+          
+          if (messageIndex !== -1) {
+            // Update existing message with new content
+            chatCopy.messages[messageIndex] = {
+              ...chatCopy.messages[messageIndex],
+              content: streamMessage.content
+            };
+          } else {
+            // Add new message if not found
+            chatCopy.messages.push(streamMessage);
+          }
+          
+          return chatCopy;
+        });
+        
+        // Scroll to the bottom as new content comes in
+        if (flatListRef.current) {
+          flatListRef.current.scrollToEnd({ animated: false });
+        }
+      };
       
-      // Send the message using the chat store (in background)
-      const response = await chatStore.sendMessage(content);
+      // Send the message using the chat store with streaming
+      const response = await chatStore.sendMessage(content, handleStreamUpdate);
       
-      // Get the latest chat data after response
-      const updatedChat = await chatStore.getActiveChat();
+      // Get the latest chats list for sidebar (for title updates)
       const updatedChats = await chatStore.getChats();
-      
-      // Ensure messages is always an array before updating state
-      if (updatedChat && !Array.isArray(updatedChat.messages)) {
-        updatedChat.messages = [];
-      }
-      
-      // Update state with the latest chat
-      setActiveChat(updatedChat);
       setChats(updatedChats);
       
-      // End streaming for this message
+      // Final update to clear streaming state
       setStreamingMessageId(null);
     } catch (error) {
       console.error('Error in chat:', error);
@@ -144,9 +164,6 @@ const ChatScreen = () => {
           ...activeChat,
           messages: [...activeChat.messages, errorMessage]
         });
-        
-        // End streaming
-        setStreamingMessageId(null);
       }
     } finally {
       setIsLoading(false);
@@ -269,7 +286,7 @@ const ChatScreen = () => {
                   }}
                 />
               )}
-              keyExtractor={(_, index) => index.toString()}
+              keyExtractor={(item, index) => item.id || index.toString()}
               style={styles.messageList}
               contentContainerStyle={styles.messageListContent}
               keyboardDismissMode="interactive"

@@ -417,8 +417,8 @@ class ChatStore {
     }
   }
 
-  // Send a message in the active chat
-  async sendMessage(content) {
+  // Send a message in the active chat with streaming support
+  async sendMessage(content, onStreamUpdate = null) {
     if (!this.isLoaded) await this.initialize();
     
     const chat = await this.getActiveChat();
@@ -437,17 +437,39 @@ class ChatStore {
       const canUseTools = isComposioConfigured && chat.useTools;
       
       if (isAzureConfigured) {
-        // Send message to chatService which will persist to database
+        // Stream handler that passes updates to the caller and updates local state
+        const handleStream = (streamMessage) => {
+          // Find existing message in local state by ID and update it
+          const existingMessageIndex = chat.messages.findIndex(
+            msg => msg.id === streamMessage.id
+          );
+          
+          if (existingMessageIndex !== -1) {
+            // Update existing message
+            chat.messages[existingMessageIndex] = {
+              ...chat.messages[existingMessageIndex],
+              content: streamMessage.content
+            };
+          } else {
+            // Add message if not found
+            chat.messages.push(streamMessage);
+          }
+          
+          // Pass stream update to caller if callback provided
+          if (onStreamUpdate) {
+            onStreamUpdate(streamMessage);
+          }
+        };
+        
+        // Send message to chatService which will persist to database and stream updates
         const response = await chatService.sendMessageAndGetResponse(
           chat.id,
           content,
           chat.enabledTools.length > 0 ? chat.enabledTools : undefined,
           canUseTools,
-          this.authStatus
+          this.authStatus,
+          handleStream
         );
-        
-        // Add assistant response to local state
-        chat.messages.push(response);
         
         // Update chat title if this is the first user message
         if (chat.messages.filter(m => m.role === 'user').length === 1) {

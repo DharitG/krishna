@@ -19,43 +19,8 @@ const AUTH_REQUEST_PATTERN = /\[AUTH_REQUEST:(\w+)\]/g;
 const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
   const isUser = message.role === 'user';
   const [authStates, setAuthStates] = useState({});
-  const [displayedContent, setDisplayedContent] = useState(message.content || '');
-  const streamInterval = useRef(null);
-  
-  useEffect(() => {
-    // If not streaming or it's a user message, display full content immediately
-    if (!isStreaming || isUser || !message.content) {
-      setDisplayedContent(message.content || '');
-      return;
-    }
-    
-    // Clean up any existing interval
-    if (streamInterval.current) {
-      clearInterval(streamInterval.current);
-    }
-    
-    // Process streaming text
-    let currentPosition = 0;
-    const content = message.content;
-    
-    // Update at a natural reading pace (faster than character-by-character)
-    streamInterval.current = setInterval(() => {
-      // Add chunks of text instead of single characters for more natural flow
-      const chunkSize = Math.floor(Math.random() * 5) + 2; // 2-6 characters per update
-      currentPosition = Math.min(currentPosition + chunkSize, content.length);
-      setDisplayedContent(content.substring(0, currentPosition));
-      
-      if (currentPosition >= content.length) {
-        clearInterval(streamInterval.current);
-      }
-    }, 10); // Fast enough to feel responsive, but still visibly streaming
-    
-    return () => {
-      if (streamInterval.current) {
-        clearInterval(streamInterval.current);
-      }
-    };
-  }, [message.content, isUser, isStreaming]);
+  // With real API streaming, we don't need any special display logic,
+  // as the content will be automatically updated from the API stream
   
   // Function to handle authentication
   const handleAuth = async (service) => {
@@ -265,7 +230,7 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
   return (
     <View style={[styles.container, styles.botContainer]}>
       <GlassCard style={[styles.bubble, styles.botBubble]}>
-        {renderMessageContent(displayedContent)}
+        {renderMessageContent(message.content || '')}
       </GlassCard>
     </View>
   );

@@ -36,18 +36,20 @@ const DEFAULT_ENABLED_TOOLS = [
 ];
 
 /**
- * Send a message to Azure OpenAI API
+ * Send a message to Azure OpenAI API (With simulated streaming for React Native)
  * @param {Array} messages - Chat messages array
  * @param {Array} enabledTools - Array of tool names to enable (optional)
  * @param {Boolean} useTools - Whether to use tools or not
  * @param {Object} authStatus - Status of authenticated services
- * @returns {Object} - The assistant's response message
+ * @param {Function} onChunk - Callback for each chunk of the response
+ * @returns {Object} - The final assistant's response message
  */
 export const sendMessage = async (
   messages, 
   enabledTools = DEFAULT_ENABLED_TOOLS, 
   useTools = true,
-  authStatus = {}
+  authStatus = {},
+  onChunk = null
 ) => {
   try {
     // Log environment variables (sanitized) for debugging
@@ -56,7 +58,8 @@ export const sendMessage = async (
       deploymentName: AZURE_OPENAI_DEPLOYMENT_NAME || 'not set',
       apiVersion: API_VERSION,
       hasApiKey: !!AZURE_OPENAI_API_KEY,
-      usingTools: useTools
+      usingTools: useTools,
+      streaming: !!onChunk
     });
 
     // Ensure the endpoint has no trailing slash before adding the path
@@ -114,6 +117,8 @@ export const sendMessage = async (
       presence_penalty: 0,
       stop: null
     };
+
+    // For real streaming, this would include stream: true, but we're using simulated streaming
     
     // Add tools to the request if enabled and available
     if (useTools && tools.length > 0) {
@@ -127,68 +132,174 @@ export const sendMessage = async (
       temperature,
       max_tokens: maxTokens,
       top_p: 0.95,
-      toolCount: tools.length
+      toolCount: tools.length,
+      streaming: !!onChunk
     });
     
-    const response = await api.post(azureApiUrl, payload);
-    
-    console.log('Response status:', response.status);
-    console.log('Response has data:', !!response.data);
-    
-    // Get the assistant's message
-    const assistantMessage = response.data.choices[0].message;
-    
-    // Check if the response contains tool calls
-    const hasToolCalls = assistantMessage.tool_calls?.length > 0;
-    
-    if (hasToolCalls) {
-      console.log('Response contains tool calls');
-      
-      // Check if we have authentication for the tools being called
-      const toolNames = assistantMessage.tool_calls.map(tc => {
-        // Extract the service name from the function name
-        // Example: "GMAIL_SEND_EMAIL" -> "gmail"
-        const serviceName = tc.function.name.split('_')[0].toLowerCase();
-        return serviceName;
-      });
-      
-      // Check if any required service is not authenticated
-      const unauthenticatedServices = toolNames.filter(service => !authStatus[service]);
-      
-      if (unauthenticatedServices.length > 0) {
-        // We need authentication for these services
-        const authRequests = unauthenticatedServices.map(service => 
-          `[AUTH_REQUEST:${service}]`
-        ).join('\n');
-        
-        // Create a message asking for authentication
-        return {
-          role: 'assistant',
-          content: `I need to access certain services to help you with this request. Please authenticate with the following services:\n\n${authRequests}\n\nOnce authenticated, I'll be able to complete your request.`
-        };
-      }
-      
-      // All required services are authenticated, proceed with tool calls
+    // If we're simulating streaming for React Native
+    if (onChunk) {
       try {
-        const result = await composioService.handleToolCalls(response.data);
-        console.log('Tool call results:', result);
+        // React Native doesn't handle Node.js style streams well, so we need to use
+        // a different approach with a normal request and then simulate streaming
         
-        // Add a message about the tool use to help the user understand what happened
-        return {
-          role: 'assistant',
-          content: `I've used tools to help with your request: ${assistantMessage.tool_calls.map(tc => tc.function.name).join(', ')}. ${result.result}`
-        };
+        // Call the Azure API without streaming to get the full response
+        console.log('Making regular request and simulating streaming');
+        const response = await api.post(azureApiUrl, payload);
+        
+        console.log('Response status:', response.status);
+        console.log('Response has data:', !!response.data);
+        
+        // Get the assistant's message
+        const assistantMessage = response.data.choices[0].message;
+        
+        // Simulate streaming with setTimeout
+        if (assistantMessage && assistantMessage.content) {
+          const content = assistantMessage.content;
+          let streamedContent = '';
+          
+          // Function to stream content in chunks
+          const streamContentInChunks = async (position = 0) => {
+            // Calculate a natural chunk size (larger chunks for faster perceived streaming)
+            const chunkSize = Math.floor(Math.random() * 5) + 5; // 5-9 chars per update
+            const nextPosition = Math.min(position + chunkSize, content.length);
+            
+            if (position < content.length) {
+              // Add next chunk to streamed content
+              streamedContent = content.substring(0, nextPosition);
+              
+              // Send the update
+              onChunk({
+                role: 'assistant',
+                content: streamedContent
+              });
+              
+              // Continue streaming after a small delay
+              setTimeout(() => streamContentInChunks(nextPosition), 10);
+            }
+          };
+          
+          // Start streaming content
+          streamContentInChunks();
+        }
+        
+        // Check if the response contains tool calls
+        const hasToolCalls = assistantMessage.tool_calls?.length > 0;
+        
+        if (hasToolCalls) {
+          // Handle tool calls as before...
+          console.log('Response contains tool calls');
+          
+          // Check if we have authentication for the tools being called
+          const toolNames = assistantMessage.tool_calls.map(tc => {
+            // Extract the service name from the function name
+            // Example: "GMAIL_SEND_EMAIL" -> "gmail"
+            const serviceName = tc.function.name.split('_')[0].toLowerCase();
+            return serviceName;
+          });
+          
+          // Check if any required service is not authenticated
+          const unauthenticatedServices = toolNames.filter(service => !authStatus[service]);
+          
+          if (unauthenticatedServices.length > 0) {
+            // We need authentication for these services
+            const authRequests = unauthenticatedServices.map(service => 
+              `[AUTH_REQUEST:${service}]`
+            ).join('\n');
+            
+            // Create a message asking for authentication
+            return {
+              role: 'assistant',
+              content: `I need to access certain services to help you with this request. Please authenticate with the following services:\n\n${authRequests}\n\nOnce authenticated, I'll be able to complete your request.`
+            };
+          }
+          
+          // All required services are authenticated, proceed with tool calls
+          try {
+            const result = await composioService.handleToolCalls(response.data);
+            console.log('Tool call results:', result);
+            
+            // Add a message about the tool use to help the user understand what happened
+            return {
+              role: 'assistant',
+              content: `I've used tools to help with your request: ${assistantMessage.tool_calls.map(tc => tc.function.name).join(', ')}. ${result.result}`
+            };
+          } catch (error) {
+            // Handle tool call failure
+            return {
+              role: 'assistant',
+              content: `I tried to use tools to help with your request, but encountered an error: ${error.message}. Could you try again or rephrase your request?`
+            };
+          }
+        }
+        
+        // Return the standard message if no tool calls
+        return assistantMessage;
       } catch (error) {
-        // Handle tool call failure
-        return {
-          role: 'assistant',
-          content: `I tried to use tools to help with your request, but encountered an error: ${error.message}. Could you try again or rephrase your request?`
-        };
+        console.error('Error in simulated streaming request:', error);
+        throw error;
       }
+    } else {
+      // For non-streaming requests (original behavior)
+      const response = await api.post(azureApiUrl, payload);
+      
+      console.log('Response status:', response.status);
+      console.log('Response has data:', !!response.data);
+      
+      // Get the assistant's message
+      const assistantMessage = response.data.choices[0].message;
+      
+      // Check if the response contains tool calls
+      const hasToolCalls = assistantMessage.tool_calls?.length > 0;
+      
+      if (hasToolCalls) {
+        console.log('Response contains tool calls');
+        
+        // Check if we have authentication for the tools being called
+        const toolNames = assistantMessage.tool_calls.map(tc => {
+          // Extract the service name from the function name
+          // Example: "GMAIL_SEND_EMAIL" -> "gmail"
+          const serviceName = tc.function.name.split('_')[0].toLowerCase();
+          return serviceName;
+        });
+        
+        // Check if any required service is not authenticated
+        const unauthenticatedServices = toolNames.filter(service => !authStatus[service]);
+        
+        if (unauthenticatedServices.length > 0) {
+          // We need authentication for these services
+          const authRequests = unauthenticatedServices.map(service => 
+            `[AUTH_REQUEST:${service}]`
+          ).join('\n');
+          
+          // Create a message asking for authentication
+          return {
+            role: 'assistant',
+            content: `I need to access certain services to help you with this request. Please authenticate with the following services:\n\n${authRequests}\n\nOnce authenticated, I'll be able to complete your request.`
+          };
+        }
+        
+        // All required services are authenticated, proceed with tool calls
+        try {
+          const result = await composioService.handleToolCalls(response.data);
+          console.log('Tool call results:', result);
+          
+          // Add a message about the tool use to help the user understand what happened
+          return {
+            role: 'assistant',
+            content: `I've used tools to help with your request: ${assistantMessage.tool_calls.map(tc => tc.function.name).join(', ')}. ${result.result}`
+          };
+        } catch (error) {
+          // Handle tool call failure
+          return {
+            role: 'assistant',
+            content: `I tried to use tools to help with your request, but encountered an error: ${error.message}. Could you try again or rephrase your request?`
+          };
+        }
+      }
+      
+      // Return the standard message if no tool calls
+      return assistantMessage;
     }
-    
-    // Return the standard message if no tool calls
-    return assistantMessage;
   } catch (error) {
     console.error('Error sending message to Azure OpenAI:', error.message);
     if (error.response) {

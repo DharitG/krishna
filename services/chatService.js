@@ -249,6 +249,7 @@ export const addMessage = async (chatId, role, content) => {
  * @param {Array} enabledTools - Array of enabled tools
  * @param {Boolean} useTools - Whether to use tools
  * @param {Object} authStatus - Authentication status for services
+ * @param {Function} onStream - Callback for streaming responses
  * @returns {Object} - AI response message
  */
 export const sendMessageAndGetResponse = async (
@@ -256,7 +257,8 @@ export const sendMessageAndGetResponse = async (
   message, 
   enabledTools, 
   useTools = true,
-  authStatus = {}
+  authStatus = {},
+  onStream = null
 ) => {
   try {
     // Check if this is a mock chat ID
@@ -285,13 +287,47 @@ export const sendMessageAndGetResponse = async (
       const chat = await getChatById(chatId);
       messages = Array.isArray(chat.messages) ? chat.messages.map(({ role, content }) => ({ role, content })) : [];
       
-      // Send to Azure OpenAI
-      const response = await sendMessageToAI(messages, enabledTools, useTools, authStatus);
+      // Create message object in database with empty content (will be updated)
+      const initialAssistantMessage = await addMessage(chatId, 'assistant', '');
       
-      // Add assistant response to database
-      await addMessage(chatId, 'assistant', response.content);
+      // Handler for streaming updates
+      const handleStreamChunk = async (chunk) => {
+        if (onStream) {
+          // Pass streaming content to callback with the DB message ID
+          onStream({
+            ...chunk,
+            id: initialAssistantMessage.id
+          });
+        }
+      };
       
-      return response;
+      // Send to Azure OpenAI with streaming
+      const response = await sendMessageToAI(
+        messages, 
+        enabledTools, 
+        useTools, 
+        authStatus,
+        handleStreamChunk
+      );
+      
+      // Update the assistant message in database with final content
+      // Use Supabase's update function to update the existing message
+      const { data, error } = await supabase
+        .from('messages')
+        .update({ content: response.content })
+        .eq('id', initialAssistantMessage.id)
+        .select()
+        .single();
+        
+      if (error) {
+        console.error('Error updating message content:', error);
+      }
+      
+      // Return the final response with the database ID
+      return {
+        ...response,
+        id: initialAssistantMessage.id
+      };
     }
   } catch (error) {
     console.error('Error sending message and getting response:', error.message);
