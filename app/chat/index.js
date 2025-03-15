@@ -68,9 +68,17 @@ const ChatScreen = () => {
   // Scroll to bottom when messages change
   useEffect(() => {
     if (flatListRef.current && activeChat?.messages?.length > 0) {
-      flatListRef.current.scrollToEnd({ animated: true });
+      flatListRef.current.scrollToEnd({ animated: false });
     }
-  }, [activeChat?.messages?.length]);
+  }, [activeChat?.messages]);
+
+  // Add a new effect to handle scrolling during streaming
+  useEffect(() => {
+    if (streamingMessageId && flatListRef.current) {
+      // Scroll to bottom whenever streaming content updates
+      flatListRef.current.scrollToEnd({ animated: false });
+    }
+  }, [streamingMessageId, activeChat?.messages]);
 
   const handleSendMessage = async (content) => {
     // Set loading state
@@ -88,14 +96,9 @@ const ChatScreen = () => {
           messages: [...activeChat.messages, userMessage]
         });
         
-        // Let UI update with user message and scroll to bottom
-        await new Promise(resolve => setTimeout(resolve, 100));
-        
         // Force-scroll to the bottom
         if (flatListRef.current) {
-          setTimeout(() => {
-            flatListRef.current.scrollToEnd({ animated: true });
-          }, 50);
+          flatListRef.current.scrollToEnd({ animated: false });
         }
       }
       
@@ -127,6 +130,11 @@ const ChatScreen = () => {
           } else {
             // Add new message if not found
             chatCopy.messages.push(streamMessage);
+          }
+          
+          // Scroll to the bottom as new content comes in
+          if (flatListRef.current) {
+            flatListRef.current.scrollToEnd({ animated: false });
           }
           
           return chatCopy;
@@ -221,6 +229,32 @@ const ChatScreen = () => {
     }
   };
 
+  // Render item function for FlatList
+  const renderItem = ({ item, index }) => (
+    <ChatMessage
+      message={item}
+      onAuthSuccess={(service) => {
+        // Update authentication status in the chat store
+        chatStore.updateAuthStatus(service, true);
+        
+        // Update the active chat in the state
+        setActiveChat({...chatStore.getActiveChat()});
+        
+        // Send a message to acknowledge authentication
+        handleSendMessage(`I've successfully authenticated with ${service}`);
+      }}
+      index={index}
+      isStreaming={item.id === streamingMessageId}
+    />
+  );
+
+  // Handle content size changes in the FlatList
+  const handleContentSizeChange = () => {
+    if (flatListRef.current && activeChat?.messages?.length > 0) {
+      flatListRef.current.scrollToEnd({ animated: false });
+    }
+  };
+
   // Show loading spinner while initializing
   if (isInitializing || !activeChat) {
     return (
@@ -261,39 +295,27 @@ const ChatScreen = () => {
         </View>
         
         <View style={styles.chatContainer}>
-          <KeyboardAvoidingView
-            style={styles.keyboardAvoidContainer}
-            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-            keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 80}
-            contentContainerStyle={{flex: 1}}
-          >
+          <View style={styles.messagesContainer}>
             <FlatList
               ref={flatListRef}
               data={Array.isArray(activeChat.messages) ? activeChat.messages : []}
-              renderItem={({ item }) => (
-                <ChatMessage 
-                  message={item} 
-                  isStreaming={item.id === streamingMessageId}
-                  onAuthSuccess={(service) => {
-                    // Update authentication status in the chat store
-                    chatStore.updateAuthStatus(service, true);
-                    
-                    // Update the active chat in the state
-                    setActiveChat({...chatStore.getActiveChat()});
-                    
-                    // Send a message to acknowledge authentication
-                    handleSendMessage(`I've successfully authenticated with ${service}`);
-                  }}
-                />
-              )}
-              keyExtractor={(item, index) => item.id || index.toString()}
-              style={styles.messageList}
+              keyExtractor={(item, index) => item.id || `msg-${index}`}
+              renderItem={renderItem}
               contentContainerStyle={styles.messageListContent}
+              showsVerticalScrollIndicator={true}
+              onContentSizeChange={handleContentSizeChange}
+              onLayout={handleContentSizeChange}
               keyboardDismissMode="interactive"
               keyboardShouldPersistTaps="handled"
               onScrollBeginDrag={Keyboard.dismiss}
+              removeClippedSubviews={false}
             />
-            
+          </View>
+          
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 80}
+          >
             <MessageInput onSendMessage={handleSendMessage} isLoading={isLoading} />
           </KeyboardAvoidingView>
         </View>
@@ -359,17 +381,16 @@ const styles = StyleSheet.create({
   chatContainer: {
     flex: 1,
     position: 'relative',
+    display: 'flex',
+    flexDirection: 'column',
   },
-  keyboardAvoidContainer: {
+  messagesContainer: {
     flex: 1,
     position: 'relative',
   },
-  messageList: {
-    flex: 1,
-  },
   messageListContent: {
-    paddingVertical: spacing.sm,
-    paddingBottom: 180, // Extra bottom padding to account for the message input height
+    paddingHorizontal: spacing.md,
+    paddingBottom: 80, // Add extra padding at the bottom to ensure messages are visible above the input
   },
 });
 

@@ -88,11 +88,7 @@ const MessageInput = ({ onSendMessage, isLoading }) => {
     <View 
       style={[
         styles.container,
-        keyboardVisible && { 
-          bottom: Platform.OS === 'ios' ? 0 : 'auto',
-          position: Platform.OS === 'ios' ? 'absolute' : 'relative',
-          transform: [{ translateY: Platform.OS === 'android' && keyboardVisible ? -10 : 0 }]
-        }
+        keyboardVisible && Platform.OS === 'android' && styles.containerWithKeyboard
       ]}
       onLayout={onInputLayout}
     >
@@ -154,7 +150,7 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: borderRadius.lg,
     borderTopRightRadius: borderRadius.lg,
     backgroundColor: 'rgba(40, 40, 45, 0.98)', // Lighter background for more contrast
-    position: 'absolute',
+    position: 'relative',
     bottom: 0,
     left: 0,
     right: 0,
