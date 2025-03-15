@@ -1,8 +1,17 @@
-import { sendMessage, sendMessageMock, authenticateService } from './api';
-import * as chatService from './chatService';
+import { create } from 'zustand';
+import * as SecureStore from 'expo-secure-store';
+import { 
+  getChats, 
+  getChatById, 
+  createChat, 
+  updateChatTitle, 
+  deleteChat, 
+  sendMessageAndGetResponse,
+  addMessage
+} from './chatService';
+import { authenticateService, checkToolAuth } from './api';
 import Constants from 'expo-constants';
-import { useAuth } from './authContext';
-import supabase from './supabase'; // Import supabase instance
+import supabase from './supabase';
 
 // Get environment variables
 const { 
@@ -22,30 +31,262 @@ const isAzureConfigured = !!(
 // Check if Composio is configured
 const isComposioConfigured = !!COMPOSIO_API_KEY;
 
-console.log('Azure configuration status:', { 
-  isConfigured: isAzureConfigured,
-  hasApiKey: !!AZURE_OPENAI_API_KEY,
-  hasEndpoint: !!AZURE_OPENAI_ENDPOINT,
-  hasDeploymentName: !!AZURE_OPENAI_DEPLOYMENT_NAME
-});
+// Create a store for chat state
+const useZustandChatStore = create((set, get) => ({
+  // Chat list state
+  chats: [],
+  isLoadingChats: false,
+  chatError: null,
+  
+  // Current chat state
+  currentChat: null,
+  currentChatId: null,
+  isLoadingCurrentChat: false,
+  currentChatError: null,
+  
+  // Message sending state
+  isSendingMessage: false,
+  sendMessageError: null,
+  
+  // Authentication state for services
+  authStatus: {},
+  
+  // Streaming state
+  streamingMessage: null,
+  
+  // Load all chats
+  loadChats: async () => {
+    set({ isLoadingChats: true, chatError: null });
+    
+    try {
+      const chats = await getChats();
+      set({ chats, isLoadingChats: false });
+      return chats;
+    } catch (error) {
+      console.error('Error loading chats:', error);
+      set({ chatError: error.message, isLoadingChats: false });
+      return [];
+    }
+  },
+  
+  // Load a specific chat by ID
+  loadChat: async (chatId) => {
+    set({ 
+      isLoadingCurrentChat: true, 
+      currentChatError: null,
+      currentChatId: chatId
+    });
+    
+    try {
+      const chat = await getChatById(chatId);
+      set({ currentChat: chat, isLoadingCurrentChat: false });
+      return chat;
+    } catch (error) {
+      console.error('Error loading chat:', error);
+      set({ 
+        currentChatError: error.message, 
+        isLoadingCurrentChat: false 
+      });
+      return null;
+    }
+  },
+  
+  // Create a new chat
+  createNewChat: async (title = 'New Chat') => {
+    set({ isLoadingChats: true, chatError: null });
+    
+    try {
+      const newChat = await createChat(title);
+      set(state => ({ 
+        chats: [newChat, ...state.chats],
+        currentChat: newChat,
+        currentChatId: newChat.id,
+        isLoadingChats: false 
+      }));
+      
+      return newChat;
+    } catch (error) {
+      console.error('Error creating chat:', error);
+      set({ chatError: error.message, isLoadingChats: false });
+      return null;
+    }
+  },
+  
+  // Update a chat's title
+  updateChatTitle: async (chatId, title) => {
+    try {
+      const updatedChat = await updateChatTitle(chatId, title);
+      
+      set(state => ({ 
+        chats: state.chats.map(chat => 
+          chat.id === chatId ? { ...chat, title } : chat
+        ),
+        currentChat: state.currentChat?.id === chatId 
+          ? { ...state.currentChat, title } 
+          : state.currentChat
+      }));
+      
+      return updatedChat;
+    } catch (error) {
+      console.error('Error updating chat title:', error);
+      return null;
+    }
+  },
+  
+  // Delete a chat
+  deleteChat: async (chatId) => {
+    try {
+      await deleteChat(chatId);
+      
+      set(state => ({ 
+        chats: state.chats.filter(chat => chat.id !== chatId),
+        currentChat: state.currentChat?.id === chatId ? null : state.currentChat,
+        currentChatId: state.currentChatId === chatId ? null : state.currentChatId
+      }));
+      
+      return true;
+    } catch (error) {
+      console.error('Error deleting chat:', error);
+      return false;
+    }
+  },
+  
+  // Send a message and get a response
+  sendMessage: async (message, enabledTools = [], useTools = true, onStreamUpdate = null) => {
+    const { currentChatId, authStatus } = get();
+    
+    if (!currentChatId) {
+      console.error('No current chat selected');
+      return null;
+    }
+    
+    set({ 
+      isSendingMessage: true, 
+      sendMessageError: null,
+      streamingMessage: null
+    });
+    
+    try {
+      // Handle streaming updates
+      const handleStreamUpdate = (chunk) => {
+        set({ streamingMessage: chunk });
+        
+        // Pass to callback if provided
+        if (onStreamUpdate) {
+          onStreamUpdate(chunk);
+        }
+      };
+      
+      // Send the message and get the response
+      const response = await sendMessageAndGetResponse(
+        currentChatId, 
+        message, 
+        enabledTools, 
+        useTools,
+        authStatus,
+        handleStreamUpdate
+      );
+      
+      // Reset streaming state
+      set({ streamingMessage: null });
+      
+      // Reload the current chat to get the updated messages
+      await get().loadChat(currentChatId);
+      
+      set({ isSendingMessage: false });
+      return response;
+    } catch (error) {
+      console.error('Error sending message:', error);
+      set({ 
+        sendMessageError: error.message, 
+        isSendingMessage: false,
+        streamingMessage: null
+      });
+      return null;
+    }
+  },
+  
+  // Authenticate with a service
+  authenticateService: async (serviceName) => {
+    try {
+      // Check if already authenticated
+      const isAuthenticated = get().authStatus[serviceName];
+      
+      if (isAuthenticated) {
+        return { isAuthenticated: true };
+      }
+      
+      // Get authentication URL from backend
+      const authResult = await authenticateService(serviceName);
+      
+      if (authResult.redirectUrl) {
+        return authResult;
+      } else {
+        throw new Error('No redirect URL provided');
+      }
+    } catch (error) {
+      console.error(`Error authenticating with ${serviceName}:`, error);
+      return { error: true, message: error.message };
+    }
+  },
+  
+  // Check authentication for a tool
+  checkToolAuth: async (toolName) => {
+    try {
+      const result = await checkToolAuth(toolName);
+      return result;
+    } catch (error) {
+      console.error(`Error checking auth for ${toolName}:`, error);
+      return { error: true, message: error.message };
+    }
+  },
+  
+  // Update authentication status
+  updateAuthStatus: (serviceName, isAuthenticated) => {
+    set(state => ({
+      authStatus: {
+        ...state.authStatus,
+        [serviceName]: isAuthenticated
+      }
+    }));
+  },
+  
+  // Load authentication status from secure storage
+  loadAuthStatus: async () => {
+    try {
+      const authStatusString = await SecureStore.getItemAsync('auth_status');
+      
+      if (authStatusString) {
+        const authStatus = JSON.parse(authStatusString);
+        set({ authStatus });
+      }
+    } catch (error) {
+      console.error('Error loading auth status:', error);
+    }
+  },
+  
+  // Save authentication status to secure storage
+  saveAuthStatus: async () => {
+    try {
+      const { authStatus } = get();
+      await SecureStore.setItemAsync('auth_status', JSON.stringify(authStatus));
+    } catch (error) {
+      console.error('Error saving auth status:', error);
+    }
+  }
+}));
 
-console.log('Composio configuration status:', {
-  isConfigured: isComposioConfigured,
-  hasApiKey: !!COMPOSIO_API_KEY
-});
-
-// Chat store for managing chat sessions with persistent storage
+// Wrapper class for backward compatibility with the old ChatStore
 class ChatStore {
   constructor() {
-    this.chats = [];
-    this.activeChat = null;
     this.isLoaded = false;
-    this.authStatus = {}; // Service authentication status
+    this.activeChat = null;
+    this.authStatus = {};
   }
-
+  
   // Initialize the store with data from Supabase
   async initialize() {
-    if (this.isLoaded) return;
+    if (this.isLoaded) return true;
     
     try {
       // Check if user is authenticated
@@ -58,14 +299,14 @@ class ChatStore {
       }
       
       // Load chats from the database
-      const chats = await chatService.getChats();
+      const chats = await getChats();
       
       if (chats.length === 0) {
         // Create a default chat if no chats exist
-        const newChat = await chatService.createChat('New Chat');
+        const newChat = await createChat('New Chat');
         
         // Add welcome message
-        await chatService.addMessage(
+        await addMessage(
           newChat.id, 
           'assistant', 
           `Hello! I'm August, your AI super agent with tool capabilities. How can I help you today?`
@@ -86,7 +327,7 @@ class ChatStore {
         ];
       } else {
         // Load first chat with its messages
-        const firstChat = await chatService.getChatById(chats[0].id);
+        const firstChat = await getChatById(chats[0].id);
         
         this.chats = chats.map((chat, index) => {
           if (index === 0) {
@@ -109,6 +350,14 @@ class ChatStore {
       this.activeChat = this.chats.length > 0 ? this.chats[0].id : null;
       this.isLoaded = true;
       
+      // Update the Zustand store
+      const zustandStore = useZustandChatStore.getState();
+      zustandStore.loadChats();
+      
+      if (this.activeChat) {
+        zustandStore.loadChat(this.activeChat);
+      }
+      
       return true;
     } catch (error) {
       console.error('Error initializing chat store:', error.message);
@@ -117,7 +366,7 @@ class ChatStore {
       return false;
     }
   }
-
+  
   // Fallback to mock data if Supabase is not configured
   _initializeMockData() {
     // Pre-populated chats for demo purposes
@@ -163,48 +412,23 @@ class ChatStore {
     this.activeChat = 'mock-chat-1';
     this.isLoaded = true;
   }
-
+  
   // Get all chats
   async getChats() {
     if (!this.isLoaded) await this.initialize();
+    
+    // Use the Zustand store to get chats
+    const zustandStore = useZustandChatStore.getState();
+    const chats = await zustandStore.loadChats();
+    
+    // Update local reference
+    this.chats = chats;
+    
     return [...this.chats].sort((a, b) => 
       new Date(b.updated_at) - new Date(a.updated_at)
     );
   }
   
-  // Search across all chats
-  async searchMessages(query) {
-    if (!this.isLoaded) await this.initialize();
-    
-    if (!query || query.trim() === '') {
-      return [];
-    }
-    
-    const normalizedQuery = query.toLowerCase().trim();
-    const results = [];
-    
-    // First, we need to ensure all chats have their messages loaded
-    for (const chat of this.chats) {
-      if (!chat.messages || chat.messages.length === 0) {
-        const fullChat = await chatService.getChatById(chat.id);
-        chat.messages = fullChat.messages || [];
-      }
-      
-      chat.messages.forEach((message, messageIndex) => {
-        if (message.content.toLowerCase().includes(normalizedQuery)) {
-          results.push({
-            chatId: chat.id,
-            messageIndex,
-            message,
-            chatTitle: chat.title,
-          });
-        }
-      });
-    }
-    
-    return results;
-  }
-
   // Get active chat
   async getActiveChat() {
     if (!this.isLoaded) await this.initialize();
@@ -233,14 +457,10 @@ class ChatStore {
       chat.messages = [];
     } else if (!Array.isArray(chat.messages)) {
       // If messages exists but is not an array, convert it to an array
-      // This is the critical fix for the iterator error
       try {
-        // If it's an object with iterator properties but not an array
         if (typeof chat.messages === 'object' && chat.messages !== null) {
-          // Try to convert to array if possible
           chat.messages = Array.from(chat.messages);
         } else {
-          // Otherwise, reset to empty array
           chat.messages = [];
         }
       } catch (error) {
@@ -252,19 +472,17 @@ class ChatStore {
     // If chat exists but messages aren't loaded, load them
     if (chat.messages.length === 0) {
       try {
-        const fullChat = await chatService.getChatById(chat.id);
-        // Ensure messages from service is an array
+        const fullChat = await getChatById(chat.id);
         chat.messages = Array.isArray(fullChat.messages) ? fullChat.messages : [];
       } catch (error) {
         console.error('Error loading messages for active chat:', error.message);
-        // Keep messages as empty array if there's an error
         chat.messages = [];
       }
     }
     
     return chat;
   }
-
+  
   // Set active chat
   async setActiveChat(chatId) {
     if (!this.isLoaded) await this.initialize();
@@ -277,26 +495,30 @@ class ChatStore {
     // If chat exists but messages aren't loaded, load them
     if (chat && (!chat.messages || chat.messages.length === 0)) {
       try {
-        const fullChat = await chatService.getChatById(chat.id);
+        const fullChat = await getChatById(chat.id);
         chat.messages = fullChat.messages || [];
       } catch (error) {
         console.error('Error loading messages for chat:', error.message);
       }
     }
     
+    // Update the Zustand store
+    const zustandStore = useZustandChatStore.getState();
+    zustandStore.loadChat(chatId);
+    
     return this.getActiveChat();
   }
-
+  
   // Create a new chat
   async createChat(useTools = true) {
     if (!this.isLoaded) await this.initialize();
     
     try {
       // Create chat in database
-      const newChat = await chatService.createChat('New Chat');
+      const newChat = await createChat('New Chat');
       
       // Add welcome message
-      await chatService.addMessage(
+      await addMessage(
         newChat.id, 
         'assistant', 
         `Hello! I'm August, your AI super agent${useTools ? ' with tool capabilities' : ''}. How can I help you today?`
@@ -317,6 +539,11 @@ class ChatStore {
       
       this.chats.unshift(chatWithMessages);
       this.activeChat = newChat.id;
+      
+      // Update the Zustand store
+      const zustandStore = useZustandChatStore.getState();
+      zustandStore.loadChats();
+      zustandStore.loadChat(newChat.id);
       
       return chatWithMessages;
     } catch (error) {
@@ -345,14 +572,14 @@ class ChatStore {
       return newChat;
     }
   }
-
+  
   // Delete a chat
   async deleteChat(chatId) {
     if (!this.isLoaded) await this.initialize();
     
     try {
       // Delete from database
-      await chatService.deleteChat(chatId);
+      await deleteChat(chatId);
       
       // Remove from local state
       this.chats = this.chats.filter(chat => chat.id !== chatId);
@@ -360,6 +587,14 @@ class ChatStore {
       // If we deleted the active chat, set active to the first remaining chat
       if (this.activeChat === chatId && this.chats.length > 0) {
         this.activeChat = this.chats[0].id;
+      }
+      
+      // Update the Zustand store
+      const zustandStore = useZustandChatStore.getState();
+      zustandStore.loadChats();
+      
+      if (this.activeChat) {
+        zustandStore.loadChat(this.activeChat);
       }
       
       return this.getChats();
@@ -376,7 +611,7 @@ class ChatStore {
       return this.getChats();
     }
   }
-
+  
   // Toggle tool usage for a chat
   toggleToolsForChat(chatId, useTools) {
     const chat = this.chats.find(c => c.id === chatId);
@@ -386,7 +621,7 @@ class ChatStore {
     }
     return false;
   }
-
+  
   // Update enabled tools for a chat
   updateEnabledTools(chatId, enabledTools) {
     const chat = this.chats.find(c => c.id === chatId);
@@ -396,27 +631,7 @@ class ChatStore {
     }
     return false;
   }
-
-  // Authenticate with a third-party service for tools
-  async authenticateService(serviceName) {
-    if (!isComposioConfigured) {
-      return {
-        error: true,
-        message: 'Composio is not configured. Please set up your COMPOSIO_API_KEY.'
-      };
-    }
-    
-    try {
-      return await authenticateService(serviceName);
-    } catch (error) {
-      console.error(`Error authenticating with ${serviceName}:`, error);
-      return {
-        error: true,
-        message: `Failed to authenticate with ${serviceName}: ${error.message}`
-      };
-    }
-  }
-
+  
   // Send a message in the active chat with streaming support
   async sendMessage(content, onStreamUpdate = null) {
     if (!this.isLoaded) await this.initialize();
@@ -436,39 +651,16 @@ class ChatStore {
       // Only use tools if both Azure and Composio are configured
       const canUseTools = isComposioConfigured && chat.useTools;
       
-      if (isAzureConfigured) {
-        // Stream handler that passes updates to the caller and updates local state
-        const handleStream = (streamMessage) => {
-          // Find existing message in local state by ID and update it
-          const existingMessageIndex = chat.messages.findIndex(
-            msg => msg.id === streamMessage.id
-          );
-          
-          if (existingMessageIndex !== -1) {
-            // Update existing message
-            chat.messages[existingMessageIndex] = {
-              ...chat.messages[existingMessageIndex],
-              content: streamMessage.content
-            };
-          } else {
-            // Add message if not found
-            chat.messages.push(streamMessage);
-          }
-          
-          // Pass stream update to caller if callback provided
-          if (onStreamUpdate) {
-            onStreamUpdate(streamMessage);
-          }
-        };
+      try {
+        // Get the Zustand store
+        const zustandStore = useZustandChatStore.getState();
         
-        // Send message to chatService which will persist to database and stream updates
-        const response = await chatService.sendMessageAndGetResponse(
-          chat.id,
-          content,
-          chat.enabledTools.length > 0 ? chat.enabledTools : undefined,
+        // Send the message using the Zustand store
+        const response = await zustandStore.sendMessage(
+          content, 
+          chat.enabledTools || [], 
           canUseTools,
-          this.authStatus,
-          handleStream
+          onStreamUpdate
         );
         
         // Update chat title if this is the first user message
@@ -477,29 +669,34 @@ class ChatStore {
           const newTitle = content.substring(0, 20) + (content.length > 20 ? '...' : '');
           
           // Update in database
-          await chatService.updateChatTitle(chat.id, newTitle);
+          await updateChatTitle(chat.id, newTitle);
           
           // Update local state
           chat.title = newTitle;
         }
         
         return response;
-      } else {
-        // Fallback to mock data if Azure is not configured
-        const mockResponse = await sendMessageMock(chat.messages);
+      } catch (backendError) {
+        console.error('Error connecting to backend:', backendError);
+        console.log('Falling back to mock response');
         
-        // Update local state
-        chat.messages.push(mockResponse);
+        // Create a mock assistant response
+        const assistantMessage = {
+          id: `mock-msg-${Date.now()}`,
+          role: 'assistant',
+          content: `I'm currently operating in offline mode due to a backend connection issue. Here's what I would typically do with your request: "${content}"\n\nPlease check your backend connection and try again later.`,
+          created_at: new Date()
+        };
         
-        // Add to database if possible
-        try {
-          await chatService.addMessage(chat.id, 'user', content);
-          await chatService.addMessage(chat.id, 'assistant', mockResponse.content);
-        } catch (error) {
-          console.error('Error saving mock messages to database:', error.message);
+        // Add to local state
+        chat.messages.push(assistantMessage);
+        
+        // Call stream update if provided
+        if (onStreamUpdate) {
+          onStreamUpdate(assistantMessage);
         }
         
-        return mockResponse;
+        return assistantMessage;
       }
     } catch (error) {
       console.error('Error sending message:', error);
@@ -514,7 +711,7 @@ class ChatStore {
       
       // Try to save error message to database
       try {
-        await chatService.addMessage(chat.id, 'assistant', errorMessage.content);
+        await addMessage(chat.id, 'assistant', errorMessage.content);
       } catch (dbError) {
         console.error('Error saving error message to database:', dbError.message);
       }
@@ -526,8 +723,12 @@ class ChatStore {
   // Update authentication status for a service
   updateAuthStatus(service, isAuthenticated) {
     this.authStatus[service] = isAuthenticated;
+    
+    // Update the Zustand store
+    const zustandStore = useZustandChatStore.getState();
+    zustandStore.updateAuthStatus(service, isAuthenticated);
+    
     console.log(`Updated auth status for ${service} to ${isAuthenticated}`);
-    console.log('Current auth status:', this.authStatus);
     return true;
   }
 }

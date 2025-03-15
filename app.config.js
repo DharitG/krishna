@@ -51,6 +51,9 @@ export default {
     // Composio Configuration
     COMPOSIO_API_KEY: process.env.COMPOSIO_API_KEY,
     
+    // Backend Configuration
+    BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:3000',
+    
     eas: {
       projectId: "your-project-id"
     }

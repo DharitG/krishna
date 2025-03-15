@@ -1,8 +1,9 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text, StyleSheet, Linking } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import GlassCard from '../GlassCard';
 import AuthButton from './AuthButton';
+import AuthRedirect from './AuthRedirect';
 import chatStore from '../../services/chatStore';
 import {
   colors,
@@ -19,8 +20,16 @@ const AUTH_REQUEST_PATTERN = /\[AUTH_REQUEST:(\w+)\]/g;
 const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
   const isUser = message.role === 'user';
   const [authStates, setAuthStates] = useState({});
-  // With real API streaming, we don't need any special display logic,
-  // as the content will be automatically updated from the API stream
+  const [showAuthRedirect, setShowAuthRedirect] = useState(false);
+  const [serviceToAuth, setServiceToAuth] = useState(null);
+  
+  // Check if the message contains an auth redirect
+  useEffect(() => {
+    if (message.authRedirect) {
+      setServiceToAuth(message.authRedirect.service);
+      setShowAuthRedirect(true);
+    }
+  }, [message]);
   
   // Function to handle authentication
   const handleAuth = async (service) => {
@@ -42,27 +51,44 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
         }));
       } else if (result.redirectUrl) {
         // Open the authentication URL
-        // Note: In a real implementation, you would use Linking.openURL()
-        // and handle the return process properly
-        console.log(`Opening URL: ${result.redirectUrl}`);
-        
-        // For now, we'll simulate a successful authentication after a delay
-        setTimeout(() => {
-          setAuthStates(prev => ({
-            ...prev,
-            [service]: { isLoading: false, isAuthenticated: true }
-          }));
-          
-          // Notify parent component of auth success
-          if (onAuthSuccess) {
-            onAuthSuccess(service);
-          }
-        }, 2000);
+        setServiceToAuth(service);
+        setShowAuthRedirect(true);
       }
     } catch (error) {
       setAuthStates(prev => ({
         ...prev,
         [service]: { isLoading: false, error: error.message }
+      }));
+    }
+  };
+  
+  // Handle authentication completion
+  const handleAuthComplete = (service) => {
+    setShowAuthRedirect(false);
+    setServiceToAuth(null);
+    
+    // Update auth state
+    setAuthStates(prev => ({
+      ...prev,
+      [service]: { isLoading: false, isAuthenticated: true }
+    }));
+    
+    // Notify parent component of auth success
+    if (onAuthSuccess) {
+      onAuthSuccess(service);
+    }
+  };
+  
+  // Handle authentication cancellation
+  const handleAuthCancel = () => {
+    setShowAuthRedirect(false);
+    setServiceToAuth(null);
+    
+    // Update auth state
+    if (serviceToAuth) {
+      setAuthStates(prev => ({
+        ...prev,
+        [serviceToAuth]: { isLoading: false, isAuthenticated: false }
       }));
     }
   };
@@ -152,6 +178,17 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
   
   // Function to parse message content and render auth buttons
   const renderMessageContent = (content) => {
+    // If we need to show auth redirect, render that instead
+    if (showAuthRedirect && serviceToAuth) {
+      return (
+        <AuthRedirect
+          serviceName={serviceToAuth}
+          onAuthComplete={handleAuthComplete}
+          onCancel={handleAuthCancel}
+        />
+      );
+    }
+    
     if (!content || !content.includes('[AUTH_REQUEST:')) {
       // No auth requests, render as markdown
       return (

@@ -1,5 +1,5 @@
 import supabase from './supabase';
-import { sendMessage as sendMessageToAI } from './api';
+import { sendMessage as sendMessageToBackend } from './api';
 
 /**
  * Create a new chat for the current user
@@ -301,8 +301,12 @@ export const sendMessageAndGetResponse = async (
         }
       };
       
-      // Send to Azure OpenAI with streaming
-      const response = await sendMessageToAI(
+      // Get the current user ID for the backend
+      const { data: { user } } = await supabase.auth.getUser();
+      const userId = user?.id;
+      
+      // Send to backend with streaming
+      const response = await sendMessageToBackend(
         messages, 
         enabledTools, 
         useTools, 
@@ -321,6 +325,12 @@ export const sendMessageAndGetResponse = async (
         
       if (error) {
         console.error('Error updating message content:', error);
+      }
+      
+      // Check if the response contains an auth redirect
+      if (response.authRedirect) {
+        console.log('Response contains auth redirect:', response.authRedirect);
+        // We'll handle this in the UI
       }
       
       // Return the final response with the database ID
