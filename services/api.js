@@ -3,6 +3,7 @@ import Constants from 'expo-constants';
 import composioService from './composio';
 import * as SecureStore from 'expo-secure-store';
 import supabase from './supabase'; // Correct import for the default export
+import socketService from './socket';
 
 // Azure OpenAI Configuration from environment
 const {
@@ -27,6 +28,7 @@ const {
 // Create API client with base URL
 const api = axios.create({
   baseURL: BACKEND_URL,
+  timeout: 30000, // 30 seconds
   headers: {
     'Content-Type': 'application/json'
   }
@@ -77,15 +79,162 @@ export const testBackendConnection = async () => {
  * Default enabled tools for the agent
  * This can be customized based on user preferences or use cases
  */
-const DEFAULT_ENABLED_TOOLS = [
-  'GITHUB_STAR_A_REPOSITORY_FOR_THE_AUTHENTICATED_USER',
-  'GITHUB_CREATE_AN_ISSUE',
-  'SLACK_SEND_MESSAGE',
-  'GMAIL_SEND_EMAIL'
-];
+const DEFAULT_ENABLED_TOOLS = [];
 
 /**
- * Send a message to the backend API (with simulated streaming for React Native)
+ * Get the authentication token from Supabase or SecureStore
+ * @returns {Promise<string|null>} - The authentication token or null if not available
+ */
+export const getAuthToken = async () => {
+  try {
+    // First try to get the session from Supabase
+    const { data, error } = await supabase.auth.getSession();
+    
+    if (data && data.session && data.session.access_token) {
+      return data.session.access_token;
+    } else {
+      // Fallback to SecureStore if Supabase session isn't available
+      const token = await SecureStore.getItemAsync('auth_token');
+      return token || null;
+    }
+  } catch (error) {
+    console.error('Error getting auth token:', error);
+    return null;
+  }
+};
+
+/**
+ * Custom implementation of EventSource for React Native
+ * @param {String} url - The URL to connect to
+ * @param {Object} options - Options for the connection
+ * @returns {Object} - The EventSource-like object
+ */
+const createEventSource = (url, options = {}) => {
+  let abortController = new AbortController();
+  let buffer = '';
+  let retryCount = 0;
+  const maxRetries = 3;
+  
+  const eventSource = {
+    listeners: {},
+    readyState: 0, // 0 = CONNECTING, 1 = OPEN, 2 = CLOSED
+    
+    addEventListener: function(type, listener) {
+      if (!this.listeners[type]) {
+        this.listeners[type] = [];
+      }
+      this.listeners[type].push(listener);
+    },
+    
+    removeEventListener: function(type, listener) {
+      if (!this.listeners[type]) return;
+      this.listeners[type] = this.listeners[type].filter(l => l !== listener);
+    },
+    
+    dispatchEvent: function(event) {
+      if (!this.listeners[event.type]) return;
+      this.listeners[event.type].forEach(listener => listener(event));
+    },
+    
+    close: function() {
+      if (this.readyState === 2) return;
+      this.readyState = 2;
+      abortController.abort();
+      this.dispatchEvent({ type: 'close' });
+    }
+  };
+  
+  const connect = async () => {
+    try {
+      eventSource.readyState = 0;
+      
+      const response = await fetch(url, {
+        ...options,
+        headers: {
+          ...options.headers,
+          'Accept': 'text/event-stream',
+          'Cache-Control': 'no-cache',
+        },
+        signal: abortController.signal
+      });
+      
+      if (!response.ok) {
+        throw new Error(`HTTP error! status: ${response.status}`);
+      }
+      
+      eventSource.readyState = 1;
+      eventSource.dispatchEvent({ type: 'open' });
+      
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      
+      const processStream = async () => {
+        try {
+          while (true) {
+            const { done, value } = await reader.read();
+            
+            if (done) {
+              eventSource.close();
+              break;
+            }
+            
+            buffer += decoder.decode(value, { stream: true });
+            
+            // Process complete lines
+            let lines = buffer.split('\n');
+            buffer = lines.pop(); // Keep the last incomplete line in the buffer
+            
+            for (const line of lines) {
+              if (!line.trim()) continue;
+              
+              if (line.startsWith('data: ')) {
+                const data = line.substring(6);
+                eventSource.dispatchEvent({ 
+                  type: 'message',
+                  data
+                });
+              }
+            }
+          }
+        } catch (error) {
+          if (error.name !== 'AbortError') {
+            console.error('Error reading stream:', error);
+            
+            // Attempt to reconnect if not manually closed
+            if (eventSource.readyState !== 2 && retryCount < maxRetries) {
+              retryCount++;
+              setTimeout(connect, 1000 * retryCount);
+            } else {
+              eventSource.close();
+            }
+          }
+        }
+      };
+      
+      processStream();
+    } catch (error) {
+      console.error('Error connecting to stream:', error);
+      
+      // Attempt to reconnect if not manually closed
+      if (eventSource.readyState !== 2 && retryCount < maxRetries) {
+        retryCount++;
+        setTimeout(connect, 1000 * retryCount);
+      } else {
+        eventSource.close();
+        eventSource.dispatchEvent({ 
+          type: 'error',
+          error
+        });
+      }
+    }
+  };
+  
+  connect();
+  return eventSource;
+};
+
+/**
+ * Send a message to the backend API (with streaming support via WebSockets)
  * @param {Array} messages - Chat messages array
  * @param {Array} enabledTools - Array of tool names to enable (optional)
  * @param {Boolean} useTools - Whether to use tools or not
@@ -122,73 +271,53 @@ export const sendMessage = async (
     // Get the active chat ID from the last message if available
     const chatId = messages[0]?.chatId;
     
-    // Determine which endpoint to use based on whether tools are enabled and if we have a chat ID
-    let endpoint;
-    if (chatId) {
-      // If we have a chat ID, use the chat-specific endpoint
-      endpoint = `/api/chats/${chatId}/messages`;
-    } else {
-      // Otherwise use the Composio endpoint
-      endpoint = '/api/composio/execute';
-    }
-    
-    // If streaming is requested, use the streaming approach
+    // If streaming is requested, use WebSockets
     if (onChunk) {
       try {
-        // Make the request to the backend
-        const response = await api.post(endpoint, {
-          messages,
-          content: messages[messages.length - 1]?.content, // For chat-specific endpoint
-          enabledTools: useTools ? enabledTools : [],
-          stream: true,
-          authStatus
-        });
+        console.log('Using WebSockets for streaming chat');
         
-        // If we get here, the request was successful but didn't stream
-        // This shouldn't normally happen, but we handle it just in case
-        console.log('Expected streaming response but got regular response');
+        // Join the chat room if we have a chat ID
+        if (chatId) {
+          await socketService.joinChatRoom(chatId);
+        }
         
-        // Create a mock message for the response
-        const assistantMessage = {
-          role: 'assistant',
-          content: response.data.content || 'I received your message but had trouble processing it.',
-          id: response.data.id || `msg-${Date.now()}`
+        // Create a handler for message chunks
+        const handleChunk = (data) => {
+          if (data.content && onChunk) {
+            onChunk({
+              role: 'assistant',
+              content: data.content,
+              id: data.id || `msg-${Date.now()}`
+            });
+          }
         };
         
-        // Call the chunk handler with the full message
-        if (onChunk) {
-          onChunk(assistantMessage);
-        }
+        // Create a handler for the complete message
+        const handleComplete = (data) => {
+          console.log('Message streaming complete');
+        };
         
-        return assistantMessage;
+        // Send the message via WebSocket
+        const result = await socketService.sendMessageViaSocket(
+          messages,
+          enabledTools,
+          useTools,
+          chatId,
+          handleChunk,
+          handleComplete
+        );
+        
+        return result;
       } catch (error) {
-        console.error('Error in simulated streaming request:', error);
-        console.error('Error sending message to backend:', error.message);
+        console.error('Error in WebSocket streaming:', error);
+        console.error('Falling back to HTTP request');
         
-        if (error.response) {
-          console.error('Response status:', error.response.status);
-          console.error('Response headers:', error.response.headers);
-          console.error('Response data:', error.response.data);
-        }
-        
-        // Fall back to the mock response if backend fails
-        return sendMessageMock(messages, onChunk);
+        // Fall back to non-streaming request
+        return sendMessageFallback(messages, enabledTools, useTools, authStatus);
       }
     } else {
-      // Non-streaming request
-      const response = await api.post(endpoint, {
-        messages,
-        content: messages[messages.length - 1]?.content, // For chat-specific endpoint
-        enabledTools: useTools ? enabledTools : [],
-        stream: false,
-        authStatus
-      });
-      
-      return {
-        role: 'assistant',
-        content: response.data.content,
-        id: response.data.id
-      };
+      // For non-streaming requests, use regular HTTP
+      return sendMessageFallback(messages, enabledTools, useTools, authStatus);
     }
   } catch (error) {
     console.error('Error sending message and getting response:', error.message);
@@ -196,6 +325,38 @@ export const sendMessage = async (
     // Fall back to the mock response
     return sendMessageMock(messages, onChunk);
   }
+};
+
+/**
+ * Fallback method to send a message via HTTP (no streaming)
+ */
+const sendMessageFallback = async (messages, enabledTools, useTools, authStatus) => {
+  // Determine which endpoint to use based on whether tools are enabled and if we have a chat ID
+  const chatId = messages[0]?.chatId;
+  let endpoint;
+  
+  if (chatId) {
+    // If we have a chat ID, use the chat-specific endpoint
+    endpoint = `/api/chats/${chatId}/messages`;
+  } else {
+    // Otherwise use the Composio endpoint
+    endpoint = '/api/composio/execute';
+  }
+  
+  // Make the request
+  const response = await api.post(endpoint, {
+    messages,
+    content: messages[messages.length - 1]?.content, // For chat-specific endpoint
+    enabledTools: useTools ? enabledTools : [],
+    stream: false,
+    authStatus
+  });
+  
+  return {
+    role: 'assistant',
+    content: response.data.content,
+    id: response.data.id
+  };
 };
 
 /**
