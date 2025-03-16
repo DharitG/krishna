@@ -203,108 +203,108 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
     let lastIndex = 0;
     let match;
     
-    // Reset the regex to start from the beginning
-    AUTH_REQUEST_PATTERN.lastIndex = 0;
-    
-    // Find all auth requests in the content
     while ((match = AUTH_REQUEST_PATTERN.exec(content)) !== null) {
-      const service = match[1];
-      
       // Add text before the auth request
       if (match.index > lastIndex) {
-        parts.push(
-          <Markdown 
-            key={`text-${lastIndex}`} 
-            style={markdownStyles}
-          >
-            {content.slice(lastIndex, match.index)}
-          </Markdown>
-        );
+        parts.push({
+          type: 'text',
+          content: content.substring(lastIndex, match.index)
+        });
       }
       
-      // Add the auth button
-      parts.push(
-        <AuthButton
-          key={`auth-${match.index}`}
-          service={service}
-          onPress={() => handleAuth(service)}
-          isLoading={authStates[service]?.isLoading}
-          isAuthenticated={authStates[service]?.isAuthenticated}
-          error={authStates[service]?.error}
-        />
-      );
+      // Add the auth request
+      parts.push({
+        type: 'auth',
+        service: match[1]
+      });
       
       lastIndex = match.index + match[0].length;
     }
     
-    // Add any remaining text after the last auth request
+    // Add any remaining text
     if (lastIndex < content.length) {
-      parts.push(
-        <Markdown 
-          key={`text-${lastIndex}`} 
-          style={markdownStyles}
-        >
-          {content.slice(lastIndex)}
-        </Markdown>
-      );
+      parts.push({
+        type: 'text',
+        content: content.substring(lastIndex)
+      });
     }
     
-    return parts;
-  };
-  
-  if (isUser) {
+    // Render the parts
     return (
-      <View style={[styles.container, styles.userContainer]}>
-        <View style={[styles.bubble, styles.userBubble]}>
-          <Markdown style={markdownStyles}>
-            {message.content}
-          </Markdown>
-        </View>
+      <View>
+        {parts.map((part, i) => {
+          if (part.type === 'text') {
+            return (
+              <Markdown key={i} style={markdownStyles}>
+                {part.content}
+              </Markdown>
+            );
+          } else if (part.type === 'auth') {
+            const service = part.service;
+            const authState = authStates[service] || {};
+            
+            return (
+              <AuthButton
+                key={i}
+                service={service}
+                isLoading={authState.isLoading}
+                isAuthenticated={authState.isAuthenticated}
+                error={authState.error}
+                onPress={() => handleAuth(service)}
+              />
+            );
+          }
+        })}
       </View>
     );
-  }
+  };
   
   return (
-    <View style={[styles.container, styles.botContainer]}>
-      <GlassCard style={[styles.bubble, styles.botBubble]}>
-        {renderMessageContent(message.content || '')}
-      </GlassCard>
+    <View style={[
+      styles.container,
+      isUser ? styles.userContainer : styles.botContainer
+    ]}>
+      {isUser ? (
+        <GlassCard style={[styles.bubble, styles.userBubble]}>
+          {renderMessageContent(message.content)}
+        </GlassCard>
+      ) : (
+        <View style={[styles.botMessageContainer]}>
+          {renderMessageContent(message.content)}
+        </View>
+      )}
     </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    padding: spacing.md,
-    marginVertical: spacing.xs,
+    padding: spacing.sm,
+    marginVertical: spacing.xs / 2,
   },
   userContainer: {
     alignItems: 'flex-end',
   },
   botContainer: {
     alignItems: 'flex-start',
+    width: '100%',
   },
   bubble: {
-    padding: spacing.md,
-    borderRadius: borderRadius.lg,
+    borderRadius: borderRadius.round,
     maxWidth: '85%',
     ...shadows.sm,
   },
   userBubble: {
-    borderBottomRightRadius: spacing.xs,
-    backgroundColor: colors.emerald,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.2)',
   },
-  botBubble: {
-    borderBottomLeftRadius: spacing.xs,
-    backgroundColor: 'rgba(0, 0, 0, 0.3)',
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.md,
-    borderWidth: 1,
-    borderColor: 'rgba(128, 128, 128, 0.5)',
+  botMessageContainer: {
+    width: '100%',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs / 2,
   },
   text: {
     fontSize: typography.fontSize.md,
