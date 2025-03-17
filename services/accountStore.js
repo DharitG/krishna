@@ -6,6 +6,9 @@ import axios from 'axios';
 // Get API URL from constants
 const API_URL = Constants.expoConfig?.extra?.API_URL || 'http://localhost:3000/api';
 
+// Development mode flag
+const DEV_MODE = process.env.NODE_ENV === 'development' || true; // Force dev mode for now
+
 // Account management store using Zustand
 const useAccountStore = create((set, get) => ({
   // Accounts state
@@ -29,18 +32,25 @@ const useAccountStore = create((set, get) => ({
     set({ loading: true, error: null });
     
     try {
+      // Use the test endpoint in development mode
+      const endpoint = DEV_MODE ? `${API_URL}/test-get-accounts` : `${API_URL}/accounts`;
+      console.log('Initializing accounts from API:', endpoint);
+      
       // Fetch accounts from the API
-      const response = await axios.get(`${API_URL}/accounts`);
+      const response = await axios.get(endpoint);
       
       if (response.data.success) {
+        console.log('Successfully loaded accounts');
         set({ accounts: response.data.accounts, loading: false });
       } else {
+        console.error('API returned error:', response.data.message);
         throw new Error(response.data.message || 'Failed to load accounts');
       }
     } catch (error) {
       console.error('Error initializing accounts:', error);
       
       // Fallback to mock data if API fails
+      console.log('Falling back to mock data');
       const mockAccounts = {
         github: [
           { id: 'gh1', username: 'user1', email: 'user1@github.com', isActive: true },
@@ -70,8 +80,10 @@ const useAccountStore = create((set, get) => ({
     set({ loading: true, error: null });
     
     try {
+      // Use the test endpoint in development mode
+      const endpoint = DEV_MODE ? `${API_URL}/test-add-account` : `${API_URL}/accounts`;
       // Call the API to add the account
-      const response = await axios.post(`${API_URL}/accounts`, {
+      const response = await axios.post(endpoint, {
         serviceName,
         accountData
       });
@@ -98,8 +110,10 @@ const useAccountStore = create((set, get) => ({
     set({ loading: true, error: null });
     
     try {
+      // Use the test endpoint in development mode
+      const endpoint = DEV_MODE ? `${API_URL}/test-remove-account` : `${API_URL}/accounts/${accountId}`;
       // Call the API to remove the account
-      const response = await axios.delete(`${API_URL}/accounts/${accountId}`);
+      const response = await axios.delete(endpoint);
       
       if (response.data.success) {
         // Refresh accounts to get the updated list
@@ -123,8 +137,10 @@ const useAccountStore = create((set, get) => ({
     set({ loading: true, error: null });
     
     try {
+      // Use the test endpoint in development mode
+      const endpoint = DEV_MODE ? `${API_URL}/test-set-active-account` : `${API_URL}/accounts/${accountId}/active`;
       // Call the API to set the account as active
-      const response = await axios.put(`${API_URL}/accounts/${accountId}/active`);
+      const response = await axios.put(endpoint);
       
       if (response.data.success) {
         // Refresh accounts to get the updated list
@@ -148,8 +164,10 @@ const useAccountStore = create((set, get) => ({
     set({ loading: true, error: null });
     
     try {
+      // Use the test endpoint in development mode
+      const endpoint = DEV_MODE ? `${API_URL}/test-authenticate-service` : `${API_URL}/accounts/auth/${serviceName}`;
       // Call the API to initiate OAuth
-      const response = await axios.get(`${API_URL}/accounts/auth/${serviceName}`);
+      const response = await axios.get(endpoint);
       
       if (response.data.success) {
         set({ loading: false });
@@ -172,8 +190,10 @@ const useAccountStore = create((set, get) => ({
     set({ loading: true, error: null });
     
     try {
+      // Use the test endpoint in development mode
+      const endpoint = DEV_MODE ? `${API_URL}/test-handle-oauth-callback` : `${API_URL}/accounts/auth/${serviceName}/callback?code=${code}`;
       // Call the API to handle the OAuth callback
-      const response = await axios.get(`${API_URL}/accounts/auth/${serviceName}/callback?code=${code}`);
+      const response = await axios.get(endpoint);
       
       if (response.data.success) {
         // Refresh accounts to get the updated list
