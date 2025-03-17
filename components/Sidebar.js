@@ -183,7 +183,7 @@ const Sidebar = ({ visible, onClose, onNewChat, onSelectChat, chats = [], active
               style={styles.footerButton}
               onPress={() => {
                 onClose();
-                import('expo-router').then(({ router }) => router.push('/account'));
+                import('expo-router').then(({ router }) => router.navigate('/account'));
               }}
             >
               <User size={22} color={colors.white} weight="regular" />

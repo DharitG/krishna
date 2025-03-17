@@ -1,12 +1,12 @@
 import React from 'react';
 import { StyleSheet, View } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
-import { colors } from '../constants/Theme';
+import { colors as themeColors } from '../constants/Theme';
 
 const GradientBackground = ({ 
   children, 
   style, 
-  colors = colors.gradients.primary,
+  colors = themeColors.gradients.primary,
   start = { x: 0, y: 0 },
   end = { x: 1, y: 1 }
 }) => {
