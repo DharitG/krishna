@@ -4,6 +4,8 @@ import Markdown from 'react-native-markdown-display';
 import GlassCard from '../GlassCard';
 import AuthButton from './AuthButton';
 import AuthRedirect from './AuthRedirect';
+import DynamicAuthBlob from '../../components/chat/DynamicAuthBlob';
+import DynamicConfirmationBlob from '../../components/chat/DynamicConfirmationBlob';
 import chatStore from '../../services/chatStore';
 import {
   colors,
@@ -244,13 +246,19 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
             const authState = authStates[service] || {};
             
             return (
-              <AuthButton
+              <DynamicAuthBlob
                 key={i}
                 service={service}
                 isLoading={authState.isLoading}
-                isAuthenticated={authState.isAuthenticated}
+                isConnected={authState.isAuthenticated}
                 error={authState.error}
-                onPress={() => handleAuth(service)}
+                onAuthenticate={() => handleAuth(service)}
+                onErrorDismiss={() => {
+                  setAuthStates(prev => ({
+                    ...prev,
+                    [service]: { ...prev[service], error: null }
+                  }));
+                }}
               />
             );
           }

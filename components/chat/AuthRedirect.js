@@ -4,6 +4,7 @@ import Button from '../Button';
 import { checkToolAuth } from '../../services/api';
 import composioService from '../../services/composio';
 import * as WebBrowser from 'expo-web-browser';
+import DynamicAuthBlob from '../../components/chat/DynamicAuthBlob';
 
 /**
  * Component to handle authentication redirects for tools
@@ -102,42 +103,32 @@ const AuthRedirect = ({ serviceName, onAuthComplete, onCancel }) => {
     }
   };
 
-  if (loading) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.text}>Preparing authentication for {serviceName}...</Text>
-      </View>
-    );
-  }
-
-  if (error) {
-    return (
-      <View style={styles.container}>
-        <Text style={styles.errorText}>{error}</Text>
-        <Button title="Try Again" onPress={() => window.location.reload()} />
-        <Button title="Cancel" onPress={onCancel} type="secondary" />
-      </View>
-    );
-  }
-
+  // Using our new DynamicAuthBlob for all states
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Authentication Required</Text>
-      <Text style={styles.text}>
-        To use {serviceName}, you need to grant August permission to access your account.
-      </Text>
-      <View style={styles.buttonContainer}>
-        <Button 
-          title={`Authenticate with ${serviceName}`} 
-          onPress={handleAuthPress} 
-        />
-        <Button 
-          title="Cancel" 
-          onPress={onCancel} 
-          type="secondary" 
-          style={styles.cancelButton} 
-        />
-      </View>
+      <DynamicAuthBlob
+        service={serviceName}
+        isLoading={loading}
+        isConnected={false}
+        error={error}
+        onAuthenticate={handleAuthPress}
+        onErrorDismiss={() => window.location.reload()}
+        size="large"
+      />
+      
+      {!loading && !error && (
+        <Text style={styles.helpText}>
+          You'll be redirected to {serviceName} to authorize August. After completing authorization, 
+          you'll be returned to this app automatically.
+        </Text>
+      )}
+      
+      <Button 
+        title="Cancel" 
+        onPress={onCancel} 
+        type="secondary" 
+        style={styles.cancelButton} 
+      />
     </View>
   );
 };
@@ -145,30 +136,18 @@ const AuthRedirect = ({ serviceName, onAuthComplete, onCancel }) => {
 const styles = StyleSheet.create({
   container: {
     padding: 20,
-    borderRadius: 10,
-    backgroundColor: '#f8f9fa',
+    borderRadius: 16,
+    backgroundColor: 'rgba(0, 0, 0, 0.2)',
     marginVertical: 10,
+    alignItems: 'center',
   },
-  title: {
-    fontSize: 18,
-    fontWeight: 'bold',
-    marginBottom: 10,
-    color: '#333',
-  },
-  text: {
-    fontSize: 16,
-    marginBottom: 15,
-    color: '#555',
-    lineHeight: 22,
-  },
-  errorText: {
-    fontSize: 16,
-    marginBottom: 15,
-    color: '#d9534f',
-    lineHeight: 22,
-  },
-  buttonContainer: {
-    marginTop: 10,
+  helpText: {
+    fontSize: 14,
+    marginVertical: 16,
+    color: 'rgba(255, 255, 255, 0.7)',
+    lineHeight: 20,
+    textAlign: 'center',
+    maxWidth: '80%',
   },
   cancelButton: {
     marginTop: 10,
