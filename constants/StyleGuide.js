@@ -21,6 +21,17 @@ export const layoutStyles = StyleSheet.create({
     paddingBottom: spacing.xxl,
   },
   
+  // Scrollable content
+  content: {
+    flex: 1,
+  },
+  
+  // Scroll content container
+  scrollContent: {
+    padding: spacing.md,
+    paddingBottom: spacing.xxl,
+  },
+  
   // Section containers
   section: {
     marginBottom: spacing.lg,
@@ -42,6 +53,19 @@ export const headerStyles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     flexDirection: 'row',
+  },
+  
+  // Back button
+  backButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  
+  // Right placeholder for balanced layout
+  rightPlaceholder: {
+    width: 40,
   },
   
   // Header with back button
@@ -99,6 +123,43 @@ export const cardStyles = StyleSheet.create({
     overflow: 'hidden',
   },
   
+  // Standard card for content sections
+  card: {
+    marginBottom: spacing.md,
+    borderRadius: borderRadius.md,
+    overflow: 'hidden',
+  },
+  
+  // Card header with title and icon
+  cardHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  
+  // Card title text
+  cardTitle: {
+    fontSize: typography.fontSize.lg,
+    fontWeight: '600',
+    color: colors.white,
+    marginLeft: spacing.sm,
+  },
+  
+  // Warning card for alerts
+  warningCard: {
+    borderColor: colors.warning,
+    borderWidth: 1,
+  },
+  
+  // Warning text
+  warningText: {
+    color: colors.warning,
+    padding: spacing.md,
+    fontSize: typography.fontSize.md,
+  },
+  
   // List item in a card
   cardItem: {
     flexDirection: 'row',
@@ -107,6 +168,126 @@ export const cardStyles = StyleSheet.create({
     padding: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  
+  // Account item in accounts list
+  accountItem: {
+    padding: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  
+  // Account item content container
+  accountItemContent: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  
+  // Main account info area
+  accountItemMain: {
+    flex: 1,
+  },
+  
+  // Account item title
+  accountItemTitle: {
+    fontSize: typography.fontSize.md,
+    fontWeight: '500',
+    color: colors.white,
+  },
+  
+  // Account item subtitle
+  accountItemSubtitle: {
+    fontSize: typography.fontSize.sm,
+    color: colors.lightGray,
+    marginTop: 2,
+  },
+  
+  // Account actions container
+  accountItemActions: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  
+  // Account action button
+  accountItemButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    borderRadius: borderRadius.sm,
+    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    marginLeft: spacing.xs,
+  },
+  
+  // Account action button text
+  accountItemButtonText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.emerald,
+    marginLeft: 4,
+  },
+  
+  // Remove button
+  removeButton: {
+    backgroundColor: 'rgba(255, 50, 50, 0.1)',
+  },
+  
+  // Active account badge
+  activeAccountBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: borderRadius.sm,
+    backgroundColor: colors.emeraldTransparent,
+    marginRight: spacing.xs,
+  },
+  
+  // Active account text
+  activeAccountText: {
+    fontSize: typography.fontSize.sm,
+    color: colors.emerald,
+  },
+  
+  // Accounts list container
+  accountsList: {
+    marginTop: spacing.xs,
+  },
+  
+  // No accounts text
+  noAccountsText: {
+    color: colors.lightGray,
+    padding: spacing.md,
+    fontSize: typography.fontSize.md,
+    fontStyle: 'italic',
+  },
+  
+  // Add account button
+  addAccountButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.sm,
+    borderTopWidth: 1,
+    borderTopColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  
+  // Add account text
+  addAccountText: {
+    fontSize: typography.fontSize.md,
+    color: colors.emerald,
+    marginLeft: spacing.xs,
+  },
+  
+  // Loading container
+  loadingContainer: {
+    padding: spacing.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  
+  // Loading text
+  loadingText: {
+    color: colors.lightGray,
+    marginTop: spacing.md,
+    fontSize: typography.fontSize.md,
   },
   
   // Last item in a card (no border)

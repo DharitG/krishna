@@ -179,7 +179,13 @@ const Sidebar = ({ visible, onClose, onNewChat, onSelectChat, chats = [], active
           </ScrollView>
           
           <View style={styles.footer}>
-            <TouchableOpacity style={styles.footerButton}>
+            <TouchableOpacity 
+              style={styles.footerButton}
+              onPress={() => {
+                onClose();
+                import('expo-router').then(({ router }) => router.push('/account'));
+              }}
+            >
               <User size={22} color={colors.white} weight="regular" />
               <Text style={styles.footerButtonText}>Account</Text>
             </TouchableOpacity>
