@@ -381,7 +381,8 @@ export const authenticateService = async (serviceName) => {
  */
 export const checkToolAuth = async (toolName) => {
   try {
-    const response = await api.post('/api/composio/check-auth', { toolName });
+    // Change this line to match the backend route
+    const response = await api.post('/api/composio/tools/check-auth', { toolName });
     return response.data;
   } catch (error) {
     console.error(`Error checking auth for ${toolName}:`, error.message);

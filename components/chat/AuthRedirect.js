@@ -10,7 +10,7 @@ import DynamicAuthBlob from '../../components/chat/DynamicAuthBlob';
  * Component to handle authentication redirects for tools
  * @param {Object} props - Component props
  * @param {String} props.serviceName - Name of the service to authenticate with
- * @param {Function} props.onAuthComplete - Callback for when authentication is complete
+ * @param {Function} props.onAuthComplete - Callback for when authentication is complete. Should update auth state and retry the last action.
  * @param {Function} props.onCancel - Callback for when authentication is cancelled
  */
 const AuthRedirect = ({ serviceName, onAuthComplete, onCancel }) => {
@@ -32,6 +32,7 @@ const AuthRedirect = ({ serviceName, onAuthComplete, onCancel }) => {
           
           if (result.success) {
             console.log('Authentication successful:', result);
+            // Update auth state and retry last action
             onAuthComplete && onAuthComplete(serviceName);
           } else {
             console.error('Authentication failed:', result.error);

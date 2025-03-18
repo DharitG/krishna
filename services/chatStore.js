@@ -725,11 +725,26 @@ class ChatStore {
     this.authStatus[service] = isAuthenticated;
     
     // Update the Zustand store
-    const zustandStore = useZustandChatStore.getState();
-    zustandStore.updateAuthStatus(service, isAuthenticated);
+    useZustandChatStore.getState().updateAuthStatus(service, isAuthenticated);
     
     console.log(`Updated auth status for ${service} to ${isAuthenticated}`);
     return true;
+  }
+  
+  // Retry the last action after authentication
+  async retryLastAction() {
+    const { currentChat } = useZustandChatStore.getState();
+    if (!currentChat) return;
+
+    // Get the last user message
+    const lastUserMessage = currentChat.messages
+      .filter(m => m.role === 'user')
+      .pop();
+
+    if (lastUserMessage) {
+      // Retry with the last user message
+      await this.sendMessage(lastUserMessage.content);
+    }
   }
 }
 
