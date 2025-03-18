@@ -123,7 +123,7 @@ export const leaveChatRoom = async (chatId) => {
 export const sendMessageViaSocket = async (
   messages,
   enabledTools = [],
-  useTools = false,
+  useTools = true,
   chatId = null,
   onChunk = null,
   onComplete = null
@@ -167,12 +167,26 @@ export const sendMessageViaSocket = async (
         socket.off('error');
       });
       
+      // Set up auth required handler
+      socket.on('auth_required', (data) => {
+        console.log('Authentication required for service:', data.service);
+        // You can handle auth redirects here
+      });
+      
+      // Log what we're sending
+      console.log('Sending message via WebSocket:', {
+        messageCount: messages.length,
+        toolCount: enabledTools.length,
+        useTools: useTools
+      });
+      
       // Send the message
       socket.emit('send_message', {
         messages,
         enabledTools,
         useTools,
-        chatId
+        chatId,
+        authStatus: {} // We'll get this from the backend
       });
       
     } catch (error) {
