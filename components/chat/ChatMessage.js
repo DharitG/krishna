@@ -98,26 +98,26 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
   // Markdown styles
   const markdownStyles = {
     body: {
-      color: isUser ? colors.white : colors.white,
+      color: isUser ? colors.black : colors.white,
       fontSize: typography.fontSize.md,
       lineHeight: typography.lineHeight.md,
     },
     heading1: {
-      color: isUser ? colors.white : colors.white,
+      color: isUser ? colors.black : colors.white,
       fontSize: typography.fontSize.xl,
       fontWeight: 'bold',
       marginTop: spacing.md,
       marginBottom: spacing.sm,
     },
     heading2: {
-      color: isUser ? colors.white : colors.white,
+      color: isUser ? colors.black : colors.white,
       fontSize: typography.fontSize.lg,
       fontWeight: 'bold',
       marginTop: spacing.md,
       marginBottom: spacing.sm,
     },
     heading3: {
-      color: isUser ? colors.white : colors.white,
+      color: isUser ? colors.black : colors.white,
       fontSize: typography.fontSize.md,
       fontWeight: 'bold',
       marginTop: spacing.md,
@@ -298,16 +298,20 @@ const styles = StyleSheet.create({
     width: '100%',
   },
   bubble: {
-    borderRadius: borderRadius.round,
     maxWidth: '85%',
-    ...shadows.sm,
+    ...shadows.md,
   },
   userBubble: {
-    backgroundColor: 'rgba(255, 255, 255, 0.15)',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: colors.emerald,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    borderRadius: 20,
+    borderBottomRightRadius: 4, // Creates chat bubble "tail" effect
+    elevation: 3,
+    shadowColor: colors.emerald,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.3,
+    shadowRadius: 4,
   },
   botMessageContainer: {
     width: '100%',

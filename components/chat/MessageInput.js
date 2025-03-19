@@ -9,9 +9,11 @@ import {
   Keyboard,
   Dimensions,
   LayoutAnimation,
-  UIManager
+  UIManager,
+  Image
 } from 'react-native';
 import { ArrowUp, Plus } from 'phosphor-react-native';
+import logo from '../../logo.png';
 import {
   colors,
   spacing,
@@ -108,37 +110,54 @@ const MessageInput = ({ onSendMessage, isLoading }) => {
         />
         
         <View style={styles.buttonRow}>
-          <TouchableOpacity 
-            style={styles.attachButton}
-            onPress={handleAttachment}
-          >
-            <Plus 
-              size={24} 
-              color={colors.white} 
-              weight="bold" 
-            />
-          </TouchableOpacity>
-          
-          {isLoading ? (
-            <View style={styles.loadingButton}>
-              <ActivityIndicator color={colors.emerald} size="small" />
-            </View>
-          ) : (
-            <TouchableOpacity
-              style={[
-                styles.sendButton, 
-                { backgroundColor: message.trim().length > 0 ? colors.emerald : colors.gray }
-              ]}
-              onPress={handleSend}
-              disabled={message.trim().length === 0}
+          <View style={styles.leftSection}>
+            <TouchableOpacity 
+              style={styles.attachButton}
+              onPress={handleAttachment}
             >
-              <ArrowUp
-                size={24}
-                color={colors.white}
-                weight="bold"
+              <Plus 
+                size={24} 
+                color={colors.white} 
+                weight="bold" 
               />
             </TouchableOpacity>
-          )}
+          </View>
+
+          <View style={styles.rightSection}>
+            {isLoading ? (
+              <View style={styles.loadingButton}>
+                <ActivityIndicator color={colors.emerald} size="small" />
+              </View>
+            ) : (
+              <>
+                <TouchableOpacity 
+                  style={styles.speechButton}
+                  onPress={() => console.log('Speech to speech pressed')}
+                >
+                  <Image 
+                    source={logo}
+                    style={styles.logoImage}
+                    resizeMode="cover"
+                  />
+                </TouchableOpacity>
+
+                <TouchableOpacity
+                  style={[
+                    styles.sendButton, 
+                    { backgroundColor: message.trim().length > 0 ? colors.emerald : colors.gray }
+                  ]}
+                  onPress={handleSend}
+                  disabled={message.trim().length === 0}
+                >
+                  <ArrowUp
+                    size={24}
+                    color={colors.white}
+                    weight="bold"
+                  />
+                </TouchableOpacity>
+              </>
+            )}
+          </View>
         </View>
       </View>
     </View>
@@ -182,15 +201,21 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     marginTop: spacing.xs,
   },
+  leftSection: {
+    flex: 1,
+  },
+  rightSection: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
   attachButton: {
     justifyContent: 'center',
     alignItems: 'center',
     width: 42,
     height: 42,
     borderRadius: borderRadius.round,
-    backgroundColor: 'rgba(55, 55, 65, 0.9)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.2)',
+    backgroundColor: colors.gray,
     ...shadows.sm,
   },
   sendButton: {
@@ -206,6 +231,20 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: 42,
     height: 42,
+  },
+  speechButton: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    width: 42,
+    height: 42,
+    borderRadius: borderRadius.round,
+    overflow: 'hidden',
+    ...shadows.sm,
+  },
+  logoImage: {
+    width: 44,
+    height: 44,
+    margin: -1,
   },
 });
 
