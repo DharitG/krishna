@@ -366,7 +366,8 @@ const sendMessageFallback = async (messages, enabledTools, useTools, authStatus)
  */
 export const authenticateService = async (serviceName) => {
   try {
-    const response = await api.post(`/api/composio/auth/${serviceName}`);
+    // Fix: Use the correct endpoint path that matches the backend route
+    const response = await api.post(`/api/composio/auth/init/${serviceName}`);
     return response.data;
   } catch (error) {
     console.error(`Error authenticating with ${serviceName}:`, error.message);

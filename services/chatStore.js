@@ -731,6 +731,24 @@ class ChatStore {
     return true;
   }
   
+  // Authenticate with a service
+  async authenticateService(serviceName) {
+    try {
+      // Check if already authenticated
+      const isAuthenticated = this.authStatus[serviceName];
+      
+      if (isAuthenticated) {
+        return { isAuthenticated: true };
+      }
+      
+      // Use the Zustand store's authenticateService function
+      return await authenticateService(serviceName);
+    } catch (error) {
+      console.error(`Error authenticating with ${serviceName}:`, error);
+      return { error: true, message: error.message };
+    }
+  }
+  
   // Retry the last action after authentication
   async retryLastAction() {
     const { currentChat } = useZustandChatStore.getState();

@@ -1,5 +1,13 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Animated, Easing } from 'react-native';
+import { 
+  View, 
+  Text, 
+  StyleSheet, 
+  TouchableOpacity, 
+  Dimensions, 
+  Animated,
+  Easing 
+} from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
 import { BlurView } from 'expo-blur';
@@ -103,7 +111,6 @@ const DynamicAuthBlob = ({
   };
 
   const stopPulseAnimation = () => {
-    pulseAnimation.stopAnimation();
     pulseAnimation.setValue(0);
   };
 
