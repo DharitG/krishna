@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -12,7 +12,8 @@ import {
   Image,
   ImageBackground,
   Dimensions,
-  SafeAreaView
+  SafeAreaView,
+  Animated
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
@@ -32,17 +33,89 @@ export default function SignupScreen() {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [showEmailForm, setShowEmailForm] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const [confirmPasswordError, setConfirmPasswordError] = useState('');
+  const formHeight = useRef(new Animated.Value(0)).current;
+  const buttonContainerPadding = useRef(new Animated.Value(32)).current;
   const { signUp } = useAuth();
   const router = useRouter();
 
-  const handleSignup = async () => {
-    if (!email || !password || !confirmPassword) {
-      alert('Please fill in all fields');
-      return;
+  useEffect(() => {
+    if (showEmailForm) {
+      // Animate form height and reduce top padding
+      Animated.parallel([
+        Animated.timing(formHeight, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: false
+        }),
+        Animated.timing(buttonContainerPadding, {
+          toValue: 16,
+          duration: 300,
+          useNativeDriver: false
+        })
+      ]).start();
+    } else {
+      // Animate form height back to 0 and restore padding
+      Animated.parallel([
+        Animated.timing(formHeight, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: false
+        }),
+        Animated.timing(buttonContainerPadding, {
+          toValue: 32,
+          duration: 300,
+          useNativeDriver: false
+        })
+      ]).start();
     }
+  }, [showEmailForm]);
 
-    if (password !== confirmPassword) {
-      alert('Passwords do not match');
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) {
+      setEmailError('Email is required');
+      return false;
+    } else if (!emailRegex.test(email)) {
+      setEmailError('Please enter a valid email');
+      return false;
+    }
+    setEmailError('');
+    return true;
+  };
+
+  const validatePassword = (password) => {
+    if (!password) {
+      setPasswordError('Password is required');
+      return false;
+    } else if (password.length < 6) {
+      setPasswordError('Password must be at least 6 characters');
+      return false;
+    }
+    setPasswordError('');
+    return true;
+  };
+
+  const validateConfirmPassword = (confirmPassword) => {
+    if (!confirmPassword) {
+      setConfirmPasswordError('Please confirm your password');
+      return false;
+    } else if (confirmPassword !== password) {
+      setConfirmPasswordError('Passwords do not match');
+      return false;
+    }
+    setConfirmPasswordError('');
+    return true;
+  };
+
+  const handleSignup = async () => {
+    const isEmailValid = validateEmail(email);
+    const isPasswordValid = validatePassword(password);
+    const isConfirmPasswordValid = validateConfirmPassword(confirmPassword);
+
+    if (!isEmailValid || !isPasswordValid || !isConfirmPasswordValid) {
       return;
     }
 
@@ -68,11 +141,14 @@ export default function SignupScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+    >
       <StatusBar style="light" />
       
       {/* Top half with image and logo */}
-      <View style={styles.topSection}>
+      <View style={[styles.topSection, showEmailForm && styles.topSectionSmaller]}>
         {/* Cancel button */}
         <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
           <Text style={styles.cancelText}>Cancel</Text>
@@ -101,79 +177,124 @@ export default function SignupScreen() {
       </View>
 
       {/* Bottom half with signup options */}
-      <View style={styles.bottomSection}>
-        <View style={styles.buttonContainer}>
-          {/* Google signup button */}
-          <TouchableOpacity style={styles.googleButton}>
-            <GoogleIcon />
-            <Text style={styles.googleButtonText}>Continue with Google</Text>
-          </TouchableOpacity>
+      <Animated.View 
+        style={[
+          styles.bottomSection, 
+          { paddingTop: buttonContainerPadding }
+        ]}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.buttonContainer}>
+            {/* Google signup button */}
+            <TouchableOpacity 
+              style={styles.googleButton}
+              activeOpacity={0.8}
+            >
+              <GoogleIcon />
+              <Text style={styles.googleButtonText}>Continue with Google</Text>
+            </TouchableOpacity>
 
-          {/* Apple signup button */}
-          <TouchableOpacity style={styles.appleButton}>
-            <AppleIcon />
-            <Text style={styles.buttonText}>Continue with Apple</Text>
-          </TouchableOpacity>
+            {/* Apple signup button */}
+            <TouchableOpacity 
+              style={styles.appleButton}
+              activeOpacity={0.8}
+            >
+              <AppleIcon />
+              <Text style={styles.buttonText}>Continue with Apple</Text>
+            </TouchableOpacity>
 
-          {/* Email signup button */}
-          <TouchableOpacity 
-            style={styles.emailButton}
-            onPress={() => setShowEmailForm(!showEmailForm)}
-          >
-            <Text style={styles.buttonText}>Continue with email</Text>
-          </TouchableOpacity>
+            {/* Email signup button */}
+            <TouchableOpacity 
+              style={[styles.emailButton, showEmailForm && styles.emailButtonActive]}
+              activeOpacity={0.8}
+              onPress={() => setShowEmailForm(!showEmailForm)}
+            >
+              <Text style={styles.buttonText}>Continue with email</Text>
+            </TouchableOpacity>
 
-          {/* Email and password fields - shown/hidden based on state */}
-          {showEmailForm && (
-            <View style={styles.formContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Email"
-                placeholderTextColor="#999"
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-              />
-              
-              <View style={styles.passwordContainer}>
+            {/* Email and password fields - shown/hidden based on state */}
+            <Animated.View 
+              style={[
+                styles.formContainer,
+                {
+                  maxHeight: formHeight.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 300]
+                  }),
+                  opacity: formHeight
+                }
+              ]}
+            >
+              <View style={styles.inputContainer}>
                 <TextInput
-                  style={styles.input}
-                  placeholder="Password"
+                  style={[styles.input, emailError ? styles.inputError : null]}
+                  placeholder="Email"
                   placeholderTextColor="#999"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
+                  value={email}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    if (emailError) validateEmail(text);
+                  }}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
                 />
-                <TouchableOpacity 
-                  style={styles.eyeIcon} 
-                  onPress={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-                </TouchableOpacity>
+                {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
               </View>
               
-              <View style={styles.passwordContainer}>
-                <TextInput
-                  style={styles.input}
-                  placeholder="Confirm Password"
-                  placeholderTextColor="#999"
-                  value={confirmPassword}
-                  onChangeText={setConfirmPassword}
-                  secureTextEntry={!showConfirmPassword}
-                />
-                <TouchableOpacity 
-                  style={styles.eyeIcon} 
-                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
-                >
-                  {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
-                </TouchableOpacity>
+              <View style={styles.inputContainer}>
+                <View style={styles.passwordContainer}>
+                  <TextInput
+                    style={[styles.input, passwordError ? styles.inputError : null]}
+                    placeholder="Password"
+                    placeholderTextColor="#999"
+                    value={password}
+                    onChangeText={(text) => {
+                      setPassword(text);
+                      if (passwordError) validatePassword(text);
+                    }}
+                    secureTextEntry={!showPassword}
+                  />
+                  <TouchableOpacity 
+                    style={styles.eyeIcon} 
+                    onPress={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                  </TouchableOpacity>
+                </View>
+                {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
+              </View>
+              
+              <View style={styles.inputContainer}>
+                <View style={styles.passwordContainer}>
+                  <TextInput
+                    style={[styles.input, confirmPasswordError ? styles.inputError : null]}
+                    placeholder="Confirm Password"
+                    placeholderTextColor="#999"
+                    value={confirmPassword}
+                    onChangeText={(text) => {
+                      setConfirmPassword(text);
+                      if (confirmPasswordError) validateConfirmPassword(text);
+                    }}
+                    secureTextEntry={!showConfirmPassword}
+                  />
+                  <TouchableOpacity 
+                    style={styles.eyeIcon} 
+                    onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                  >
+                    {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
+                  </TouchableOpacity>
+                </View>
+                {confirmPasswordError ? <Text style={styles.errorText}>{confirmPasswordError}</Text> : null}
               </View>
 
               <TouchableOpacity 
                 style={styles.signupButton}
                 onPress={handleSignup}
                 disabled={isLoading}
+                activeOpacity={0.8}
               >
                 {isLoading ? (
                   <ActivityIndicator color="#fff" />
@@ -181,28 +302,28 @@ export default function SignupScreen() {
                   <Text style={styles.signupButtonText}>Sign Up</Text>
                 )}
               </TouchableOpacity>
-            </View>
-          )}
-        </View>
+            </Animated.View>
+          </View>
 
-        {/* Footer links */}
-        <View style={styles.footer}>
-          <View style={styles.footerLinks}>
-            <TouchableOpacity>
-              <Text style={styles.footerLink}>Privacy policy</Text>
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Text style={styles.footerLink}>Terms of service</Text>
+          {/* Footer links */}
+          <View style={styles.footer}>
+            <View style={styles.footerLinks}>
+              <TouchableOpacity>
+                <Text style={styles.footerLink}>Privacy policy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity>
+                <Text style={styles.footerLink}>Terms of service</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity onPress={navigateToLogin}>
+              <Text style={styles.signupLink}>
+                Already have an account? <Text style={styles.signupLinkText}>Sign In</Text>
+              </Text>
             </TouchableOpacity>
           </View>
-          <TouchableOpacity onPress={navigateToLogin}>
-            <Text style={styles.signupLink}>
-              Already have an account? <Text style={styles.signupLinkText}>Sign In</Text>
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
+        </ScrollView>
+      </Animated.View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -281,6 +402,9 @@ const styles = StyleSheet.create({
     height: height * 0.55,
     position: 'relative',
   },
+  topSectionSmaller: {
+    height: height * 0.35,
+  },
   cancelButton: {
     position: 'absolute',
     top: 40,
@@ -326,8 +450,10 @@ const styles = StyleSheet.create({
   bottomSection: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 32,
     paddingBottom: 24,
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'space-between',
   },
   buttonContainer: {
@@ -362,6 +488,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  emailButtonActive: {
+    borderColor: '#06C167',
+  },
   appleButton: {
     width: '100%',
     paddingVertical: 16,
@@ -381,7 +510,9 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   formContainer: {
-    marginTop: 16,
+    overflow: 'hidden',
+  },
+  inputContainer: {
     marginBottom: 16,
   },
   input: {
@@ -391,7 +522,15 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     color: 'white',
-    marginBottom: 12,
+  },
+  inputError: {
+    borderColor: '#FF3B30',
+  },
+  errorText: {
+    color: '#FF3B30',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
   },
   passwordContainer: {
     position: 'relative',

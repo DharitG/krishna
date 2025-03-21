@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { 
   View, 
   Text, 
@@ -13,7 +13,8 @@ import {
   ImageBackground,
   Dimensions,
   SafeAreaView,
-  Pressable
+  Pressable,
+  Animated
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
@@ -31,12 +32,75 @@ export default function LoginScreen() {
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
   const [showEmailForm, setShowEmailForm] = useState(false);
+  const [emailError, setEmailError] = useState('');
+  const [passwordError, setPasswordError] = useState('');
+  const formHeight = useRef(new Animated.Value(0)).current;
+  const buttonContainerPadding = useRef(new Animated.Value(32)).current;
   const { signIn } = useAuth();
   const router = useRouter();
 
+  useEffect(() => {
+    if (showEmailForm) {
+      // Animate form height and reduce top padding
+      Animated.parallel([
+        Animated.timing(formHeight, {
+          toValue: 1,
+          duration: 300,
+          useNativeDriver: false
+        }),
+        Animated.timing(buttonContainerPadding, {
+          toValue: 16,
+          duration: 300,
+          useNativeDriver: false
+        })
+      ]).start();
+    } else {
+      // Animate form height back to 0 and restore padding
+      Animated.parallel([
+        Animated.timing(formHeight, {
+          toValue: 0,
+          duration: 300,
+          useNativeDriver: false
+        }),
+        Animated.timing(buttonContainerPadding, {
+          toValue: 32,
+          duration: 300,
+          useNativeDriver: false
+        })
+      ]).start();
+    }
+  }, [showEmailForm]);
+
+  const validateEmail = (email) => {
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!email) {
+      setEmailError('Email is required');
+      return false;
+    } else if (!emailRegex.test(email)) {
+      setEmailError('Please enter a valid email');
+      return false;
+    }
+    setEmailError('');
+    return true;
+  };
+
+  const validatePassword = (password) => {
+    if (!password) {
+      setPasswordError('Password is required');
+      return false;
+    } else if (password.length < 6) {
+      setPasswordError('Password must be at least 6 characters');
+      return false;
+    }
+    setPasswordError('');
+    return true;
+  };
+
   const handleLogin = async () => {
-    if (!email || !password) {
-      alert('Please enter both email and password');
+    const isEmailValid = validateEmail(email);
+    const isPasswordValid = validatePassword(password);
+
+    if (!isEmailValid || !isPasswordValid) {
       return;
     }
 
@@ -66,11 +130,14 @@ export default function LoginScreen() {
   };
 
   return (
-    <View style={styles.container}>
+    <KeyboardAvoidingView 
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      style={styles.container}
+    >
       <StatusBar style="light" />
       
       {/* Top half with image and logo */}
-      <View style={styles.topSection}>
+      <View style={[styles.topSection, showEmailForm && styles.topSectionSmaller]}>
         {/* Cancel button */}
         <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
           <Text style={styles.cancelText}>Cancel</Text>
@@ -99,56 +166,94 @@ export default function LoginScreen() {
       </View>
 
       {/* Bottom half with login options */}
-      <View style={styles.bottomSection}>
-        <View style={styles.buttonContainer}>
-          {/* Google login button */}
-          <TouchableOpacity style={styles.googleButton}>
-            <GoogleIcon />
-            <Text style={styles.googleButtonText}>Continue with Google</Text>
-          </TouchableOpacity>
+      <Animated.View 
+        style={[
+          styles.bottomSection, 
+          { paddingTop: buttonContainerPadding }
+        ]}
+      >
+        <ScrollView 
+          contentContainerStyle={styles.scrollContent}
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.buttonContainer}>
+            {/* Google login button */}
+            <TouchableOpacity 
+              style={styles.googleButton}
+              activeOpacity={0.8}
+            >
+              <GoogleIcon />
+              <Text style={styles.googleButtonText}>Continue with Google</Text>
+            </TouchableOpacity>
 
-          {/* Apple login button */}
-          <TouchableOpacity style={styles.appleButton}>
-            <AppleIcon />
-            <Text style={styles.buttonText}>Continue with Apple</Text>
-          </TouchableOpacity>
+            {/* Apple login button */}
+            <TouchableOpacity 
+              style={styles.appleButton}
+              activeOpacity={0.8}
+            >
+              <AppleIcon />
+              <Text style={styles.buttonText}>Continue with Apple</Text>
+            </TouchableOpacity>
 
-          {/* Email login button */}
-          <TouchableOpacity 
-            style={styles.emailButton}
-            onPress={() => setShowEmailForm(!showEmailForm)}
-          >
-            <Text style={styles.buttonText}>Continue with email</Text>
-          </TouchableOpacity>
+            {/* Email login button */}
+            <TouchableOpacity 
+              style={[styles.emailButton, showEmailForm && styles.emailButtonActive]}
+              activeOpacity={0.8}
+              onPress={() => setShowEmailForm(!showEmailForm)}
+            >
+              <Text style={styles.buttonText}>Continue with email</Text>
+            </TouchableOpacity>
 
-          {/* Email and password fields - shown/hidden based on state */}
-          {showEmailForm && (
-            <View style={styles.formContainer}>
-              <TextInput
-                style={styles.input}
-                placeholder="Email"
-                placeholderTextColor="#999"
-                value={email}
-                onChangeText={setEmail}
-                autoCapitalize="none"
-                keyboardType="email-address"
-              />
-              
-              <View style={styles.passwordContainer}>
+            {/* Email and password fields - shown/hidden based on state */}
+            <Animated.View 
+              style={[
+                styles.formContainer,
+                {
+                  maxHeight: formHeight.interpolate({
+                    inputRange: [0, 1],
+                    outputRange: [0, 250]
+                  }),
+                  opacity: formHeight
+                }
+              ]}
+            >
+              <View style={styles.inputContainer}>
                 <TextInput
-                  style={styles.input}
-                  placeholder="Password"
+                  style={[styles.input, emailError ? styles.inputError : null]}
+                  placeholder="Email"
                   placeholderTextColor="#999"
-                  value={password}
-                  onChangeText={setPassword}
-                  secureTextEntry={!showPassword}
+                  value={email}
+                  onChangeText={(text) => {
+                    setEmail(text);
+                    if (emailError) validateEmail(text);
+                  }}
+                  autoCapitalize="none"
+                  keyboardType="email-address"
                 />
-                <TouchableOpacity 
-                  style={styles.eyeIcon} 
-                  onPress={() => setShowPassword(!showPassword)}
-                >
-                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
-                </TouchableOpacity>
+                {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
+              </View>
+              
+              <View style={styles.inputContainer}>
+                <View style={styles.passwordContainer}>
+                  <TextInput
+                    style={[styles.input, passwordError ? styles.inputError : null]}
+                    placeholder="Password"
+                    placeholderTextColor="#999"
+                    value={password}
+                    onChangeText={(text) => {
+                      setPassword(text);
+                      if (passwordError) validatePassword(text);
+                    }}
+                    secureTextEntry={!showPassword}
+                  />
+                  <TouchableOpacity 
+                    style={styles.eyeIcon} 
+                    onPress={() => setShowPassword(!showPassword)}
+                  >
+                    {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                  </TouchableOpacity>
+                </View>
+                {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
               </View>
               
               <TouchableOpacity 
@@ -162,6 +267,7 @@ export default function LoginScreen() {
                 style={styles.loginButton}
                 onPress={handleLogin}
                 disabled={isLoading}
+                activeOpacity={0.8}
               >
                 {isLoading ? (
                   <ActivityIndicator color="#fff" />
@@ -169,28 +275,28 @@ export default function LoginScreen() {
                   <Text style={styles.loginButtonText}>Sign In</Text>
                 )}
               </TouchableOpacity>
-            </View>
-          )}
-        </View>
+            </Animated.View>
+          </View>
 
-        {/* Footer links */}
-        <View style={styles.footer}>
-          <View style={styles.footerLinks}>
-            <TouchableOpacity>
-              <Text style={styles.footerLink}>Privacy policy</Text>
-            </TouchableOpacity>
-            <TouchableOpacity>
-              <Text style={styles.footerLink}>Terms of service</Text>
+          {/* Footer links */}
+          <View style={styles.footer}>
+            <View style={styles.footerLinks}>
+              <TouchableOpacity>
+                <Text style={styles.footerLink}>Privacy policy</Text>
+              </TouchableOpacity>
+              <TouchableOpacity>
+                <Text style={styles.footerLink}>Terms of service</Text>
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity onPress={navigateToSignUp}>
+              <Text style={styles.signupLink}>
+                Don't have an account? <Text style={styles.signupLinkText}>Sign Up</Text>
+              </Text>
             </TouchableOpacity>
           </View>
-          <TouchableOpacity onPress={navigateToSignUp}>
-            <Text style={styles.signupLink}>
-              Don't have an account? <Text style={styles.signupLinkText}>Sign Up</Text>
-            </Text>
-          </TouchableOpacity>
-        </View>
-      </View>
-    </View>
+        </ScrollView>
+      </Animated.View>
+    </KeyboardAvoidingView>
   );
 }
 
@@ -269,6 +375,9 @@ const styles = StyleSheet.create({
     height: height * 0.55,
     position: 'relative',
   },
+  topSectionSmaller: {
+    height: height * 0.35,
+  },
   cancelButton: {
     position: 'absolute',
     top: 40,
@@ -314,8 +423,10 @@ const styles = StyleSheet.create({
   bottomSection: {
     flex: 1,
     paddingHorizontal: 24,
-    paddingTop: 32,
     paddingBottom: 24,
+  },
+  scrollContent: {
+    flexGrow: 1,
     justifyContent: 'space-between',
   },
   buttonContainer: {
@@ -350,6 +461,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
+  emailButtonActive: {
+    borderColor: '#06C167',
+  },
   appleButton: {
     width: '100%',
     paddingVertical: 16,
@@ -369,7 +483,9 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   formContainer: {
-    marginTop: 16,
+    overflow: 'hidden',
+  },
+  inputContainer: {
     marginBottom: 16,
   },
   input: {
@@ -379,7 +495,15 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     padding: 12,
     color: 'white',
-    marginBottom: 12,
+  },
+  inputError: {
+    borderColor: '#FF3B30',
+  },
+  errorText: {
+    color: '#FF3B30',
+    fontSize: 12,
+    marginTop: 4,
+    marginLeft: 4,
   },
   passwordContainer: {
     position: 'relative',
