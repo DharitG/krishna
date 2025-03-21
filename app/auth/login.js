@@ -9,7 +9,11 @@ import {
   Platform,
   ActivityIndicator,
   ScrollView,
-  Image
+  Image,
+  ImageBackground,
+  Dimensions,
+  SafeAreaView,
+  Pressable
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
@@ -19,11 +23,14 @@ import { useAuth } from '../../services/authContext';
 import { colors, typography, spacing, borderRadius, shadows } from '../../constants/Theme';
 import theme from '../../constants/NewTheme';
 
+const { width, height } = Dimensions.get('window');
+
 export default function LoginScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const [showPassword, setShowPassword] = useState(false);
+  const [showEmailForm, setShowEmailForm] = useState(false);
   const { signIn } = useAuth();
   const router = useRouter();
 
@@ -54,143 +61,136 @@ export default function LoginScreen() {
     router.push('/auth/forgot-password');
   };
 
+  const handleCancel = () => {
+    router.back();
+  };
+
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-    >
+    <View style={styles.container}>
       <StatusBar style="light" />
       
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.content}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Hello Again!</Text>
-            <Text style={styles.subtitle}>Welcome Back You've been missed</Text>
-          </View>
+      {/* Top half with image and logo */}
+      <View style={styles.topSection}>
+        {/* Cancel button */}
+        <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
+          <Text style={styles.cancelText}>Cancel</Text>
+        </TouchableOpacity>
 
-          <View style={styles.formContainer}>
-            <View style={styles.inputWrapper}>
-              <View style={styles.iconContainer}>
-                <MailIcon />
-              </View>
+        {/* Background image with gradient overlay */}
+        <ImageBackground 
+          source={require('../../assets/images/backgrounds/utopia.jpeg')} 
+          style={styles.backgroundImage}
+          resizeMode="cover"
+        >
+          {/* Gradient overlay */}
+          <LinearGradient
+            colors={['transparent', 'transparent', 'rgba(0,0,0,0.9)']}
+            style={styles.gradientOverlay}
+          />
+
+          {/* Logo and title */}
+          <View style={styles.logoContainer}>
+            <View style={styles.logoWrapper}>
+              <LogoIcon />
+            </View>
+            <Text style={styles.appTitle}>August</Text>
+          </View>
+        </ImageBackground>
+      </View>
+
+      {/* Bottom half with login options */}
+      <View style={styles.bottomSection}>
+        <View style={styles.buttonContainer}>
+          {/* Google login button */}
+          <TouchableOpacity style={styles.googleButton}>
+            <GoogleIcon />
+            <Text style={styles.googleButtonText}>Continue with Google</Text>
+          </TouchableOpacity>
+
+          {/* Apple login button */}
+          <TouchableOpacity style={styles.appleButton}>
+            <AppleIcon />
+            <Text style={styles.buttonText}>Continue with Apple</Text>
+          </TouchableOpacity>
+
+          {/* Email login button */}
+          <TouchableOpacity 
+            style={styles.emailButton}
+            onPress={() => setShowEmailForm(!showEmailForm)}
+          >
+            <Text style={styles.buttonText}>Continue with email</Text>
+          </TouchableOpacity>
+
+          {/* Email and password fields - shown/hidden based on state */}
+          {showEmailForm && (
+            <View style={styles.formContainer}>
               <TextInput
                 style={styles.input}
                 placeholder="Email"
-                placeholderTextColor={theme.colors.text.muted}
+                placeholderTextColor="#999"
                 value={email}
                 onChangeText={setEmail}
                 autoCapitalize="none"
                 keyboardType="email-address"
               />
-            </View>
-
-            <View style={styles.inputWrapper}>
-              <View style={styles.iconContainer}>
-                <LockIcon />
+              
+              <View style={styles.passwordContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Password"
+                  placeholderTextColor="#999"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity 
+                  style={styles.eyeIcon} 
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </TouchableOpacity>
               </View>
-              <TextInput
-                style={styles.input}
-                placeholder="Password"
-                placeholderTextColor={theme.colors.text.muted}
-                value={password}
-                onChangeText={setPassword}
-                secureTextEntry={!showPassword}
-              />
+              
               <TouchableOpacity 
-                style={styles.eyeIcon} 
-                onPress={() => setShowPassword(!showPassword)}
+                style={styles.forgotPassword} 
+                onPress={navigateToForgotPassword}
               >
-                {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
+              </TouchableOpacity>
+
+              <TouchableOpacity 
+                style={styles.loginButton}
+                onPress={handleLogin}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.loginButtonText}>Sign In</Text>
+                )}
               </TouchableOpacity>
             </View>
-
-            <TouchableOpacity 
-              style={styles.forgotPassword} 
-              onPress={navigateToForgotPassword}
-            >
-              <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity 
-              style={styles.loginButton} 
-              onPress={handleLogin}
-              disabled={isLoading}
-            >
-              {isLoading ? (
-                <ActivityIndicator color={colors.white} />
-              ) : (
-                <Text style={styles.loginButtonText}>Sign In</Text>
-              )}
-            </TouchableOpacity>
-
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>Or</Text>
-              <View style={styles.dividerLine} />
-            </View>
-
-            <TouchableOpacity style={styles.googleButton}>
-              <View style={styles.socialIconContainer}>
-                <GoogleIcon />
-              </View>
-              <Text style={styles.buttonText}>Sign With Google</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.appleButton}>
-              <View style={styles.socialIconContainer}>
-                <AppleIcon />
-              </View>
-              <Text style={styles.buttonText}>Sign With Apple</Text>
-            </TouchableOpacity>
-          </View>
-
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>
-              Don't Have Account?{' '}
-              <Text style={styles.footerLink} onPress={navigateToSignUp}>
-                Sign Up
-              </Text>
-            </Text>
-          </View>
+          )}
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
-  );
-}
 
-function MailIcon() {
-  return (
-    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={theme.colors.text.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-      <Path d="M22 6l-10 7L2 6" />
-    </Svg>
-  );
-}
-
-function LockIcon() {
-  return (
-    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={theme.colors.text.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2z" />
-      <Path d="M7 11V7a5 5 0 0110 0v4" />
-    </Svg>
-  );
-}
-
-function EyeIcon() {
-  return (
-    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={theme.colors.text.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-      <Circle cx="12" cy="12" r="3" />
-    </Svg>
-  );
-}
-
-function EyeOffIcon() {
-  return (
-    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={theme.colors.text.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" />
-      <Path d="M1 1l22 22" />
-    </Svg>
+        {/* Footer links */}
+        <View style={styles.footer}>
+          <View style={styles.footerLinks}>
+            <TouchableOpacity>
+              <Text style={styles.footerLink}>Privacy policy</Text>
+            </TouchableOpacity>
+            <TouchableOpacity>
+              <Text style={styles.footerLink}>Terms of service</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity onPress={navigateToSignUp}>
+            <Text style={styles.signupLink}>
+              Don't have an account? <Text style={styles.signupLinkText}>Sign Up</Text>
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
   );
 }
 
@@ -232,139 +232,208 @@ function AppleIcon() {
   );
 }
 
+function EyeIcon() {
+  return (
+    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <Circle cx="12" cy="12" r="3" />
+    </Svg>
+  );
+}
+
+function EyeOffIcon() {
+  return (
+    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" />
+      <Path d="M1 1l22 22" />
+    </Svg>
+  );
+}
+
+function LogoIcon() {
+  return (
+    <Svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+      <Path d="M32 4L4 32L32 60L60 32L32 4Z" stroke="white" strokeWidth="4" fill="none" />
+      <Path d="M32 4L32 60" stroke="white" strokeWidth="4" />
+      <Path d="M4 32L60 32" stroke="white" strokeWidth="4" />
+    </Svg>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: 'black',
   },
-  scrollContent: {
-    flexGrow: 1,
+  topSection: {
+    height: height * 0.55,
+    position: 'relative',
   },
-  content: {
-    flex: 1,
-    padding: theme.spacing.lg,
-    justifyContent: 'center',
-    maxWidth: 500,
+  cancelButton: {
+    position: 'absolute',
+    top: 40,
+    right: 16,
+    zIndex: 10,
+  },
+  cancelText: {
+    color: 'white',
+    fontSize: 18,
+    fontWeight: '500',
+  },
+  backgroundImage: {
     width: '100%',
-    alignSelf: 'center',
+    height: '100%',
   },
-  header: {
-    marginBottom: theme.spacing["3xl"],
+  gradientOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+  },
+  logoContainer: {
+    position: 'absolute',
+    bottom: 48,
+    left: 0,
+    right: 0,
     alignItems: 'center',
   },
-  title: {
-    fontSize: theme.fontSizes["2xl"],
-    fontWeight: 'bold',
-    color: theme.colors.text.primary,
-    marginBottom: theme.spacing.sm,
-    textAlign: 'center',
+  logoWrapper: {
+    width: 64,
+    height: 64,
+    marginBottom: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
-  subtitle: {
-    fontSize: theme.fontSizes.md,
-    color: theme.colors.text.secondary,
-    textAlign: 'center',
+  appTitle: {
+    fontSize: 36,
+    color: 'white',
+    fontWeight: '300',
+    letterSpacing: 1,
   },
-  formContainer: {
-    marginBottom: theme.spacing["3xl"],
+  bottomSection: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    paddingBottom: 24,
+    justifyContent: 'space-between',
   },
-  inputWrapper: {
+  buttonContainer: {
+    flex: 1,
+    gap: 16,
+  },
+  googleButton: {
+    width: '100%',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: 'white',
+    borderRadius: 30,
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.borderRadius.sm,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    marginBottom: theme.spacing.lg,
+    justifyContent: 'center',
+    gap: 12,
   },
-  iconContainer: {
-    paddingLeft: theme.spacing.lg,
-    paddingRight: theme.spacing.sm,
+  googleButtonText: {
+    color: 'black',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  emailButton: {
+    width: '100%',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: '#222222',
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: '#333333',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  appleButton: {
+    width: '100%',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: '#222222',
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: '#333333',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  formContainer: {
+    marginTop: 16,
+    marginBottom: 16,
   },
   input: {
-    flex: 1,
-    height: 50,
-    color: theme.colors.text.primary,
-    fontSize: theme.fontSizes.md,
-    paddingVertical: theme.spacing.md,
+    backgroundColor: '#222222',
+    borderWidth: 1,
+    borderColor: '#333333',
+    borderRadius: 8,
+    padding: 12,
+    color: 'white',
+    marginBottom: 12,
+  },
+  passwordContainer: {
+    position: 'relative',
   },
   eyeIcon: {
-    paddingHorizontal: theme.spacing.lg,
+    position: 'absolute',
+    right: 12,
+    top: 12,
   },
   forgotPassword: {
     alignSelf: 'flex-end',
-    marginBottom: theme.spacing.xl,
+    marginTop: 4,
+    marginBottom: 16,
   },
   forgotPasswordText: {
-    color: theme.colors.text.secondary,
-    fontSize: theme.fontSizes.sm,
+    color: '#999999',
+    fontSize: 14,
   },
   loginButton: {
-    backgroundColor: theme.colors.primary,
-    borderRadius: theme.borderRadius.sm,
-    padding: theme.spacing.md,
+    width: '100%',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: '#06C167',
+    borderRadius: 30,
+    flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: theme.spacing.xl,
-    height: 50,
     justifyContent: 'center',
   },
   loginButtonText: {
-    color: theme.colors.text.primary,
-    fontSize: theme.fontSizes.md,
-    fontWeight: 'bold',
-  },
-  divider: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: theme.spacing.xl,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: theme.colors.border,
-  },
-  dividerText: {
-    color: theme.colors.text.secondary,
-    fontSize: theme.fontSizes.sm,
-    marginHorizontal: theme.spacing.md,
-  },
-  googleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    marginBottom: theme.spacing.lg,
-  },
-  appleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  socialIconContainer: {
-    marginRight: theme.spacing.md,
-  },
-  buttonText: {
-    color: theme.colors.text.primary,
-    fontSize: theme.fontSizes.md,
+    color: 'white',
+    fontSize: 16,
     fontWeight: '500',
   },
   footer: {
-    alignItems: 'center',
+    marginTop: 'auto',
+    paddingTop: 24,
   },
-  footerText: {
-    color: theme.colors.text.secondary,
-    fontSize: theme.fontSizes.sm,
+  footerLinks: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 32,
+    marginBottom: 16,
   },
   footerLink: {
-    color: theme.colors.primary,
+    color: '#999999',
+    fontSize: 14,
+  },
+  signupLink: {
+    color: '#999999',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  signupLinkText: {
+    color: '#06C167',
     fontWeight: '500',
   },
 });

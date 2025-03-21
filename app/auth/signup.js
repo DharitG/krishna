@@ -9,32 +9,40 @@ import {
   Platform,
   ActivityIndicator,
   ScrollView,
-  Image
+  Image,
+  ImageBackground,
+  Dimensions,
+  SafeAreaView
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Svg, Path } from 'react-native-svg';
+import { Svg, Path, Circle } from 'react-native-svg';
 import { useAuth } from '../../services/authContext';
 import { colors, typography, spacing, borderRadius, shadows } from '../../constants/Theme';
 import theme from '../../constants/NewTheme';
 
+const { width, height } = Dimensions.get('window');
+
 export default function SignupScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
   const [isLoading, setIsLoading] = useState(false);
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
+  const [showEmailForm, setShowEmailForm] = useState(false);
   const { signUp } = useAuth();
   const router = useRouter();
 
   const handleSignup = async () => {
-    // Basic form validation
-    if (!email || !password) {
+    if (!email || !password || !confirmPassword) {
       alert('Please fill in all fields');
       return;
     }
 
-    if (password.length < 6) {
-      alert('Password should be at least 6 characters long');
+    if (password !== confirmPassword) {
+      alert('Passwords do not match');
       return;
     }
 
@@ -42,9 +50,7 @@ export default function SignupScreen() {
 
     try {
       await signUp(email, password);
-      // Note: We don't navigate here since the user needs to verify their email first
-      // The alert is shown in the auth context
-      router.push('/auth/verification');
+      router.replace('/');
     } catch (error) {
       // Error is already handled in the auth context
       console.log(error);
@@ -57,77 +63,146 @@ export default function SignupScreen() {
     router.push('/auth/login');
   };
 
+  const handleCancel = () => {
+    router.back();
+  };
+
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
+    <View style={styles.container}>
       <StatusBar style="light" />
       
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        <View style={styles.content}>
-          <View style={styles.header}>
-            <Text style={styles.title}>Lets Get Started</Text>
-            <Text style={styles.subtitle}>Find the right ticket and what you want only in myticket</Text>
-          </View>
+      {/* Top half with image and logo */}
+      <View style={styles.topSection}>
+        {/* Cancel button */}
+        <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
+          <Text style={styles.cancelText}>Cancel</Text>
+        </TouchableOpacity>
 
-          <View style={styles.buttonContainer}>
-            <TouchableOpacity 
-              style={styles.emailButton}
-              onPress={handleSignup}
-              disabled={isLoading}
-            >
-              <View style={styles.iconContainer}>
-                <MailIcon />
-              </View>
-              {isLoading ? (
-                <ActivityIndicator color={colors.white} />
-              ) : (
-                <Text style={styles.buttonText}>Sign Up Email</Text>
-              )}
-            </TouchableOpacity>
+        {/* Background image with gradient overlay */}
+        <ImageBackground 
+          source={require('../../assets/images/backgrounds/utopia.jpeg')} 
+          style={styles.backgroundImage}
+          resizeMode="cover"
+        >
+          {/* Gradient overlay */}
+          <LinearGradient
+            colors={['transparent', 'transparent', 'rgba(0,0,0,0.9)']}
+            style={styles.gradientOverlay}
+          />
 
-            <View style={styles.divider}>
-              <View style={styles.dividerLine} />
-              <Text style={styles.dividerText}>Or Use Instant Sign Up</Text>
-              <View style={styles.dividerLine} />
+          {/* Logo and title */}
+          <View style={styles.logoContainer}>
+            <View style={styles.logoWrapper}>
+              <LogoIcon />
             </View>
-
-            <TouchableOpacity style={styles.googleButton}>
-              <View style={styles.iconContainer}>
-                <GoogleIcon />
-              </View>
-              <Text style={styles.buttonText}>Sign With Google</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity style={styles.appleButton}>
-              <View style={styles.iconContainer}>
-                <AppleIcon />
-              </View>
-              <Text style={styles.buttonText}>Sign With Apple</Text>
-            </TouchableOpacity>
+            <Text style={styles.appTitle}>August</Text>
           </View>
+        </ImageBackground>
+      </View>
 
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>
-              Already Have an Account?{' '}
-              <Text style={styles.footerLink} onPress={navigateToLogin}>
-                Sign In
-              </Text>
-            </Text>
-          </View>
+      {/* Bottom half with signup options */}
+      <View style={styles.bottomSection}>
+        <View style={styles.buttonContainer}>
+          {/* Google signup button */}
+          <TouchableOpacity style={styles.googleButton}>
+            <GoogleIcon />
+            <Text style={styles.googleButtonText}>Continue with Google</Text>
+          </TouchableOpacity>
+
+          {/* Apple signup button */}
+          <TouchableOpacity style={styles.appleButton}>
+            <AppleIcon />
+            <Text style={styles.buttonText}>Continue with Apple</Text>
+          </TouchableOpacity>
+
+          {/* Email signup button */}
+          <TouchableOpacity 
+            style={styles.emailButton}
+            onPress={() => setShowEmailForm(!showEmailForm)}
+          >
+            <Text style={styles.buttonText}>Continue with email</Text>
+          </TouchableOpacity>
+
+          {/* Email and password fields - shown/hidden based on state */}
+          {showEmailForm && (
+            <View style={styles.formContainer}>
+              <TextInput
+                style={styles.input}
+                placeholder="Email"
+                placeholderTextColor="#999"
+                value={email}
+                onChangeText={setEmail}
+                autoCapitalize="none"
+                keyboardType="email-address"
+              />
+              
+              <View style={styles.passwordContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Password"
+                  placeholderTextColor="#999"
+                  value={password}
+                  onChangeText={setPassword}
+                  secureTextEntry={!showPassword}
+                />
+                <TouchableOpacity 
+                  style={styles.eyeIcon} 
+                  onPress={() => setShowPassword(!showPassword)}
+                >
+                  {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </TouchableOpacity>
+              </View>
+              
+              <View style={styles.passwordContainer}>
+                <TextInput
+                  style={styles.input}
+                  placeholder="Confirm Password"
+                  placeholderTextColor="#999"
+                  value={confirmPassword}
+                  onChangeText={setConfirmPassword}
+                  secureTextEntry={!showConfirmPassword}
+                />
+                <TouchableOpacity 
+                  style={styles.eyeIcon} 
+                  onPress={() => setShowConfirmPassword(!showConfirmPassword)}
+                >
+                  {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
+                </TouchableOpacity>
+              </View>
+
+              <TouchableOpacity 
+                style={styles.signupButton}
+                onPress={handleSignup}
+                disabled={isLoading}
+              >
+                {isLoading ? (
+                  <ActivityIndicator color="#fff" />
+                ) : (
+                  <Text style={styles.signupButtonText}>Sign Up</Text>
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
         </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
-  );
-}
 
-function MailIcon() {
-  return (
-    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={theme.colors.primary} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
-      <Path d="M22 6l-10 7L2 6" />
-    </Svg>
+        {/* Footer links */}
+        <View style={styles.footer}>
+          <View style={styles.footerLinks}>
+            <TouchableOpacity>
+              <Text style={styles.footerLink}>Privacy policy</Text>
+            </TouchableOpacity>
+            <TouchableOpacity>
+              <Text style={styles.footerLink}>Terms of service</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity onPress={navigateToLogin}>
+            <Text style={styles.signupLink}>
+              Already have an account? <Text style={styles.signupLinkText}>Sign In</Text>
+            </Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </View>
   );
 }
 
@@ -169,105 +244,199 @@ function AppleIcon() {
   );
 }
 
+function EyeIcon() {
+  return (
+    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <Circle cx="12" cy="12" r="3" />
+    </Svg>
+  );
+}
+
+function EyeOffIcon() {
+  return (
+    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" />
+      <Path d="M1 1l22 22" />
+    </Svg>
+  );
+}
+
+function LogoIcon() {
+  return (
+    <Svg width="64" height="64" viewBox="0 0 64 64" fill="none">
+      <Path d="M32 4L4 32L32 60L60 32L32 4Z" stroke="white" strokeWidth="4" fill="none" />
+      <Path d="M32 4L32 60" stroke="white" strokeWidth="4" />
+      <Path d="M4 32L60 32" stroke="white" strokeWidth="4" />
+    </Svg>
+  );
+}
+
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-    backgroundColor: theme.colors.background,
+    backgroundColor: 'black',
   },
-  scrollContent: {
-    flexGrow: 1,
+  topSection: {
+    height: height * 0.55,
+    position: 'relative',
   },
-  content: {
-    flex: 1,
-    padding: theme.spacing.lg,
-    justifyContent: 'center',
-    maxWidth: 500,
-    width: '100%',
-    alignSelf: 'center',
+  cancelButton: {
+    position: 'absolute',
+    top: 40,
+    right: 16,
+    zIndex: 10,
   },
-  header: {
-    marginBottom: theme.spacing["3xl"],
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: theme.fontSizes["2xl"],
-    fontWeight: 'bold',
-    color: theme.colors.text.primary,
-    marginBottom: theme.spacing.sm,
-    textAlign: 'center',
-  },
-  subtitle: {
-    fontSize: theme.fontSizes.md,
-    color: theme.colors.text.secondary,
-    textAlign: 'center',
-  },
-  buttonContainer: {
-    marginBottom: theme.spacing["3xl"],
-  },
-  emailButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    marginBottom: theme.spacing.lg,
-  },
-  googleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-    marginBottom: theme.spacing.lg,
-  },
-  appleButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    backgroundColor: theme.colors.card,
-    borderRadius: theme.borderRadius.md,
-    padding: theme.spacing.lg,
-    borderWidth: 1,
-    borderColor: theme.colors.border,
-  },
-  iconContainer: {
-    marginRight: theme.spacing.md,
-  },
-  buttonText: {
-    color: theme.colors.text.primary,
-    fontSize: theme.fontSizes.md,
+  cancelText: {
+    color: 'white',
+    fontSize: 18,
     fontWeight: '500',
   },
-  divider: {
+  backgroundImage: {
+    width: '100%',
+    height: '100%',
+  },
+  gradientOverlay: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    top: 0,
+    bottom: 0,
+  },
+  logoContainer: {
+    position: 'absolute',
+    bottom: 48,
+    left: 0,
+    right: 0,
+    alignItems: 'center',
+  },
+  logoWrapper: {
+    width: 64,
+    height: 64,
+    marginBottom: 16,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  appTitle: {
+    fontSize: 36,
+    color: 'white',
+    fontWeight: '300',
+    letterSpacing: 1,
+  },
+  bottomSection: {
+    flex: 1,
+    paddingHorizontal: 24,
+    paddingTop: 32,
+    paddingBottom: 24,
+    justifyContent: 'space-between',
+  },
+  buttonContainer: {
+    flex: 1,
+    gap: 16,
+  },
+  googleButton: {
+    width: '100%',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: 'white',
+    borderRadius: 30,
     flexDirection: 'row',
     alignItems: 'center',
-    marginVertical: theme.spacing.xl,
+    justifyContent: 'center',
+    gap: 12,
   },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: theme.colors.border,
+  googleButtonText: {
+    color: 'black',
+    fontSize: 16,
+    fontWeight: '500',
   },
-  dividerText: {
-    color: theme.colors.text.secondary,
-    fontSize: theme.fontSizes.sm,
-    marginHorizontal: theme.spacing.md,
+  emailButton: {
+    width: '100%',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: '#222222',
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: '#333333',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  appleButton: {
+    width: '100%',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: '#222222',
+    borderRadius: 30,
+    borderWidth: 1,
+    borderColor: '#333333',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: 12,
+  },
+  buttonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '500',
+  },
+  formContainer: {
+    marginTop: 16,
+    marginBottom: 16,
+  },
+  input: {
+    backgroundColor: '#222222',
+    borderWidth: 1,
+    borderColor: '#333333',
+    borderRadius: 8,
+    padding: 12,
+    color: 'white',
+    marginBottom: 12,
+  },
+  passwordContainer: {
+    position: 'relative',
+  },
+  eyeIcon: {
+    position: 'absolute',
+    right: 12,
+    top: 12,
+  },
+  signupButton: {
+    width: '100%',
+    paddingVertical: 16,
+    paddingHorizontal: 16,
+    backgroundColor: '#06C167',
+    borderRadius: 30,
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  signupButtonText: {
+    color: 'white',
+    fontSize: 16,
+    fontWeight: '500',
   },
   footer: {
-    alignItems: 'center',
+    marginTop: 'auto',
+    paddingTop: 24,
   },
-  footerText: {
-    color: theme.colors.text.secondary,
-    fontSize: theme.fontSizes.sm,
+  footerLinks: {
+    flexDirection: 'row',
+    justifyContent: 'center',
+    gap: 32,
+    marginBottom: 16,
   },
   footerLink: {
-    color: theme.colors.primary,
+    color: '#999999',
+    fontSize: 14,
+  },
+  signupLink: {
+    color: '#999999',
+    fontSize: 14,
+    textAlign: 'center',
+  },
+  signupLinkText: {
+    color: '#06C167',
     fontWeight: '500',
   },
 });
