@@ -8,6 +8,7 @@ import { colors } from '../../constants/Theme';
 import { layoutStyles, headerStyles, cardStyles, textStyles } from '../../constants/StyleGuide';
 import Constants from 'expo-constants';
 import chatStore from '../../services/chatStore';
+import { signOut } from '../../services/supabase';
 
 const SettingsScreen = () => {
   const router = useRouter();
@@ -26,6 +27,33 @@ const SettingsScreen = () => {
   
   const handleBack = () => {
     router.back();
+  };
+  
+  const handleSignOut = async () => {
+    try {
+      Alert.alert(
+        'Sign Out',
+        'Are you sure you want to sign out?',
+        [
+          { text: 'Cancel', style: 'cancel' },
+          { 
+            text: 'Sign Out', 
+            style: 'destructive',
+            onPress: async () => {
+              try {
+                await signOut();
+                // Redirect to the login screen or home screen
+                router.replace('/');
+              } catch (error) {
+                Alert.alert('Error', `Failed to sign out: ${error.message}`);
+              }
+            }
+          }
+        ]
+      );
+    } catch (error) {
+      Alert.alert('Error', `Failed to sign out: ${error.message}`);
+    }
   };
   
   const handleAuthenticateService = async (serviceName) => {
@@ -74,7 +102,12 @@ const SettingsScreen = () => {
       items: [
         { label: 'API Key', icon: 'key-outline', hasDetail: true, value: '••••••••••••••••' },
         { label: 'Theme', icon: 'color-palette-outline', hasDetail: true, value: 'Dark' },
-        { label: 'Sign Out', icon: 'log-out-outline', hasDetail: false },
+        { 
+          label: 'Sign Out', 
+          icon: 'log-out-outline', 
+          hasDetail: false,
+          onPress: handleSignOut
+        },
       ]
     },
     {
