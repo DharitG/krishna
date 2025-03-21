@@ -55,6 +55,11 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
         // Open the authentication URL
         setServiceToAuth(service);
         setShowAuthRedirect(true);
+        
+        // Start polling for auth status if we're in mock mode
+        if (result.mockMode) {
+          startPollingAuthStatus(service);
+        }
       }
     } catch (error) {
       setAuthStates(prev => ({
@@ -62,6 +67,27 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
         [service]: { isLoading: false, error: error.message }
       }));
     }
+  };
+  
+  // Poll for authentication status
+  const startPollingAuthStatus = (service) => {
+    const pollInterval = setInterval(async () => {
+      try {
+        const status = await chatStore.checkToolAuth(service);
+        
+        if (status.authenticated) {
+          clearInterval(pollInterval);
+          handleAuthComplete(service);
+        }
+      } catch (error) {
+        console.error('Error polling auth status:', error);
+      }
+    }, 2000); // Poll every 2 seconds
+    
+    // Store the interval ID to clear it later
+    setTimeout(() => {
+      clearInterval(pollInterval);
+    }, 60000); // Stop polling after 1 minute
   };
   
   // Handle authentication completion

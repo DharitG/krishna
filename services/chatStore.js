@@ -749,6 +749,18 @@ class ChatStore {
     }
   }
   
+  // Check authentication status for a tool
+  async checkToolAuth(toolName) {
+    try {
+      // Use the API function directly
+      const result = await checkToolAuth(toolName);
+      return result;
+    } catch (error) {
+      console.error(`Error checking auth for ${toolName}:`, error);
+      return { error: true, message: error.message, authenticated: false };
+    }
+  }
+  
   // Retry the last action after authentication
   async retryLastAction() {
     const { currentChat } = useZustandChatStore.getState();

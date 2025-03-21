@@ -366,12 +366,44 @@ const sendMessageFallback = async (messages, enabledTools, useTools, authStatus)
  */
 export const authenticateService = async (serviceName) => {
   try {
+    // Get the auth token
+    const token = await getAuthToken();
+    
     // Fix: Use the correct endpoint path that matches the backend route
-    const response = await api.post(`/api/composio/auth/init/${serviceName}`);
+    const response = await api.post(`/api/composio/auth/init/${serviceName}`, {}, {
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': token ? `Bearer ${token}` : ''
+      }
+    });
+    
+    // If in mock mode, show a warning to the user
+    if (response.data.mockMode) {
+      console.warn('Using mock mode for authentication because Composio API is unreachable');
+    }
+    
     return response.data;
   } catch (error) {
-    console.error(`Error authenticating with ${serviceName}:`, error.message);
-    throw error;
+    console.error(`Error authenticating with ${serviceName}:`, error);
+    
+    // Provide more detailed error message
+    let errorMessage = `Error authenticating with ${serviceName}`;
+    
+    if (error.response && error.response.data) {
+      errorMessage = error.response.data.error || errorMessage;
+      
+      // If it's a configuration error, provide more guidance
+      if (error.response.data.configError) {
+        errorMessage += '. Please check your backend configuration.';
+      }
+      
+      // If it's a Composio error, provide guidance about Composio setup
+      if (error.response.data.composioError) {
+        errorMessage += '. Please ensure Gmail is properly configured in the Composio dashboard.';
+      }
+    }
+    
+    throw new Error(errorMessage);
   }
 };
 

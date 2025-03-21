@@ -86,7 +86,7 @@ const DynamicAuthBlob = ({
     Animated.timing(animation, {
       toValue: 1,
       duration: 600,
-      easing: Easing.out(Easing.cubic),
+      easing: Easing.out(Easing.ease),
       useNativeDriver: true
     }).start();
   }, [isLoading]);
@@ -97,13 +97,13 @@ const DynamicAuthBlob = ({
         Animated.timing(pulseAnimation, {
           toValue: 1,
           duration: 1000,
-          easing: Easing.inOut(Easing.sine),
+          easing: Easing.inOut(Easing.ease),
           useNativeDriver: true
         }),
         Animated.timing(pulseAnimation, {
           toValue: 0,
           duration: 1000,
-          easing: Easing.inOut(Easing.sine),
+          easing: Easing.inOut(Easing.ease),
           useNativeDriver: true
         })
       ])
