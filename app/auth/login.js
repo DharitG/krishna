@@ -14,7 +14,7 @@ import {
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
-import { Svg, Path } from 'react-native-svg';
+import { Svg, Path, Circle } from 'react-native-svg';
 import { useAuth } from '../../services/authContext';
 import { colors, typography, spacing, borderRadius, shadows } from '../../constants/Theme';
 import theme from '../../constants/NewTheme';
@@ -160,33 +160,37 @@ export default function LoginScreen() {
 
 function MailIcon() {
   return (
-    <View style={{width: 20, height: 20, alignItems: 'center', justifyContent: 'center'}}>
-      <Text style={{color: theme.colors.text.muted}}>✉️</Text>
-    </View>
+    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={theme.colors.text.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z" />
+      <Path d="M22 6l-10 7L2 6" />
+    </Svg>
   );
 }
 
 function LockIcon() {
   return (
-    <View style={{width: 20, height: 20, alignItems: 'center', justifyContent: 'center'}}>
-      <Text style={{color: theme.colors.text.muted}}>🔒</Text>
-    </View>
+    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={theme.colors.text.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M19 11H5a2 2 0 00-2 2v7a2 2 0 002 2h14a2 2 0 002-2v-7a2 2 0 00-2-2z" />
+      <Path d="M7 11V7a5 5 0 0110 0v4" />
+    </Svg>
   );
 }
 
 function EyeIcon() {
   return (
-    <View style={{width: 20, height: 20, alignItems: 'center', justifyContent: 'center'}}>
-      <Text style={{color: theme.colors.text.muted}}>👁️</Text>
-    </View>
+    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={theme.colors.text.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+      <Circle cx="12" cy="12" r="3" />
+    </Svg>
   );
 }
 
 function EyeOffIcon() {
   return (
-    <View style={{width: 20, height: 20, alignItems: 'center', justifyContent: 'center'}}>
-      <Text style={{color: theme.colors.text.muted}}>🙈</Text>
-    </View>
+    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke={theme.colors.text.muted} strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <Path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" />
+      <Path d="M1 1l22 22" />
+    </Svg>
   );
 }
 
