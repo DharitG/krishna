@@ -151,7 +151,16 @@ export default function LoginScreen() {
         >
           {/* Gradient overlay */}
           <LinearGradient
-            colors={['transparent', 'transparent', 'rgba(0,0,0,0.9)']}
+            colors={[
+              'transparent',
+              'transparent',
+              'transparent',
+              'rgba(0,0,0,0.3)',
+              'rgba(0,0,0,0.6)',
+              'rgba(0,0,0,0.9)',
+              'black'
+            ]}
+            locations={[0, 0.3, 0.5, 0.7, 0.8, 0.9, 1]}
             style={styles.gradientOverlay}
           />
 
