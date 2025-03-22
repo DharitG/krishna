@@ -164,11 +164,8 @@ export default function LoginScreen() {
             style={styles.gradientOverlay}
           />
 
-          {/* Logo and title */}
+          {/* Title */}
           <View style={styles.logoContainer}>
-            <View style={styles.logoWrapper}>
-              <LogoIcon />
-            </View>
             <Text style={styles.appTitle}>August</Text>
           </View>
         </ImageBackground>
@@ -367,10 +364,11 @@ function EyeOffIcon() {
 
 function LogoIcon() {
   return (
-    <Svg width="64" height="64" viewBox="0 0 64 64" fill="none">
-      <Path d="M32 4L4 32L32 60L60 32L32 4Z" stroke="white" strokeWidth="4" fill="none" />
-      <Path d="M32 4L32 60" stroke="white" strokeWidth="4" />
-      <Path d="M4 32L60 32" stroke="white" strokeWidth="4" />
+    <Svg width="64" height="64" viewBox="0 0 1024 1024" fill="none">
+      <Path
+        d="M575.27 843.46c-15.29 2.93-30.3 4.98-45.39 5.71-40.93 1.98-80.99-3.49-120.06-15.79-27.92-8.79-54.06-21.33-79.05-36.69-41.14-25.3-73.28-59.4-99.95-99.15-24.24-36.13-40.2-75.72-48.97-118.26-5.77-28.03-7.68-56.42-6-84.9 2.82-47.56 14.37-92.88 36.8-135.19 15.76-29.72 34.02-57.7 57.51-81.92 36.67-37.8 79.52-65.84 129.68-82.83 27.61-9.35 55.79-14.75 84.62-17.9 29.69-3.24 59.05-1.14 88.37 3.94 52.51 9.11 99.89 30.02 142.37 61.96 47.72 35.87 81.93 82.58 106.46 136.48 12.86 28.26 20.41 58.24 24.84 89.05 2.93 20.38 3.62 40.82 2.58 61.24-1.79 35.05-8.54 69.23-21.04 102.14-8.84 23.28-20.86 44.83-34.56 65.64-22.11 33.59-48.23 63.29-81.18 86.51-41.43 29.2-86.55 50.25-137.04 59.96M563.14 298.48c-9.66-1.69-19.25-3.94-28.98-4.95-24.86-2.58-49.62-.92-73.8 5.25-52.21 13.31-94.83 41.21-126.62 85.08-27.5 37.94-39.52 81.04-41.17 127.17-.8 22.16 3.02 43.99 9.78 65.28 16.63 52.37 47.51 94.06 93.95 123.35 44.39 28 93.14 38.14 145.26 30.96 23.41-3.22 45.88-9.85 66.96-20.6 40.08-20.44 71.44-50.18 94-89.17 27.39-47.34 34.68-98.09 24.45-151.3-5.7-29.65-17.13-57.27-34.49-82.3-31.72-45.75-74.29-75.56-129.34-88.77z"
+        fill="white"
+      />
     </Svg>
   );
 }
@@ -416,17 +414,10 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: 'center',
   },
-  logoWrapper: {
-    width: 64,
-    height: 64,
-    marginBottom: 16,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
   appTitle: {
-    fontSize: 36,
+    fontSize: 48,
     color: 'white',
-    fontWeight: '300',
+    fontFamily: 'NeueMachina-Ultrabold',
     letterSpacing: 1,
   },
   bottomSection: {

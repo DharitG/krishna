@@ -1,7 +1,8 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
+import * as Font from 'expo-font';
 import { AuthProvider } from '../services/authContext';
 import ProtectedRoute from '../components/ProtectedRoute';
 import { SafeAreaProvider } from 'react-native-safe-area-context';
@@ -13,9 +14,30 @@ import { Socket } from 'socket.io-client';
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
+  const [fontsLoaded, setFontsLoaded] = useState(false);
+
   useEffect(() => {
-    SplashScreen.hideAsync();
+    async function loadResources() {
+      try {
+        await Font.loadAsync({
+          'NeueMachina-Light': require('../assets/fonts/NeueMachina-Light.otf'),
+          'NeueMachina-Regular': require('../assets/fonts/NeueMachina-Regular.otf'),
+          'NeueMachina-Ultrabold': require('../assets/fonts/NeueMachina-Ultrabold.otf'),
+        });
+        setFontsLoaded(true);
+      } catch (e) {
+        console.warn('Error loading fonts:', e);
+      }
+    }
+
+    loadResources();
   }, []);
+
+  useEffect(() => {
+    if (fontsLoaded) {
+      SplashScreen.hideAsync();
+    }
+  }, [fontsLoaded]);
 
   useEffect(() => {
     const initSocket = async () => {
