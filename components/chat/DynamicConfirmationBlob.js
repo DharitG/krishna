@@ -1,30 +1,28 @@
 import React, { useEffect, useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Dimensions, Animated, Easing } from 'react-native';
+import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { BlurView } from 'expo-blur';
-import { colors } from '../../constants/Theme';
 import { Feather } from '@expo/vector-icons';
+import { theme } from '../../constants/NewTheme';
 
 const { width } = Dimensions.get('window');
 
 const DynamicConfirmationBlob = ({
-  action,
+  action = 'default',
   service,
-  details,
+  details = [],
   onConfirm,
   onCancel,
-  isLoading,
+  isLoading = false,
   size = 'default'
 }) => {
-  const [animation] = useState(new Animated.Value(0));
-  const [warningAnimation] = useState(new Animated.Value(0));
-  
+  const [isPulsing, setIsPulsing] = useState(false);
+
   const actionConfig = {
     email: {
       title: 'Send Email',
       icon: 'mail',
-      gradientColors: ['#4285F4', '#34A853'],
+      gradientColors: theme.colors.gradients.gmail,
       dangerLevel: 'medium'
     },
     delete: {
@@ -54,173 +52,148 @@ const DynamicConfirmationBlob = ({
     default: {
       title: 'Confirm Action',
       icon: 'alert-circle',
-      gradientColors: [colors.emerald, colors.purple],
+      gradientColors: theme.colors.gradients.default,
       dangerLevel: 'medium'
     }
   };
 
+  useEffect(() => {
+    if (isLoading) {
+      setIsPulsing(true);
+    } else {
+      setIsPulsing(false);
+    }
+  }, [isLoading]);
+
   const config = actionConfig[action] || actionConfig.default;
   const blobSize = size === 'large' ? width * 0.9 : width * 0.7;
-  
-  useEffect(() => {
-    Animated.timing(animation, {
-      toValue: 1,
-      duration: 600,
-      easing: Easing.out(Easing.cubic),
-      useNativeDriver: true
-    }).start();
-    
-    startWarningAnimation();
-  }, []);
-  
-  const startWarningAnimation = () => {
-    if (config.dangerLevel === 'high') {
-      Animated.loop(
-        Animated.sequence([
-          Animated.timing(warningAnimation, {
-            toValue: 1,
-            duration: 800,
-            easing: Easing.inOut(Easing.sine),
-            useNativeDriver: true
-          }),
-          Animated.timing(warningAnimation, {
-            toValue: 0,
-            duration: 800,
-            easing: Easing.inOut(Easing.sine),
-            useNativeDriver: true
-          })
-        ])
-      ).start();
-    }
-  };
-  
+
   const handleConfirm = () => {
     if (isLoading) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Medium);
     onConfirm();
   };
-  
+
   const handleCancel = () => {
     if (isLoading) return;
     Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light);
     onCancel();
   };
-  
-  const scale = animation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.8, 1]
-  });
-  
-  const opacity = animation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0, 1]
-  });
-  
-  const warningOpacity = warningAnimation.interpolate({
-    inputRange: [0, 1],
-    outputRange: [0.7, 1]
-  });
 
   const renderDangerBadge = () => {
     if (config.dangerLevel === 'low') return null;
-    
+
     return (
-      <Animated.View style={[
+      <View style={[
         styles.dangerBadge,
         config.dangerLevel === 'high' ? styles.highDangerBadge : styles.mediumDangerBadge,
-        config.dangerLevel === 'high' ? { opacity: warningOpacity } : {}
       ]}>
-        <Feather 
-          name={config.dangerLevel === 'high' ? 'alert-triangle' : 'alert-circle'} 
-          size={14} 
-          color="#fff" 
+        <Feather
+          name={config.dangerLevel === 'high' ? 'alert-triangle' : 'alert-circle'}
+          size={14}
+          color={theme.colors.text.primary}
         />
         <Text style={styles.dangerBadgeText}>
           {config.dangerLevel === 'high' ? 'High Risk' : 'Caution'}
         </Text>
-      </Animated.View>
+      </View>
     );
   };
 
   return (
-    <Animated.View
-      style={[
-        styles.container,
-        {
-          transform: [{ scale }],
-          opacity
-        }
-      ]}
-    >
-      <BlurView intensity={40} style={styles.blurContainer}>
-        <LinearGradient
-          colors={config.gradientColors}
-          start={{ x: 0, y: 0 }}
-          end={{ x: 1, y: 1 }}
-          style={[styles.gradient, { width: blobSize, height: blobSize * 0.7 }]}
-        >
-          {renderDangerBadge()}
-          
-          <View style={styles.content}>
-            <View style={styles.header}>
-              <View style={styles.iconContainer}>
-                <Feather name={config.icon} size={28} color="#fff" />
-              </View>
+    <View style={[styles.container, { width: blobSize }]}>
+      <LinearGradient
+        colors={config.gradientColors}
+        start={{ x: 0, y: 0 }}
+        end={{ x: 1, y: 1 }}
+        style={[
+          styles.card,
+          {
+            borderColor: theme.colors.border,
+          },
+          isPulsing && styles.pulsing
+        ]}>
+        {/* Glow Effect */}
+        <View style={[
+          styles.glow,
+          {
+            backgroundColor: config.gradientColors[1],
+          }
+        ]} />
+
+        {renderDangerBadge()}
+
+        <View style={styles.content}>
+          {/* Header */}
+          <View style={styles.header}>
+            <View style={styles.iconContainer}>
+              <Feather name={config.icon} size={28} color={theme.colors.text.primary} />
+            </View>
+            <View style={styles.titleContainer}>
               <Text style={styles.title}>{config.title}</Text>
               {service && <Text style={styles.service}>via {service}</Text>}
             </View>
-            
-            <View style={styles.detailsContainer}>
-              {details.map((detail, index) => (
-                <View key={index} style={styles.detailRow}>
-                  <Text style={styles.detailLabel}>{detail.label}:</Text>
-                  <Text style={styles.detailValue}>{detail.value}</Text>
-                </View>
-              ))}
-            </View>
-            
-            <View style={styles.actionContainer}>
-              <TouchableOpacity
-                style={styles.cancelButton}
-                onPress={handleCancel}
-                disabled={isLoading}
-              >
-                <Text style={styles.cancelButtonText}>Cancel</Text>
-              </TouchableOpacity>
-              
-              <TouchableOpacity
-                style={[
-                  styles.confirmButton,
-                  isLoading ? styles.loadingButton : {},
-                  config.dangerLevel === 'high' ? styles.highDangerButton : {}
-                ]}
-                onPress={handleConfirm}
-                disabled={isLoading}
-              >
-                <Text style={styles.confirmButtonText}>
-                  {isLoading ? 'Processing...' : 'Confirm'}
-                </Text>
-                {!isLoading && (
-                  <Feather 
-                    name={config.dangerLevel === 'high' ? 'alert-triangle' : 'check'} 
-                    size={18} 
-                    color="#fff" 
-                    style={styles.confirmIcon} 
-                  />
-                )}
-              </TouchableOpacity>
-            </View>
           </View>
-        </LinearGradient>
-      </BlurView>
-    </Animated.View>
+
+          {/* Details */}
+          <View style={styles.detailsContainer}>
+            {details.map((detail, index) => (
+              <View key={index} style={styles.detailRow}>
+                <Text style={styles.detailLabel}>{detail.label}:</Text>
+                <Text style={styles.detailValue}>{detail.value}</Text>
+              </View>
+            ))}
+          </View>
+
+          {/* Action Buttons */}
+          <View style={styles.actionContainer}>
+            <TouchableOpacity
+              style={styles.cancelButton}
+              onPress={handleCancel}
+              disabled={isLoading}
+            >
+              <Text style={styles.cancelButtonText}>Cancel</Text>
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[
+                styles.confirmButton,
+                isLoading && styles.loadingButton,
+                config.dangerLevel === 'high' && styles.highDangerButton
+              ]}
+              onPress={handleConfirm}
+              disabled={isLoading}
+            >
+              <Text style={styles.confirmButtonText}>
+                {isLoading ? 'Processing...' : 'Confirm'}
+              </Text>
+              {!isLoading && (
+                <Feather
+                  name={config.dangerLevel === 'high' ? 'alert-triangle' : 'check'}
+                  size={18}
+                  color={theme.colors.text.primary}
+                  style={styles.confirmIcon}
+                />
+              )}
+            </TouchableOpacity>
+          </View>
+        </View>
+      </LinearGradient>
+    </View>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
     alignSelf: 'center',
-    marginVertical: 16,
+    marginVertical: theme.spacing.lg,
+  },
+  card: {
+    borderRadius: theme.borderRadius.lg,
+    overflow: 'hidden',
+    borderWidth: 1,
+    padding: theme.spacing.xl,
+    position: 'relative',
     shadowColor: '#000',
     shadowOffset: {
       width: 0,
@@ -230,24 +203,25 @@ const styles = StyleSheet.create({
     shadowRadius: 20,
     elevation: 10,
   },
-  blurContainer: {
-    borderRadius: 24,
-    overflow: 'hidden',
-  },
-  gradient: {
-    borderRadius: 24,
-    overflow: 'hidden',
-    padding: 24,
-    position: 'relative',
+  glow: {
+    position: 'absolute',
+    top: 0,
+    right: 0,
+    width: 150,
+    height: 150,
+    borderRadius: 75,
+    opacity: 0.3,
+    transform: [{ scale: 1.5 }],
   },
   content: {
     width: '100%',
+    position: 'relative',
+    zIndex: 1,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
-    flexWrap: 'wrap',
+    marginBottom: theme.spacing.lg,
   },
   iconContainer: {
     width: 48,
@@ -256,25 +230,26 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     alignItems: 'center',
     justifyContent: 'center',
-    marginRight: 12,
+    marginRight: theme.spacing.md,
+  },
+  titleContainer: {
+    flex: 1,
   },
   title: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    color: '#fff',
+    fontSize: theme.fontSizes.xl,
+    fontWeight: '600',
+    color: theme.colors.text.primary,
   },
   service: {
-    fontSize: 12,
-    color: 'rgba(255, 255, 255, 0.7)',
-    marginLeft: 8,
-    alignSelf: 'flex-end',
-    marginBottom: 4,
+    fontSize: theme.fontSizes.xs,
+    color: theme.colors.text.secondary,
+    marginTop: 2,
   },
   detailsContainer: {
     backgroundColor: 'rgba(0, 0, 0, 0.2)',
-    borderRadius: 12,
-    padding: 12,
-    marginBottom: 16,
+    borderRadius: theme.borderRadius.md,
+    padding: theme.spacing.md,
+    marginBottom: theme.spacing.lg,
   },
   detailRow: {
     flexDirection: 'row',
@@ -282,15 +257,15 @@ const styles = StyleSheet.create({
     flexWrap: 'wrap',
   },
   detailLabel: {
-    fontSize: 14,
-    fontWeight: 'bold',
-    color: 'rgba(255, 255, 255, 0.9)',
-    marginRight: 8,
+    fontSize: theme.fontSizes.sm,
+    fontWeight: '600',
+    color: theme.colors.text.secondary,
+    marginRight: theme.spacing.sm,
     width: 80,
   },
   detailValue: {
-    fontSize: 14,
-    color: '#fff',
+    fontSize: theme.fontSizes.sm,
+    color: theme.colors.text.primary,
     flex: 1,
   },
   actionContainer: {
@@ -298,27 +273,27 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   cancelButton: {
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
+    backgroundColor: 'rgba(255, 255, 255, 0.15)',
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    borderRadius: theme.borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
     flex: 1,
-    marginRight: 12,
+    marginRight: theme.spacing.md,
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.3)',
   },
   cancelButtonText: {
-    color: '#fff',
+    color: theme.colors.text.primary,
     fontWeight: '600',
-    fontSize: 16,
+    fontSize: theme.fontSizes.md,
   },
   confirmButton: {
     backgroundColor: 'rgba(39, 174, 96, 0.6)',
-    paddingVertical: 12,
-    paddingHorizontal: 16,
-    borderRadius: 12,
+    paddingVertical: theme.spacing.md,
+    paddingHorizontal: theme.spacing.lg,
+    borderRadius: theme.borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
     flex: 1,
@@ -327,12 +302,12 @@ const styles = StyleSheet.create({
     borderColor: 'rgba(39, 174, 96, 0.8)',
   },
   confirmButtonText: {
-    color: '#fff',
+    color: theme.colors.text.primary,
     fontWeight: 'bold',
-    fontSize: 16,
+    fontSize: theme.fontSizes.md,
   },
   confirmIcon: {
-    marginLeft: 8,
+    marginLeft: theme.spacing.sm,
   },
   loadingButton: {
     opacity: 0.7,
@@ -343,13 +318,14 @@ const styles = StyleSheet.create({
   },
   dangerBadge: {
     position: 'absolute',
-    top: 12,
-    right: 12,
-    borderRadius: 12,
+    top: theme.spacing.md,
+    right: theme.spacing.md,
+    borderRadius: theme.borderRadius.sm,
     paddingVertical: 4,
-    paddingHorizontal: 8,
+    paddingHorizontal: theme.spacing.sm,
     flexDirection: 'row',
     alignItems: 'center',
+    zIndex: 2,
   },
   mediumDangerBadge: {
     backgroundColor: 'rgba(241, 196, 15, 0.8)',
@@ -358,10 +334,13 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(231, 76, 60, 0.8)',
   },
   dangerBadgeText: {
-    fontSize: 12,
+    fontSize: theme.fontSizes.xs,
     fontWeight: 'bold',
-    color: '#fff',
+    color: theme.colors.text.primary,
     marginLeft: 4,
+  },
+  pulsing: {
+    transform: [{ scale: 1.02 }],
   },
 });
 
