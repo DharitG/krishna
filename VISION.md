@@ -1,4 +1,4 @@
-# August: The AI Super Agent
+# August: The AI Super Assistant
 
 ## Vision Statement
 
