@@ -55,10 +55,16 @@ const Sidebar = ({ visible, onClose, onNewChat, onSelectChat, chats = [], active
     }
     
     const query = searchQuery.toLowerCase().trim();
-    const filtered = chats.filter(chat => 
-      chat.title.toLowerCase().includes(query) || 
-      chat.messages.some(msg => msg.content.toLowerCase().includes(query))
-    );
+    const filtered = chats.filter(chat => {
+      // Check if chat.title exists before trying to use it
+      const titleMatch = chat.title && chat.title.toLowerCase().includes(query);
+      
+      // Check if chat.messages is an array before trying to use .some()
+      const messageMatch = Array.isArray(chat.messages) && 
+        chat.messages.some(msg => msg && msg.content && msg.content.toLowerCase().includes(query));
+      
+      return titleMatch || messageMatch;
+    });
     
     setFilteredChats(filtered);
   }, [searchQuery, chats]);
@@ -76,10 +82,10 @@ const Sidebar = ({ visible, onClose, onNewChat, onSelectChat, chats = [], active
     
     // If we're searching and there are matching messages, highlight them
     let highlightCount = 0;
-    if (searchQuery) {
+    if (searchQuery && Array.isArray(chat.messages)) {
       const query = searchQuery.toLowerCase();
       highlightCount = chat.messages.filter(msg => 
-        msg.content.toLowerCase().includes(query)
+        msg && msg.content && msg.content.toLowerCase().includes(query)
       ).length;
     }
     

@@ -49,51 +49,35 @@ const SubscriptionScreen = () => {
   
   const plans = [
     {
-      id: 'nirvana',
-      name: 'Nirvana',
+      id: 'eden',
+      name: 'Eden',
       price: '$20',
       period: 'month',
       description: 'Perfect for personal use with essential features',
       icon: (props) => <Lightning {...props} />,
       color: colors.emerald,
       features: [
-        '1,000 messages per month',
-        'Access to core AI models',
-        'Mobile app access',
+        '10x more requests than free plan',
+        'SOTA AI models with significantly higher accuracy than free',
+        'Manage 10x more accounts than free',
         'Standard response time'
-      ]
-    },
-    {
-      id: 'eden',
-      name: 'Eden',
-      price: '$200',
-      period: 'month',
-      description: 'Advanced features for professionals',
-      icon: (props) => <Rocket {...props} />,
-      color: '#9F7AEA', // Purple
-      features: [
-        '20,000 messages per month',
-        'Premium AI models',
-        'Mobile & desktop access',
-        'File uploads & analysis',
-        'Priority response time'
       ]
     },
     {
       id: 'utopia',
       name: 'Utopia',
-      price: '$2,000',
+      price: '$50',
       period: 'month',
-      description: 'Ultimate plan for power users and small teams',
-      icon: (props) => <Planet {...props} />,
-      color: '#F6AD55', // Orange
+      description: 'Advanced features for professionals',
+      icon: (props) => <Rocket {...props} />,
+      color: '#9F7AEA', // Purple
       features: [
-        'Unlimited messages',
-        'Access to all AI models',
-        'Unlimited file uploads',
-        'Team collaboration tools',
-        'API access',
-        'Dedicated support'
+        'Unlimited requests',
+        'SOTA AI models with significantly higher accuracy than free',
+        'Unlimited accounts',
+        'File uploads & analysis',
+        'Priority response time',
+        'Enhanced security features'
       ]
     }
   ];
@@ -186,7 +170,8 @@ const SubscriptionScreen = () => {
               <Text style={styles.enterpriseFeatureItem}>• Custom AI model training</Text>
               <Text style={styles.enterpriseFeatureItem}>• Advanced security & compliance</Text>
               <Text style={styles.enterpriseFeatureItem}>• Dedicated account management</Text>
-              <Text style={styles.enterpriseFeatureItem}>• Custom integration</Text>
+              <Text style={styles.enterpriseFeatureItem}>• Custom integrations</Text>
+              <Text style={styles.enterpriseFeatureItem}>• Personalized support</Text>
             </View>
             
             <TouchableOpacity 
@@ -197,11 +182,7 @@ const SubscriptionScreen = () => {
             </TouchableOpacity>
           </GlassCard>
           
-          <View style={styles.footer}>
-            <Text style={styles.footerText}>
-              All plans include a 14-day money-back guarantee
-            </Text>
-          </View>
+          {/* Footer section removed */}
         </ScrollView>
       </SafeAreaView>
     </GradientBackground>
