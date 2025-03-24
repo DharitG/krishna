@@ -54,6 +54,10 @@ export default {
     // Backend Configuration
     BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:3000',
     
+    // RevenueCat Configuration
+    REVENUECAT_IOS_API_KEY: process.env.REVENUECAT_IOS_API_KEY,
+    REVENUECAT_ANDROID_API_KEY: process.env.REVENUECAT_ANDROID_API_KEY,
+    
     eas: {
       projectId: "your-project-id"
     }

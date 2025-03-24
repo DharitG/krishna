@@ -1,6 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
-import { Alert } from 'react-native';
+import { Alert, Platform } from 'react-native';
 import * as supabaseService from './supabase';
+import revenueCatService from './revenueCatService';
 
 // Create the authentication context
 const AuthContext = createContext(null);
@@ -20,12 +21,16 @@ export const AuthProvider = ({ children }) => {
   const [profile, setProfile] = useState(null);
   const [loading, setLoading] = useState(true);
   const [initialized, setInitialized] = useState(false);
+  const [subscription, setSubscription] = useState(null);
 
   // Initialize auth state
   useEffect(() => {
     const initializeAuth = async () => {
       setLoading(true);
       try {
+        // Initialize RevenueCat
+        await revenueCatService.initializeRevenueCat();
+        
         // Check if user is already logged in
         const currentUser = await supabaseService.getCurrentUser();
         
@@ -35,6 +40,9 @@ export const AuthProvider = ({ children }) => {
           // Fetch user profile data
           const userProfile = await supabaseService.getUserProfile(currentUser.id);
           setProfile(userProfile);
+          
+          // Identify user with RevenueCat
+          await revenueCatService.identifyUser(currentUser.id);
         }
       } catch (error) {
         console.error('Error initializing auth:', error.message);
@@ -61,12 +69,22 @@ export const AuthProvider = ({ children }) => {
             // Fetch user profile
             const userProfile = await supabaseService.getUserProfile(currentUser.id);
             setProfile(userProfile);
+            
+            // Identify user with RevenueCat
+            await revenueCatService.identifyUser(currentUser.id);
+            
+            // Fetch user subscription
+            await fetchSubscriptionStatus(currentUser.id);
           } catch (error) {
             console.error('Error fetching user profile:', error.message);
           }
         } else if (event === 'SIGNED_OUT') {
           setUser(null);
           setProfile(null);
+          setSubscription(null);
+          
+          // Reset RevenueCat user
+          await revenueCatService.resetUser();
         }
       }
     );
@@ -78,6 +96,28 @@ export const AuthProvider = ({ children }) => {
       }
     };
   }, [initialized]);
+  
+  // Fetch subscription status
+  const fetchSubscriptionStatus = async (userId) => {
+    try {
+      // Get subscription from Supabase
+      const userSubscription = await supabaseService.getUserSubscription(userId);
+      
+      // Get subscription status from RevenueCat
+      const rcStatus = await revenueCatService.getCurrentSubscriptionStatus();
+      
+      // Combine data and set subscription state
+      setSubscription({
+        ...userSubscription,
+        rcStatus: rcStatus
+      });
+      
+      return userSubscription;
+    } catch (error) {
+      console.error('Error fetching subscription status:', error.message);
+      return null;
+    }
+  };
 
   // Sign up function
   const signUp = async (email, password, metadata = {}) => {
@@ -169,10 +209,86 @@ export const AuthProvider = ({ children }) => {
     }
   };
 
+  // Subscribe to a plan
+  const subscribeToPlan = async (packageToPurchase) => {
+    try {
+      if (!user) throw new Error('User not authenticated');
+      
+      // Purchase package through RevenueCat
+      const customerInfo = await revenueCatService.purchasePackage(packageToPurchase, user.id);
+      
+      // Refresh subscription status
+      await fetchSubscriptionStatus(user.id);
+      
+      return customerInfo;
+    } catch (error) {
+      if (!error.userCancelled) {
+        Alert.alert('Subscription Error', error.message);
+      }
+      throw error;
+    }
+  };
+  
+  // Restore purchases
+  const restorePurchases = async () => {
+    try {
+      if (!user) throw new Error('User not authenticated');
+      
+      // Restore purchases through RevenueCat
+      const customerInfo = await revenueCatService.restorePurchases(user.id);
+      
+      // Refresh subscription status
+      await fetchSubscriptionStatus(user.id);
+      
+      return customerInfo;
+    } catch (error) {
+      Alert.alert('Restore Purchases Error', error.message);
+      throw error;
+    }
+  };
+  
+  // Get current plan name
+  const getCurrentPlan = () => {
+    if (!subscription) return 'free';
+    
+    // Check RC status first
+    if (subscription.rcStatus?.customerInfo) {
+      return revenueCatService.getCurrentPlan(subscription.rcStatus.customerInfo);
+    }
+    
+    // Fall back to database status
+    if (subscription.status === 'active' && subscription.plan_id) {
+      if (subscription.plan_id.includes('utopia')) return 'utopia';
+      if (subscription.plan_id.includes('eden')) return 'eden';
+    }
+    
+    return 'free';
+  };
+  
+  // Check if user has access to specific feature
+  const hasFeatureAccess = (featureName) => {
+    const currentPlan = getCurrentPlan();
+    
+    // Add your feature access logic here based on plan
+    switch (featureName) {
+      case 'unlimited_requests':
+        return currentPlan === 'utopia';
+      case 'file_uploads':
+        return currentPlan === 'utopia';
+      case 'priority_support':
+        return currentPlan === 'utopia';
+      case 'basic_ai':
+        return currentPlan === 'eden' || currentPlan === 'utopia';
+      default:
+        return false;
+    }
+  };
+
   // Context value
   const value = {
     user,
     profile,
+    subscription,
     loading,
     signUp,
     signIn,
@@ -181,6 +297,11 @@ export const AuthProvider = ({ children }) => {
     updateProfile,
     getServiceTokens,
     isAuthenticated: !!user,
+    subscribeToPlan,
+    restorePurchases,
+    getCurrentPlan,
+    hasFeatureAccess,
+    fetchSubscriptionStatus
   };
 
   // Render the provider

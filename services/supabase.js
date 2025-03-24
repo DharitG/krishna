@@ -233,5 +233,143 @@ export const getServiceTokens = async (userId) => {
   }
 };
 
+/**
+ * Get subscription plans
+ * @returns {Array} - Array of subscription plans
+ */
+export const getSubscriptionPlans = async () => {
+  try {
+    const { data, error } = await supabase
+      .from('subscription_plans')
+      .select('*')
+      .eq('is_active', true)
+      .order('price_usd', { ascending: true });
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error getting subscription plans:', error.message);
+    throw error;
+  }
+};
+
+/**
+ * Get user subscription
+ * @param {String} userId - User ID
+ * @returns {Object} - User subscription
+ */
+export const getUserSubscription = async (userId) => {
+  try {
+    const { data, error } = await supabase
+      .from('user_subscriptions')
+      .select('*, subscription_plans(*)')
+      .eq('user_id', userId)
+      .single();
+
+    if (error && error.code !== 'PGRST116') { // PGRST116 is "No rows returned" error
+      throw error;
+    }
+    return data;
+  } catch (error) {
+    console.error('Error getting user subscription:', error.message);
+    throw error;
+  }
+};
+
+/**
+ * Save subscription data
+ * @param {Object} subscriptionData - Subscription data
+ * @returns {Object} - Saved subscription
+ */
+export const saveSubscription = async (subscriptionData) => {
+  try {
+    // Check if subscription already exists for user
+    const { data: existingSubscription } = await supabase
+      .from('user_subscriptions')
+      .select('id')
+      .eq('user_id', subscriptionData.user_id)
+      .single();
+
+    let result;
+    
+    if (existingSubscription) {
+      // Update existing subscription
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .update(subscriptionData)
+        .eq('id', existingSubscription.id)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      result = data;
+    } else {
+      // Create new subscription
+      const { data, error } = await supabase
+        .from('user_subscriptions')
+        .insert(subscriptionData)
+        .select()
+        .single();
+        
+      if (error) throw error;
+      result = data;
+    }
+    
+    return result;
+  } catch (error) {
+    console.error('Error saving subscription:', error.message);
+    throw error;
+  }
+};
+
+/**
+ * Save purchase history
+ * @param {Object} purchaseData - Purchase data
+ * @returns {Object} - Saved purchase record
+ */
+export const savePurchaseHistory = async (purchaseData) => {
+  try {
+    // Get user subscription to link with purchase history
+    const subscription = await getUserSubscription(purchaseData.user_id);
+    
+    if (subscription) {
+      purchaseData.subscription_id = subscription.id;
+    }
+    
+    const { data, error } = await supabase
+      .from('purchase_history')
+      .insert(purchaseData)
+      .select()
+      .single();
+      
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error saving purchase history:', error.message);
+    throw error;
+  }
+};
+
+/**
+ * Get user purchase history
+ * @param {String} userId - User ID
+ * @returns {Array} - Array of purchase records
+ */
+export const getPurchaseHistory = async (userId) => {
+  try {
+    const { data, error } = await supabase
+      .from('purchase_history')
+      .select('*')
+      .eq('user_id', userId)
+      .order('purchase_date', { ascending: false });
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Error getting purchase history:', error.message);
+    throw error;
+  }
+};
+
 // Export the Supabase client for direct access if needed
 export default supabase;
