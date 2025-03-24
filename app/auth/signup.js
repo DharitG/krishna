@@ -149,10 +149,6 @@ export default function SignupScreen() {
       
       {/* Top half with image and logo */}
       <View style={[styles.topSection, showEmailForm && styles.topSectionSmaller]}>
-        {/* Cancel button */}
-        <TouchableOpacity style={styles.cancelButton} onPress={handleCancel}>
-          <Text style={styles.cancelText}>Cancel</Text>
-        </TouchableOpacity>
 
         {/* Background image with gradient overlay */}
         <ImageBackground 
