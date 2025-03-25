@@ -29,7 +29,7 @@ import GlassCard from '../components/GlassCard';
 import { colors, spacing } from '../constants/Theme';
 import { layoutStyles, headerStyles, cardStyles, textStyles } from '../constants/StyleGuide';
 import { useAuth } from '../services/authContext';
-import revenueCatService from '../services/revenueCatService';
+import subscriptionService from '../services/subscriptionService';
 
 const SubscriptionScreen = () => {
   const router = useRouter();
@@ -45,7 +45,7 @@ const SubscriptionScreen = () => {
       setLoading(true);
       try {
         // Fetch available offerings from RevenueCat
-        const rcOfferings = await revenueCatService.getOfferings();
+        const rcOfferings = await subscriptionService.getOfferings();
         setOfferings(rcOfferings);
         
         // Set current plan

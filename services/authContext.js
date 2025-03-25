@@ -1,7 +1,7 @@
 import React, { createContext, useState, useContext, useEffect } from 'react';
 import { Alert, Platform } from 'react-native';
 import * as supabaseService from './supabase';
-import revenueCatService from './revenueCatService';
+import subscriptionService from './subscriptionService';
 
 // Create the authentication context
 const AuthContext = createContext(null);
@@ -29,7 +29,7 @@ export const AuthProvider = ({ children }) => {
       setLoading(true);
       try {
         // Initialize RevenueCat
-        await revenueCatService.initializeRevenueCat();
+        await subscriptionService.initializeRevenueCat();
         
         // Check if user is already logged in
         const currentUser = await supabaseService.getCurrentUser();
@@ -42,7 +42,7 @@ export const AuthProvider = ({ children }) => {
           setProfile(userProfile);
           
           // Identify user with RevenueCat
-          await revenueCatService.identifyUser(currentUser.id);
+          await subscriptionService.identifyUser(currentUser.id);
         }
       } catch (error) {
         console.error('Error initializing auth:', error.message);
@@ -71,7 +71,7 @@ export const AuthProvider = ({ children }) => {
             setProfile(userProfile);
             
             // Identify user with RevenueCat
-            await revenueCatService.identifyUser(currentUser.id);
+            await subscriptionService.identifyUser(currentUser.id);
             
             // Fetch user subscription
             await fetchSubscriptionStatus(currentUser.id);
@@ -84,7 +84,7 @@ export const AuthProvider = ({ children }) => {
           setSubscription(null);
           
           // Reset RevenueCat user
-          await revenueCatService.resetUser();
+          await subscriptionService.resetUser();
         }
       }
     );
@@ -104,7 +104,7 @@ export const AuthProvider = ({ children }) => {
       const userSubscription = await supabaseService.getUserSubscription(userId);
       
       // Get subscription status from RevenueCat
-      const rcStatus = await revenueCatService.getCurrentSubscriptionStatus();
+      const rcStatus = await subscriptionService.getCurrentSubscriptionStatus();
       
       // Combine data and set subscription state
       setSubscription({
@@ -215,7 +215,7 @@ export const AuthProvider = ({ children }) => {
       if (!user) throw new Error('User not authenticated');
       
       // Purchase package through RevenueCat
-      const customerInfo = await revenueCatService.purchasePackage(packageToPurchase, user.id);
+      const customerInfo = await subscriptionService.purchasePackage(packageToPurchase, user.id);
       
       // Refresh subscription status
       await fetchSubscriptionStatus(user.id);
@@ -235,7 +235,7 @@ export const AuthProvider = ({ children }) => {
       if (!user) throw new Error('User not authenticated');
       
       // Restore purchases through RevenueCat
-      const customerInfo = await revenueCatService.restorePurchases(user.id);
+      const customerInfo = await subscriptionService.restorePurchases(user.id);
       
       // Refresh subscription status
       await fetchSubscriptionStatus(user.id);
@@ -253,7 +253,7 @@ export const AuthProvider = ({ children }) => {
     
     // Check RC status first
     if (subscription.rcStatus?.customerInfo) {
-      return revenueCatService.getCurrentPlan(subscription.rcStatus.customerInfo);
+      return subscriptionService.getCurrentPlan(subscription.rcStatus.customerInfo);
     }
     
     // Fall back to database status
