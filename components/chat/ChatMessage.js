@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Linking } from 'react-native';
+import { View, Text, StyleSheet, Linking, Alert } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import GlassCard from '../GlassCard';
 import AuthButton from './AuthButton';
@@ -34,8 +34,9 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
   }, [message]);
   
   // Function to handle authentication
-  const handleAuth = async (service) => {
-    // Update loading state
+  const handleAuthenticate = async (service) => {
+    console.log(`Starting authentication for service: ${service}`);
+    // Set loading state
     setAuthStates(prev => ({
       ...prev,
       [service]: { isLoading: true }
@@ -43,29 +44,50 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
     
     try {
       // Request authentication via chatStore
+      console.log(`Calling chatStore.authenticateService for ${service}`);
       const result = await chatStore.authenticateService(service);
+      console.log(`Authentication result for ${service}:`, result);
       
       if (result.error) {
+        console.error(`Authentication error for ${service}:`, result.message);
         // Set error state
         setAuthStates(prev => ({
           ...prev,
           [service]: { isLoading: false, error: result.message }
         }));
+        // Show error alert
+        Alert.alert('Authentication Error', result.message || 'Failed to connect to service');
       } else if (result.redirectUrl) {
+        console.log(`Got redirect URL for ${service}:`, result.redirectUrl);
         // Open the authentication URL
         setServiceToAuth(service);
         setShowAuthRedirect(true);
         
         // Start polling for auth status if we're in mock mode
         if (result.mockMode) {
+          console.log(`Starting polling for ${service} (mock mode)`);
           startPollingAuthStatus(service);
+        } else {
+          // Open the URL directly for real OAuth flow
+          console.log(`Opening redirect URL for ${service}:`, result.redirectUrl);
+          Linking.openURL(result.redirectUrl);
         }
+      } else {
+        console.error(`No redirect URL for ${service}:`, result);
+        // No redirect URL and no error - this is unexpected
+        setAuthStates(prev => ({
+          ...prev,
+          [service]: { isLoading: false, error: 'No redirect URL provided' }
+        }));
+        Alert.alert('Authentication Error', 'No redirect URL provided');
       }
     } catch (error) {
+      console.error(`Error authenticating with ${service}:`, error);
       setAuthStates(prev => ({
         ...prev,
         [service]: { isLoading: false, error: error.message }
       }));
+      Alert.alert('Authentication Error', error.message || 'An unexpected error occurred');
     }
   };
   
@@ -278,7 +300,7 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
                 isLoading={authState.isLoading}
                 isConnected={authState.isAuthenticated}
                 error={authState.error}
-                onAuthenticate={() => handleAuth(service)}
+                onAuthenticate={() => handleAuthenticate(service)}
                 onErrorDismiss={() => {
                   setAuthStates(prev => ({
                     ...prev,

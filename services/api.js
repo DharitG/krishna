@@ -365,11 +365,14 @@ const sendMessageFallback = async (messages, enabledTools, useTools, authStatus)
  * @returns {Object} - Authentication information
  */
 export const authenticateService = async (serviceName) => {
+  console.log(`Authenticating service: ${serviceName}`);
   try {
     // Get the auth token
     const token = await getAuthToken();
+    console.log(`Got auth token: ${token ? 'Yes' : 'No'}`);
     
     // Fix: Use the correct endpoint path that matches the backend route
+    console.log(`Making request to: /api/composio/auth/init/${serviceName}`);
     const response = await api.post(`/api/composio/auth/init/${serviceName}`, {}, {
       headers: {
         'Content-Type': 'application/json',
@@ -377,9 +380,27 @@ export const authenticateService = async (serviceName) => {
       }
     });
     
+    console.log(`Authentication response:`, response.data);
+    
     // If in mock mode, show a warning to the user
     if (response.data.mockMode) {
       console.warn('Using mock mode for authentication because Composio API is unreachable');
+    }
+    
+    // If the service is already authenticated, return success without redirect
+    if (response.data.isAuthenticated === true) {
+      console.log(`Service ${serviceName} is already authenticated`);
+      return {
+        isAuthenticated: true,
+        success: true,
+        message: `${serviceName} is already connected`
+      };
+    }
+    
+    // Check if redirectUrl exists in the response
+    if (!response.data.redirectUrl) {
+      console.error(`No redirect URL for ${serviceName}:`, response.data);
+      throw new Error(`No redirect URL provided in the server response for ${serviceName}`);
     }
     
     return response.data;
