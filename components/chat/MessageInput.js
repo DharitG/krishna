@@ -10,18 +10,10 @@ import {
   Dimensions,
   LayoutAnimation,
   UIManager,
-  Image
+  SafeAreaView
 } from 'react-native';
-import { ArrowUp, Plus } from 'phosphor-react-native';
-import logo from '../../logo.png';
-import {
-  colors,
-  spacing,
-  borderRadius,
-  shadows,
-  typography,
-  glassMorphism
-} from '../../constants/Theme';
+import { Plus, ArrowUp } from 'phosphor-react-native';
+import { colors } from '../../constants/Theme';
 
 // Enable LayoutAnimation for Android
 if (Platform.OS === 'android' && UIManager.setLayoutAnimationEnabledExperimental) {
@@ -69,189 +61,112 @@ const MessageInput = ({ onSendMessage, isLoading }) => {
     }
   };
 
-  // Handle attachments
-  const handleAttachment = () => {
-    // This would open attachment options
-    console.log('Open attachment options');
-  };
-
   // Handle input layout to calculate its height
   const onInputLayout = (event) => {
     setInputHeight(event.nativeEvent.layout.height);
   };
 
-  // Focus the input when needed
-  const focusInput = () => {
-    if (inputRef.current) {
-      inputRef.current.focus();
-    }
-  };
-
   return (
-    <View 
-      style={[
-        styles.container,
-        keyboardVisible && Platform.OS === 'android' && styles.containerWithKeyboard
-      ]}
-      onLayout={onInputLayout}
-    >
-      <View style={styles.inputArea}>
+    <SafeAreaView>
+      <View 
+        style={[
+          styles.container,
+          keyboardVisible && Platform.OS === 'android' && styles.containerWithKeyboard
+        ]}
+        onLayout={onInputLayout}
+      >
         <TextInput
           ref={inputRef}
-          style={styles.integrated}
+          style={styles.input}
+          placeholder="Message August"
+          placeholderTextColor="#8BAEDC"
           value={message}
           onChangeText={setMessage}
-          placeholder="Message August"
-          placeholderTextColor="rgba(255, 255, 255, 0.7)"
-          multiline
-          maxHeight={100}
           returnKeyType="send"
           onSubmitEditing={handleSend}
           blurOnSubmit={false}
+          multiline
         />
         
-        <View style={styles.buttonRow}>
-          <View style={styles.leftSection}>
+        <View style={styles.actions}>
+          <TouchableOpacity style={styles.button}>
+            <Plus size={24} color="#8BAEDC" weight="bold" />
+          </TouchableOpacity>
+
+          {isLoading ? (
+            <View style={styles.sendButton}>
+              <ActivityIndicator color="#fff" size="small" />
+            </View>
+          ) : (
             <TouchableOpacity 
-              style={styles.attachButton}
-              onPress={handleAttachment}
+              style={[
+                styles.sendButton,
+                { backgroundColor: message.trim().length > 0 ? '#1D4ED8' : '#173A63' }
+              ]}
+              onPress={handleSend}
+              disabled={message.trim().length === 0}
             >
-              <Plus 
-                size={24} 
-                color={colors.white} 
-                weight="bold" 
-              />
+              <ArrowUp size={24} color="#fff" weight="bold" />
             </TouchableOpacity>
-          </View>
-
-          <View style={styles.rightSection}>
-            {isLoading ? (
-              <View style={styles.loadingButton}>
-                <ActivityIndicator color={colors.emerald} size="small" />
-              </View>
-            ) : (
-              <>
-                <TouchableOpacity 
-                  style={styles.speechButton}
-                  onPress={() => console.log('Speech to speech pressed')}
-                >
-                  <Image 
-                    source={logo}
-                    style={styles.logoImage}
-                    resizeMode="cover"
-                  />
-                </TouchableOpacity>
-
-                <TouchableOpacity
-                  style={[
-                    styles.sendButton, 
-                    { backgroundColor: message.trim().length > 0 ? colors.emerald : colors.gray }
-                  ]}
-                  onPress={handleSend}
-                  disabled={message.trim().length === 0}
-                >
-                  <ArrowUp
-                    size={24}
-                    color={colors.white}
-                    weight="bold"
-                  />
-                </TouchableOpacity>
-              </>
-            )}
-          </View>
+          )}
         </View>
       </View>
-    </View>
+    </SafeAreaView>
   );
 };
 
 const styles = StyleSheet.create({
   container: {
-    borderTopLeftRadius: borderRadius.lg,
-    borderTopRightRadius: borderRadius.lg,
-    ...glassMorphism.chatInput,
-    position: 'relative',
-    bottom: 0,
-    left: 0,
-    right: 0,
-    zIndex: 10,
+    backgroundColor: '#0C1B3B',
+    padding: 12,
+    margin: 16,
+    borderRadius: 20,
+    elevation: 10,
+    shadowColor: '#1E90FF',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    minHeight: 80, // Double height
   },
   containerWithKeyboard: {
-    position: 'relative', // Change from absolute to relative when keyboard is visible on Android
+    position: 'relative',
     bottom: 0,
   },
-  inputArea: {
-    padding: spacing.md,
-    paddingBottom: Platform.OS === 'ios' ? 34 : 20, // Extra padding for bottom safe area
-  },
-  integrated: {
-    fontSize: typography.fontSize.lg,
-    fontFamily: typography.fontFamily.regular,
-    color: colors.white,
-    maxHeight: 100,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    lineHeight: typography.lineHeight.lg,
-    letterSpacing: 0.2,
-    backgroundColor: 'rgba(26, 44, 75, 0.4)',
-    borderRadius: borderRadius.md,
-    borderWidth: 1,
-    borderColor: 'rgba(48, 109, 255, 0.15)',
-  },
-  buttonRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginTop: spacing.xs,
-  },
-  leftSection: {
+  input: {
     flex: 1,
+    color: '#fff',
+    fontSize: 16,
+    paddingVertical: 8,
+    paddingHorizontal: 12,
+    backgroundColor: 'transparent',
+    minHeight: 60, // Increased height for input
+    maxHeight: 120, // Maximum height for multiline
   },
-  rightSection: {
+  actions: {
     flexDirection: 'row',
+    marginLeft: 8,
     alignItems: 'center',
-    gap: spacing.xs,
+    gap: 8,
   },
-  attachButton: {
-    justifyContent: 'center',
+  button: {
+    backgroundColor: '#173A63',
+    padding: 8,
+    borderRadius: 14,
     alignItems: 'center',
+    justifyContent: 'center',
     width: 42,
     height: 42,
-    borderRadius: borderRadius.round,
-    backgroundColor: 'rgba(26, 44, 75, 0.8)',
-    borderWidth: 1,
-    borderColor: 'rgba(48, 109, 255, 0.2)',
-    ...shadows.sm,
   },
   sendButton: {
+    backgroundColor: '#1D4ED8',
+    padding: 8,
+    borderRadius: 999,
     justifyContent: 'center',
     alignItems: 'center',
     width: 42,
     height: 42,
-    borderRadius: borderRadius.round,
-    borderWidth: 1,
-    borderColor: 'rgba(48, 109, 255, 0.2)',
-    ...shadows.sm,
-  },
-  loadingButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 42,
-    height: 42,
-  },
-  speechButton: {
-    justifyContent: 'center',
-    alignItems: 'center',
-    width: 42,
-    height: 42,
-    borderRadius: borderRadius.round,
-    overflow: 'hidden',
-    ...shadows.sm,
-  },
-  logoImage: {
-    width: 44,
-    height: 44,
-    margin: -1,
   },
 });
 
