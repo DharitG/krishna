@@ -1,65 +1,118 @@
 import React from 'react';
-import { ScrollView, TouchableOpacity, Text, StyleSheet, View, Animated } from 'react-native';
+import { ScrollView, TouchableOpacity, Text, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing, glassMorphism, borderRadius, typography } from '../../constants/Theme';
+import { colors, spacing, glassMorphism, borderRadius, typography, shadows } from '../../constants/Theme';
 
 const suggestions = [
-  { icon: 'list', text: 'List 5 healthy breakfast ideas' },
-  { icon: 'calendar', text: 'What should I do in Tokyo?' },
-  { icon: 'language', text: 'Translate to Spanish' },
-  { icon: 'bulb', text: 'Give me creative ideas' },
-  { icon: 'code', text: 'Help me code something' }
+  { 
+    icon: 'time-outline', 
+    title: 'Daily Briefing',
+    subtitle: 'Get up to speed'
+  },
+  { 
+    icon: 'mail-outline', 
+    title: 'Email Assistant',
+    subtitle: 'Manage inbox'
+  },
+  { 
+    icon: 'card-outline', 
+    title: 'Track Refund',
+    subtitle: 'Check status'
+  },
+  { 
+    icon: 'help-circle-outline', 
+    title: 'Personal Help',
+    subtitle: 'Ask anything'
+  },
+  { 
+    icon: 'calendar-outline', 
+    title: 'Smart Schedule',
+    subtitle: 'Plan your day'
+  }
 ];
 
 const SuggestionBoxes = ({ onSelectSuggestion }) => (
-  <ScrollView
-    horizontal
-    showsHorizontalScrollIndicator={false}
-    contentContainerStyle={styles.suggestionScroll}
-  >
-    {suggestions.map((item, index) => (
-      <TouchableOpacity 
-        key={index} 
-        style={styles.suggestionBox}
-        onPress={() => onSelectSuggestion?.(item.text)}
-      >
-        <Ionicons 
-          name={item.icon} 
-          size={14} 
-          color={colors.text.primary} 
-          style={styles.suggestionIcon} 
-        />
-        <Text style={styles.suggestionText}>{item.text}</Text>
-      </TouchableOpacity>
-    ))}
-  </ScrollView>
+  <View style={styles.container}>
+    <ScrollView
+      horizontal
+      showsHorizontalScrollIndicator={false}
+      contentContainerStyle={styles.suggestionScroll}
+    >
+      {suggestions.map((item, index) => (
+        <TouchableOpacity 
+          key={index} 
+          style={styles.suggestionBox}
+          onPress={() => onSelectSuggestion?.(`${item.title} ${item.subtitle}`)}
+        >
+          <View style={styles.iconContainer}>
+            <Ionicons 
+              name={item.icon} 
+              size={20} 
+              color={colors.text.primary} 
+              style={styles.suggestionIcon} 
+            />
+          </View>
+          <View style={styles.textContainer}>
+            <Text style={styles.titleText}>{item.title}</Text>
+            <Text style={styles.subtitleText}>{item.subtitle}</Text>
+          </View>
+        </TouchableOpacity>
+      ))}
+    </ScrollView>
+  </View>
 );
 
 const styles = StyleSheet.create({
+  container: {
+    marginBottom: 4,
+  },
   suggestionScroll: {
     paddingHorizontal: spacing.md,
-    paddingVertical: 20,
+    paddingVertical: 4,
+    gap: 4,
   },
   suggestionBox: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(26, 44, 75, 0.6)',
-    paddingVertical: 10,
-    paddingHorizontal: 14,
-    borderRadius: borderRadius.md,
-    marginRight: spacing.sm,
-    borderWidth: 1,
-    borderColor: 'rgba(48, 109, 255, 0.15)',
-    ...shadows.sm,
+    ...glassMorphism.chatInput,
+    paddingVertical: 12,
+    paddingHorizontal: 12,
+    borderRadius: 10,
+    marginRight: 4,
+    shadowColor: '#306DFF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+    minWidth: 145,
+  },
+  iconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    backgroundColor: 'rgba(48, 109, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: 6,
   },
   suggestionIcon: {
-    marginRight: spacing.xs,
     opacity: 0.9,
   },
-  suggestionText: {
+  textContainer: {
+    flex: 1,
+    justifyContent: 'center',
+  },
+  titleText: {
     color: colors.text.primary,
-    fontSize: typography.fontSize.sm,
+    fontSize: 13,
     fontFamily: typography.fontFamily.medium,
+    letterSpacing: 0.3,
+    marginBottom: 2,
+  },
+  subtitleText: {
+    color: colors.text.secondary,
+    fontSize: 11,
+    fontFamily: typography.fontFamily.regular,
     letterSpacing: 0.2,
   },
 });

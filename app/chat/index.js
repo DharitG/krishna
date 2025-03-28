@@ -16,6 +16,7 @@ import { SidebarSimple, Plus } from 'phosphor-react-native';
 import Constants from 'expo-constants';
 import ChatMessage from '../../components/chat/ChatMessage';
 import MessageInput from '../../components/chat/MessageInput';
+import SuggestionBoxes from '../../components/chat/SuggestionBoxes';
 import TypingIndicator from '../../components/chat/TypingIndicator';
 import ChatBackgroundWrapper from '../../components/chat/ChatBackgroundWrapper';
 import Sidebar from '../../components/Sidebar';
@@ -316,6 +317,7 @@ const ChatScreen = () => {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 80}
           >
+            <SuggestionBoxes onSelectSuggestion={handleSendMessage} />
             <MessageInput onSendMessage={handleSendMessage} isLoading={isLoading} />
           </KeyboardAvoidingView>
         </View>
