@@ -90,13 +90,15 @@ We collect analytics about:
 ## 4. Data Protection
 
 ### 4.1 Security Infrastructure
-- Industry-standard encryption for data in transit and at rest
-- Secure token management for third-party services
-- Multi-layer authentication protection
-- Regular security audits and penetration testing
-- Automated threat detection and prevention
-- Secure key rotation and management
-- Protected cloud infrastructure
+
+We employ robust security measures to protect your information from unauthorized access, use, or disclosure. These measures include:
+
+-   **Encryption:** We use industry-standard encryption protocols to protect your data in transit and at rest. All data transmitted between your device and our servers is encrypted using HTTPS. Sensitive data, such as passwords and payment information, is encrypted using AES-256 encryption.
+-   **Access Controls:** We implement strict access controls to limit access to your information to authorized personnel only. Access to sensitive data requires multi-factor authentication and is logged for auditing purposes.
+-   **Regular Security Audits:** We conduct regular security audits and penetration testing to identify and address potential vulnerabilities in our systems.
+-   **Intrusion Detection and Prevention:** We use intrusion detection and prevention systems to monitor our network for malicious activity and to prevent unauthorized access to our systems.
+-   **Data Loss Prevention:** We implement data loss prevention (DLP) measures to prevent sensitive data from being accidentally or intentionally disclosed.
+-   **Incident Response Plan:** We have a comprehensive incident response plan in place to address any security incidents that may occur. This plan includes procedures for identifying, containing, and eradicating security threats, as well as for notifying affected users.
 
 ### 4.2 Data Storage
 - Encrypted database management
@@ -150,24 +152,29 @@ We maintain data processing agreements with our service providers that:
 - Prohibit unauthorized data sharing
 
 ### 5.4 Important Disclosures
-- We do not sell your personal information
-- We do not use your data for AI training
-- We do not share your information with third parties for marketing purposes
-- We do not retain third-party service data beyond necessary operational periods
-- We do not combine data across services without explicit consent
+
+To ensure transparency and protect your privacy, we make the following disclosures:
+
+-   We do not sell your personal information to third parties.
+-   We do not use your data for training our AI models.
+-   We do not share your information with third parties for marketing or advertising purposes. Your data is strictly used for personalizing your AI experience and improving the Service.
+-   We do not retain third-party service data beyond the necessary operational periods.
+-   We do not combine data across services without your explicit consent.
 
 ## 6. Your Rights and Choices
 
 ### 6.1 Account Controls
-You have the right to:
-- Access your personal information
-- Correct inaccurate data
-- Request deletion of your account and data
-- Opt-out of non-essential communications
-- Cancel your subscription
-- Manage third-party service connections
-- Control notification preferences
-- Export your data
+
+You have the following rights regarding your personal information:
+
+-   **Access:** You have the right to request access to the personal information we hold about you.
+-   **Correction:** You have the right to request that we correct any inaccurate or incomplete personal information we hold about you.
+-   **Deletion:** You have the right to request that we delete your personal information, subject to certain exceptions.
+-   **Objection:** You have the right to object to the processing of your personal information in certain circumstances.
+-   **Restriction:** You have the right to request that we restrict the processing of your personal information in certain circumstances.
+-   **Portability:** You have the right to receive your personal information in a structured, commonly used, and machine-readable format and to transmit that information to another controller.
+
+To exercise these rights, please contact us using the contact information provided in Section 9.
 
 ### 6.2 Service Connections
 You can:
@@ -235,6 +242,10 @@ We will notify you of material changes through:
 - Major changes are summarized for clarity
 
 ## 9. Contact Us
+
+### 9.3 Consent
+
+By using the Service, you consent to the collection, use, and disclosure of your information as described in this Privacy Policy. If you do not agree with the terms of this Privacy Policy, please do not use the Service.
 
 ### 9.1 General Inquiries
 For questions about this Privacy Policy or our practices:
