@@ -19,7 +19,8 @@ import {
   spacing,
   borderRadius,
   shadows,
-  typography
+  typography,
+  glassMorphism
 } from '../../constants/Theme';
 
 // Enable LayoutAnimation for Android
@@ -168,14 +169,12 @@ const styles = StyleSheet.create({
   container: {
     borderTopLeftRadius: borderRadius.lg,
     borderTopRightRadius: borderRadius.lg,
-    backgroundColor: 'rgba(40, 40, 45, 0.98)', // Lighter background for more contrast
+    ...glassMorphism.chatInput,
     position: 'relative',
     bottom: 0,
     left: 0,
     right: 0,
-    ...shadows.lg,
     zIndex: 10,
-    elevation: 5, // For Android shadow
   },
   containerWithKeyboard: {
     position: 'relative', // Change from absolute to relative when keyboard is visible on Android
@@ -187,13 +186,17 @@ const styles = StyleSheet.create({
   },
   integrated: {
     fontSize: typography.fontSize.lg,
-    fontFamily: 'Roboto',
+    fontFamily: typography.fontFamily.regular,
     color: colors.white,
     maxHeight: 100,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.md,
     lineHeight: typography.lineHeight.lg,
     letterSpacing: 0.2,
+    backgroundColor: 'rgba(26, 44, 75, 0.4)',
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    borderColor: 'rgba(48, 109, 255, 0.15)',
   },
   buttonRow: {
     flexDirection: 'row',
@@ -215,7 +218,9 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: borderRadius.round,
-    backgroundColor: colors.gray,
+    backgroundColor: 'rgba(26, 44, 75, 0.8)',
+    borderWidth: 1,
+    borderColor: 'rgba(48, 109, 255, 0.2)',
     ...shadows.sm,
   },
   sendButton: {
@@ -224,6 +229,8 @@ const styles = StyleSheet.create({
     width: 42,
     height: 42,
     borderRadius: borderRadius.round,
+    borderWidth: 1,
+    borderColor: 'rgba(48, 109, 255, 0.2)',
     ...shadows.sm,
   },
   loadingButton: {

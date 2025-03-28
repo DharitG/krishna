@@ -1,7 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Linking, Alert } from 'react-native';
+import { View, Text, StyleSheet, Linking, Alert, Animated } from 'react-native';
 import Markdown from 'react-native-markdown-display';
-import GlassCard from '../GlassCard';
 import AuthButton from './AuthButton';
 import AuthRedirect from './AuthRedirect';
 import DynamicAuthBlob from '../../components/chat/DynamicAuthBlob';
@@ -301,15 +300,12 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
       styles.container,
       isUser ? styles.userContainer : styles.botContainer
     ]}>
-      {isUser ? (
-        <GlassCard style={[styles.bubble, styles.userBubble]}>
-          {renderMessageContent(message.content)}
-        </GlassCard>
-      ) : (
-        <View style={[styles.botMessageContainer]}>
-          {renderMessageContent(message.content)}
-        </View>
-      )}
+      <View style={[
+        styles.bubble,
+        isUser ? styles.userBubble : styles.botBubble
+      ]}>
+        {renderMessageContent(message.content)}
+      </View>
     </View>
   );
 };
@@ -328,24 +324,24 @@ const styles = StyleSheet.create({
   },
   bubble: {
     maxWidth: '85%',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
     ...shadows.md,
   },
   userBubble: {
-    backgroundColor: colors.buttonBackground,
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
+    ...glassMorphism.chatBubble,
     borderRadius: 20,
     borderBottomRightRadius: 4,
-    elevation: 3,
-    shadowColor: colors.buttonBackground,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
+    backgroundColor: 'rgba(48, 109, 255, 0.15)',
   },
-  botMessageContainer: {
+  botBubble: {
+    backgroundColor: 'rgba(26, 44, 75, 0.4)',
+    backdropFilter: 'blur(12px)',
+    borderRadius: 20,
+    borderBottomLeftRadius: 4,
+    borderWidth: 1,
+    borderColor: 'rgba(48, 109, 255, 0.15)',
     width: '100%',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs / 2,
   },
   text: {
     fontSize: typography.fontSize.md,

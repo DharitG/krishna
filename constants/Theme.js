@@ -1,7 +1,7 @@
 // Modern design system for August AI
 // Enhanced with semantic tokens and component-specific styles
 
-// Base colors
+  // Base colors
 const baseColors = {
   black: '#121214',
   darkGray: '#1E1E22',
@@ -11,12 +11,14 @@ const baseColors = {
   white: '#FFFFFF',
   
   // Theme colors
-  backgroundStart: '#0A0F2C',
-  backgroundEnd: '#0E1233',
+  backgroundTop: '#050709',
+  backgroundMid: '#1A2C4B',
+  backgroundBottom: '#1F4ACC',
+  backgroundBottomLeft: '#183AAD',  // Additional color for asymmetric gradient
   primaryText: '#BFD6FF',
   secondaryText: '#9BB1DD',
-  buttonBackground: '#1B2A4B',
-  inputBackground: '#14203D',
+  buttonBackground: 'rgba(26, 44, 75, 0.8)',
+  inputBackground: 'rgba(20, 32, 61, 0.85)',
   
   // Accent colors
   emerald: '#10B981',
@@ -77,11 +79,16 @@ export const colors = {
   
   // Gradient definitions
   gradients: {
-    primary: [baseColors.backgroundStart, baseColors.backgroundEnd],
+    primary: [baseColors.backgroundTop, baseColors.backgroundMid, baseColors.backgroundBottom],
     secondary: [baseColors.purpleDark, baseColors.emeraldLight],
-    glow: ['rgba(16, 185, 129, 0.6)', 'rgba(139, 92, 246, 0.6)'],
+    glow: ['rgba(48, 109, 255, 0.6)', 'rgba(11, 12, 29, 0.6)'],
     overlay: ['rgba(18, 18, 20, 0.8)', 'rgba(18, 18, 20, 0.95)'],
-    chat: ['#060818', '#0A0F2C', '#0E1233']
+    chat: [
+      baseColors.backgroundTop,
+      baseColors.backgroundMid,
+      baseColors.backgroundBottom,
+      baseColors.backgroundBottomLeft
+    ]
   }
 };
 
@@ -214,6 +221,28 @@ export const glassMorphism = {
     backdropFilter: 'blur(12px)',
     borderColor: colors.border.secondary,
     borderWidth: 1
+  },
+  chatBubble: {
+    backgroundColor: 'rgba(26, 44, 75, 0.6)',
+    backdropFilter: 'blur(12px)',
+    borderColor: 'rgba(48, 109, 255, 0.2)',
+    borderWidth: 1,
+    shadowColor: '#306DFF',
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4
+  },
+  chatInput: {
+    backgroundColor: 'rgba(20, 32, 61, 0.85)',
+    backdropFilter: 'blur(12px)',
+    borderColor: 'rgba(48, 109, 255, 0.15)',
+    borderWidth: 1,
+    shadowColor: '#306DFF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 8,
+    elevation: 4
   }
 };
 
