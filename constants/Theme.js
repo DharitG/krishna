@@ -11,10 +11,11 @@ const baseColors = {
   white: '#FFFFFF',
   
   // Theme colors
-  backgroundTop: '#050709',
-  backgroundMid: '#1A2C4B',
+  backgroundTop: '#020305',
+  backgroundMid1: '#061022',
+  backgroundMid2: '#0A1D45',
+  backgroundMid3: '#102C68',
   backgroundBottom: '#1F4ACC',
-  backgroundBottomLeft: '#183AAD',  // Additional color for asymmetric gradient
   primaryText: '#BFD6FF',
   secondaryText: '#9BB1DD',
   buttonBackground: 'rgba(26, 44, 75, 0.8)',
@@ -85,9 +86,10 @@ export const colors = {
     overlay: ['rgba(18, 18, 20, 0.8)', 'rgba(18, 18, 20, 0.95)'],
     chat: [
       baseColors.backgroundTop,
-      baseColors.backgroundMid,
-      baseColors.backgroundBottom,
-      baseColors.backgroundBottomLeft
+      baseColors.backgroundMid1,
+      baseColors.backgroundMid2,
+      baseColors.backgroundMid3,
+      baseColors.backgroundBottom
     ]
   }
 };
