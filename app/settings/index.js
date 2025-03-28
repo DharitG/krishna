@@ -9,21 +9,46 @@ import { layoutStyles, headerStyles, cardStyles, textStyles } from '../../consta
 import Constants from 'expo-constants';
 import chatStore from '../../services/chatStore';
 import { signOut } from '../../services/supabase';
+import { useAuth } from '../../services/authContext';
+import subscriptionService from '../../services/subscriptionService';
 
 const SettingsScreen = () => {
   const router = useRouter();
+  const { user, getCurrentPlan, fetchSubscriptionStatus } = useAuth();
   
   // Check if Composio is configured
   const { COMPOSIO_API_KEY } = Constants.expoConfig?.extra || {};
   const isComposioConfigured = !!COMPOSIO_API_KEY;
   
-  // State for toggles
+  // State for toggles and subscription
   const [useTools, setUseTools] = useState(true);
+  const [currentPlan, setCurrentPlan] = useState('free');
   const [features, setFeatures] = useState({
     github: true,
     slack: true,
     gmail: true,
   });
+  
+  // Fetch current subscription plan
+  useEffect(() => {
+    const loadSubscriptionData = async () => {
+      if (user) {
+        await fetchSubscriptionStatus(user.id);
+        const plan = getCurrentPlan();
+        setCurrentPlan(plan);
+      }
+    };
+    
+    loadSubscriptionData();
+  }, [user]);
+  
+  const getPlanDisplayName = (plan) => {
+    switch(plan) {
+      case 'utopia': return 'Utopia';
+      case 'eden': return 'Eden';
+      default: return 'Free';
+    }
+  };
   
   const handleBack = () => {
     router.back();
@@ -232,7 +257,12 @@ const SettingsScreen = () => {
     {
       title: 'Subscription',
       items: [
-        { label: 'Current Plan', icon: 'ribbon-outline', hasDetail: true, value: 'Nirvana' },
+        { 
+          label: 'Current Plan', 
+          icon: 'ribbon-outline', 
+          hasDetail: true, 
+          value: getPlanDisplayName(currentPlan) 
+        },
         { 
           label: 'Manage Subscription', 
           icon: 'card-outline', 
