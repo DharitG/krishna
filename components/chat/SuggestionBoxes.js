@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, TouchableOpacity, Text, StyleSheet, View } from 'react-native';
+import { ScrollView, TouchableOpacity, Text, StyleSheet, View, Animated } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, glassMorphism, borderRadius, typography, shadows } from '../../constants/Theme';
 
@@ -31,8 +31,8 @@ const suggestions = [
   }
 ];
 
-const SuggestionBoxes = ({ onSelectSuggestion }) => (
-  <View style={styles.container}>
+const SuggestionBoxes = ({ onSelectSuggestion, style }) => (
+  <Animated.View style={[styles.container, style]}>
     <ScrollView
       horizontal
       showsHorizontalScrollIndicator={false}
@@ -59,7 +59,7 @@ const SuggestionBoxes = ({ onSelectSuggestion }) => (
         </TouchableOpacity>
       ))}
     </ScrollView>
-  </View>
+  </Animated.View>
 );
 
 const styles = StyleSheet.create({

@@ -11,6 +11,7 @@ import {
   TouchableOpacity,
   Keyboard,
   ActivityIndicator,
+  Animated,
 } from 'react-native';
 import { SidebarSimple, Plus } from 'phosphor-react-native';
 import Constants from 'expo-constants';
@@ -36,6 +37,8 @@ const ChatScreen = () => {
   const [isInitializing, setIsInitializing] = useState(true);
   const [sidebarVisible, setSidebarVisible] = useState(false);
   const [streamingMessageId, setStreamingMessageId] = useState(null);
+  const [hasUserSentMessage, setHasUserSentMessage] = useState(false);
+  const suggestionBoxAnimation = useRef(new Animated.Value(1)).current;
   
   const flatListRef = useRef(null);
 
@@ -85,6 +88,16 @@ const ChatScreen = () => {
   const handleSendMessage = async (content) => {
     // Set loading state
     setIsLoading(true);
+    
+    // If this is the first message, trigger fade out animation
+    if (!hasUserSentMessage) {
+      setHasUserSentMessage(true);
+      Animated.timing(suggestionBoxAnimation, {
+        toValue: 0,
+        duration: 300,
+        useNativeDriver: true,
+      }).start();
+    }
     
     try {
       // Add user message immediately for better UX
@@ -316,7 +329,20 @@ const ChatScreen = () => {
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 80}
           >
-            <SuggestionBoxes onSelectSuggestion={handleSendMessage} />
+            {!hasUserSentMessage && (
+              <SuggestionBoxes 
+                onSelectSuggestion={handleSendMessage} 
+                style={{
+                  opacity: suggestionBoxAnimation,
+                  transform: [{
+                    translateY: suggestionBoxAnimation.interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [50, 0]
+                    })
+                  }]
+                }}
+              />
+            )}
             <MessageInput onSendMessage={handleSendMessage} isLoading={isLoading} />
           </KeyboardAvoidingView>
         </View>
