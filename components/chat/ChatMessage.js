@@ -36,45 +36,37 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
   // Function to handle authentication
   const handleAuthenticate = async (service) => {
     console.log(`Starting authentication for service: ${service}`);
-    // Set loading state
     setAuthStates(prev => ({
       ...prev,
       [service]: { isLoading: true }
     }));
     
     try {
-      // Request authentication via chatStore
       console.log(`Calling chatStore.authenticateService for ${service}`);
       const result = await chatStore.authenticateService(service);
       console.log(`Authentication result for ${service}:`, result);
       
       if (result.error) {
         console.error(`Authentication error for ${service}:`, result.message);
-        // Set error state
         setAuthStates(prev => ({
           ...prev,
           [service]: { isLoading: false, error: result.message }
         }));
-        // Show error alert
         Alert.alert('Authentication Error', result.message || 'Failed to connect to service');
       } else if (result.redirectUrl) {
         console.log(`Got redirect URL for ${service}:`, result.redirectUrl);
-        // Open the authentication URL
         setServiceToAuth(service);
         setShowAuthRedirect(true);
         
-        // Start polling for auth status if we're in mock mode
         if (result.mockMode) {
           console.log(`Starting polling for ${service} (mock mode)`);
           startPollingAuthStatus(service);
         } else {
-          // Open the URL directly for real OAuth flow
           console.log(`Opening redirect URL for ${service}:`, result.redirectUrl);
           Linking.openURL(result.redirectUrl);
         }
       } else {
         console.error(`No redirect URL for ${service}:`, result);
-        // No redirect URL and no error - this is unexpected
         setAuthStates(prev => ({
           ...prev,
           [service]: { isLoading: false, error: 'No redirect URL provided' }
@@ -104,12 +96,11 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
       } catch (error) {
         console.error('Error polling auth status:', error);
       }
-    }, 2000); // Poll every 2 seconds
+    }, 2000);
     
-    // Store the interval ID to clear it later
     setTimeout(() => {
       clearInterval(pollInterval);
-    }, 60000); // Stop polling after 1 minute
+    }, 60000);
   };
   
   // Handle authentication completion
@@ -117,13 +108,11 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
     setShowAuthRedirect(false);
     setServiceToAuth(null);
     
-    // Update auth state
     setAuthStates(prev => ({
       ...prev,
       [service]: { isLoading: false, isAuthenticated: true }
     }));
     
-    // Notify parent component of auth success
     if (onAuthSuccess) {
       onAuthSuccess(service);
     }
@@ -134,7 +123,6 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
     setShowAuthRedirect(false);
     setServiceToAuth(null);
     
-    // Update auth state
     if (serviceToAuth) {
       setAuthStates(prev => ({
         ...prev,
@@ -146,26 +134,26 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
   // Markdown styles
   const markdownStyles = {
     body: {
-      color: isUser ? colors.black : colors.white,
+      color: isUser ? colors.text.inverse : colors.text.primary,
       fontSize: typography.fontSize.md,
       lineHeight: typography.lineHeight.md,
     },
     heading1: {
-      color: isUser ? colors.black : colors.white,
+      color: isUser ? colors.text.inverse : colors.text.primary,
       fontSize: typography.fontSize.xl,
       fontWeight: 'bold',
       marginTop: spacing.md,
       marginBottom: spacing.sm,
     },
     heading2: {
-      color: isUser ? colors.black : colors.white,
+      color: isUser ? colors.text.inverse : colors.text.primary,
       fontSize: typography.fontSize.lg,
       fontWeight: 'bold',
       marginTop: spacing.md,
       marginBottom: spacing.sm,
     },
     heading3: {
-      color: isUser ? colors.black : colors.white,
+      color: isUser ? colors.text.inverse : colors.text.primary,
       fontSize: typography.fontSize.md,
       fontWeight: 'bold',
       marginTop: spacing.md,
@@ -178,14 +166,14 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
       marginVertical: spacing.xs / 2,
     },
     code_block: {
-      backgroundColor: 'rgba(0, 0, 0, 0.3)',
+      backgroundColor: colors.background.tertiary,
       padding: spacing.sm,
       borderRadius: borderRadius.sm,
       fontFamily: typography.fontFamily.mono,
       fontSize: typography.fontSize.sm,
     },
     code_inline: {
-      backgroundColor: 'rgba(0, 0, 0, 0.3)',
+      backgroundColor: colors.background.tertiary,
       padding: spacing.xs,
       borderRadius: borderRadius.sm,
       fontFamily: typography.fontFamily.mono,
@@ -193,33 +181,33 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
     },
     blockquote: {
       borderLeftWidth: 4,
-      borderLeftColor: colors.emerald,
+      borderLeftColor: colors.interactive.primary,
       paddingLeft: spacing.md,
       marginLeft: spacing.sm,
       opacity: 0.8,
     },
     link: {
-      color: colors.emerald,
+      color: colors.interactive.primary,
       textDecorationLine: 'underline',
     },
     hr: {
-      backgroundColor: 'rgba(255, 255, 255, 0.2)',
+      backgroundColor: colors.border.primary,
       height: 1,
       marginVertical: spacing.md,
     },
     table: {
       borderWidth: 1,
-      borderColor: 'rgba(255, 255, 255, 0.2)',
+      borderColor: colors.border.primary,
       borderRadius: borderRadius.sm,
       marginVertical: spacing.md,
     },
     tr: {
       borderBottomWidth: 1,
-      borderColor: 'rgba(255, 255, 255, 0.2)',
+      borderColor: colors.border.primary,
     },
     th: {
       padding: spacing.sm,
-      backgroundColor: 'rgba(0, 0, 0, 0.3)',
+      backgroundColor: colors.background.tertiary,
     },
     td: {
       padding: spacing.sm,
@@ -228,7 +216,6 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
   
   // Function to parse message content and render auth buttons
   const renderMessageContent = (content) => {
-    // If we need to show auth redirect, render that instead
     if (showAuthRedirect && serviceToAuth) {
       return (
         <AuthRedirect
@@ -240,7 +227,6 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
     }
     
     if (!content || !content.includes('[AUTH_REQUEST:')) {
-      // No auth requests, render as markdown
       return (
         <Markdown style={markdownStyles}>
           {content}
@@ -248,13 +234,11 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
       );
     }
     
-    // Split the content into parts
     const parts = [];
     let lastIndex = 0;
     let match;
     
     while ((match = AUTH_REQUEST_PATTERN.exec(content)) !== null) {
-      // Add text before the auth request
       if (match.index > lastIndex) {
         parts.push({
           type: 'text',
@@ -262,7 +246,6 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
         });
       }
       
-      // Add the auth request
       parts.push({
         type: 'auth',
         service: match[1]
@@ -271,7 +254,6 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
       lastIndex = match.index + match[0].length;
     }
     
-    // Add any remaining text
     if (lastIndex < content.length) {
       parts.push({
         type: 'text',
@@ -279,7 +261,6 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
       });
     }
     
-    // Render the parts
     return (
       <View>
         {parts.map((part, i) => {
@@ -350,13 +331,13 @@ const styles = StyleSheet.create({
     ...shadows.md,
   },
   userBubble: {
-    backgroundColor: colors.emerald,
+    backgroundColor: colors.buttonBackground,
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
     borderRadius: 20,
-    borderBottomRightRadius: 4, // Creates chat bubble "tail" effect
+    borderBottomRightRadius: 4,
     elevation: 3,
-    shadowColor: colors.emerald,
+    shadowColor: colors.buttonBackground,
     shadowOffset: { width: 0, height: 2 },
     shadowOpacity: 0.3,
     shadowRadius: 4,
@@ -371,10 +352,10 @@ const styles = StyleSheet.create({
     lineHeight: typography.lineHeight.md,
   },
   userText: {
-    color: colors.white,
+    color: colors.text.primary,
   },
   botText: {
-    color: colors.white,
+    color: colors.text.primary,
   },
 });
 

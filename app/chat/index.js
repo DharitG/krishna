@@ -17,7 +17,7 @@ import Constants from 'expo-constants';
 import ChatMessage from '../../components/chat/ChatMessage';
 import MessageInput from '../../components/chat/MessageInput';
 import TypingIndicator from '../../components/chat/TypingIndicator';
-import GradientBackground from '../../components/GradientBackground';
+import ChatBackgroundWrapper from '../../components/chat/ChatBackgroundWrapper';
 import Sidebar from '../../components/Sidebar';
 import chatStore from '../../services/chatStore';
 import { colors, spacing, typography } from '../../constants/Theme';
@@ -258,7 +258,7 @@ const ChatScreen = () => {
   // Show loading spinner while initializing
   if (isInitializing || !activeChat) {
     return (
-      <GradientBackground colors={['#0A0A0C', '#121214']}>
+      <ChatBackgroundWrapper>
         <StatusBar barStyle="light-content" />
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.loadingContainer}>
@@ -266,12 +266,12 @@ const ChatScreen = () => {
             <Text style={styles.loadingText}>Loading chats...</Text>
           </View>
         </SafeAreaView>
-      </GradientBackground>
+      </ChatBackgroundWrapper>
     );
   }
 
   return (
-    <GradientBackground colors={['#0A0A0C', '#121214']}>
+    <ChatBackgroundWrapper>
       <StatusBar barStyle="light-content" />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
@@ -329,7 +329,7 @@ const ChatScreen = () => {
           activeChat={activeChat.id}
         />
       </SafeAreaView>
-    </GradientBackground>
+    </ChatBackgroundWrapper>
   );
 };
 

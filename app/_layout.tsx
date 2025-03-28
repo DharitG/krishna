@@ -20,9 +20,11 @@ export default function RootLayout() {
     async function loadResources() {
       try {
         await Font.loadAsync({
-          'NeueMachina-Light': require('../assets/fonts/NeueMachina-Light.otf'),
-          'NeueMachina-Regular': require('../assets/fonts/NeueMachina-Regular.otf'),
-          'NeueMachina-Ultrabold': require('../assets/fonts/NeueMachina-Ultrabold.otf'),
+          'InterVariable': require('../assets/fonts/InterVariable.ttf'),
+          'Inter-Medium': require('../assets/fonts/Inter-Medium.otf'),
+          'Inter-Light': require('../assets/fonts/Inter-Light.otf'),
+          'Inter-Black': require('../assets/fonts/Inter-Black.otf'),
+          'InterDisplay-Bold': require('../assets/fonts/InterDisplay-Bold.otf'),
         });
         setFontsLoaded(true);
       } catch (e) {

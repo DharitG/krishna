@@ -10,6 +10,14 @@ const baseColors = {
   offWhite: '#F0F0F5',
   white: '#FFFFFF',
   
+  // Theme colors
+  backgroundStart: '#0A0F2C',
+  backgroundEnd: '#0E1233',
+  primaryText: '#BFD6FF',
+  secondaryText: '#9BB1DD',
+  buttonBackground: '#1B2A4B',
+  inputBackground: '#14203D',
+  
   // Accent colors
   emerald: '#10B981',
   emeraldLight: '#34D399',
@@ -30,18 +38,18 @@ export const colors = {
   
   // Background colors
   background: {
-    primary: baseColors.black,
-    secondary: baseColors.darkGray,
-    tertiary: baseColors.gray,
-    card: baseColors.darkGray,
-    input: baseColors.gray,
+    primary: baseColors.backgroundStart,
+    secondary: baseColors.backgroundEnd,
+    tertiary: baseColors.buttonBackground,
+    card: baseColors.inputBackground,
+    input: baseColors.inputBackground,
     overlay: 'rgba(18, 18, 20, 0.8)',
   },
   
   // Text colors
   text: {
-    primary: baseColors.white,
-    secondary: baseColors.offWhite,
+    primary: baseColors.primaryText,
+    secondary: baseColors.secondaryText,
     tertiary: baseColors.lightGray,
     inverse: baseColors.black,
     error: baseColors.error,
@@ -69,10 +77,11 @@ export const colors = {
   
   // Gradient definitions
   gradients: {
-    primary: [baseColors.emerald, baseColors.purple],
+    primary: [baseColors.backgroundStart, baseColors.backgroundEnd],
     secondary: [baseColors.purpleDark, baseColors.emeraldLight],
     glow: ['rgba(16, 185, 129, 0.6)', 'rgba(139, 92, 246, 0.6)'],
     overlay: ['rgba(18, 18, 20, 0.8)', 'rgba(18, 18, 20, 0.95)'],
+    chat: ['#060818', '#0A0F2C', '#0E1233']
   }
 };
 
@@ -212,11 +221,13 @@ export const glassMorphism = {
 export const typography = {
   // Font families
   fontFamily: {
-    regular: 'System',
-    medium: 'System',
-    bold: 'System',
-    mono: 'SpaceMono-Regular',
-    brand: 'SpaceMono-Regular'
+    regular: 'InterVariable',
+    medium: 'Inter-Medium',
+    light: 'Inter-Light',
+    black: 'Inter-Black',
+    bold: 'InterDisplay-Bold',
+    mono: 'InterVariable',
+    brand: 'InterDisplay-Bold'
   },
   
   // Font sizes
