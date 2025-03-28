@@ -1,10 +1,21 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, StatusBar, Alert, ActivityIndicator, Image, Platform } from 'react-native';
+import { 
+  View, 
+  Text, 
+  TouchableOpacity, 
+  ScrollView, 
+  SafeAreaView, 
+  StatusBar, 
+  Alert, 
+  ActivityIndicator, 
+  Platform,
+  Animated
+} from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import ChatBackgroundWrapper from '../../components/chat/ChatBackgroundWrapper';
 import GlassCard from '../../components/GlassCard';
-import { colors, spacing, typography, glassMorphism } from '../../constants/Theme';
+import { colors, spacing, typography, glassMorphism, shadows, borderRadius } from '../../constants/Theme';
 import Constants from 'expo-constants';
 import accountStore from '../../services/accountStore';
 
@@ -186,29 +197,32 @@ const AccountScreen = () => {
     const formattedServiceName = serviceName.charAt(0).toUpperCase() + serviceName.slice(1);
     
     return (
-      <GlassCard key={serviceName} style={styles.serviceCard}>
-        <View style={styles.cardHeader}>
-          <Ionicons name={icon} size={24} color={colors.white} />
-          <Text style={styles.cardTitle}>{formattedServiceName}</Text>
-        </View>
-        
-        {serviceAccounts.length > 0 ? (
-          <View style={styles.accountsList}>
-            {serviceAccounts.map(account => renderAccountItem(serviceName, account))}
+      <View key={serviceName} style={styles.serviceCardContainer}>
+        <View style={styles.serviceCard}>
+          <View style={styles.cardHeader}>
+            <Ionicons name={icon} size={24} color={colors.white} />
+            <Text style={styles.cardTitle}>{formattedServiceName}</Text>
           </View>
-        ) : (
-          <Text style={styles.noAccountsText}>No {formattedServiceName} accounts connected</Text>
-        )}
-        
-        <TouchableOpacity 
-          style={styles.addAccountButton}
-          onPress={() => handleAddAccount(serviceName)}
-          disabled={!isComposioConfigured}
-        >
-          <Ionicons name="add-circle-outline" size={20} color={colors.white} />
-          <Text style={styles.addAccountButtonText}>Add {formattedServiceName} Account</Text>
-        </TouchableOpacity>
-      </GlassCard>
+          
+          {serviceAccounts.length > 0 ? (
+            <View style={styles.accountsList}>
+              {serviceAccounts.map(account => renderAccountItem(serviceName, account))}
+            </View>
+          ) : (
+            <Text style={styles.noAccountsText}>No {formattedServiceName} accounts connected</Text>
+          )}
+          
+          <TouchableOpacity 
+            style={styles.addAccountButton}
+            onPress={() => handleAddAccount(serviceName)}
+            disabled={!isComposioConfigured}
+            activeOpacity={0.7}
+          >
+            <Ionicons name="add-circle-outline" size={20} color={colors.white} />
+            <Text style={styles.addAccountButtonText}>Add {formattedServiceName} Account</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
     );
   };
   
@@ -236,7 +250,8 @@ const AccountScreen = () => {
           </TouchableOpacity>
           
           <View style={styles.headerTitleContainer}>
-            <Text style={styles.headerTitle}>Accounts</Text>
+            <Text style={styles.headerTitle}>August</Text>
+            <Text style={styles.headerSubtitle}>Account Settings</Text>
           </View>
           
           <View style={styles.headerButton} />
@@ -248,54 +263,59 @@ const AccountScreen = () => {
           showsVerticalScrollIndicator={false}
         >
           {/* User Profile Card */}
-          <GlassCard style={styles.profileCard}>
-            <View style={styles.profileHeader}>
-              <View style={styles.avatarContainer}>
-                <View style={styles.avatar}>
-                  <Ionicons name="person" size={40} color={colors.white} />
+          <View style={styles.profileCardContainer}>
+            <View style={styles.profileCard}>
+              <View style={styles.profileHeader}>
+                <View style={styles.avatarContainer}>
+                  <View style={styles.avatar}>
+                    <Ionicons name="person" size={40} color={colors.white} />
+                  </View>
                 </View>
-              </View>
-              <View style={styles.profileInfo}>
-                <Text style={styles.profileName}>{userInfo.name}</Text>
-                <Text style={styles.profileEmail}>{userInfo.email}</Text>
-                <View style={styles.badgeContainer}>
-                  <View style={styles.premiumBadge}>
-                    <Ionicons name="star" size={14} color={colors.warning} />
-                    <Text style={styles.premiumText}>{userInfo.accountType}</Text>
+                <View style={styles.profileInfo}>
+                  <Text style={styles.profileName}>{userInfo.name}</Text>
+                  <Text style={styles.profileEmail}>{userInfo.email}</Text>
+                  <View style={styles.badgeContainer}>
+                    <View style={styles.premiumBadge}>
+                      <Ionicons name="star" size={14} color={colors.warning} />
+                      <Text style={styles.premiumText}>{userInfo.accountType}</Text>
+                    </View>
                   </View>
                 </View>
               </View>
-            </View>
-            
-            <View style={styles.divider} />
-            
-            <View style={styles.profileDetails}>
-              <View style={styles.profileDetailItem}>
-                <Ionicons name="calendar-outline" size={20} color={colors.lightGray} />
-                <View style={styles.profileDetailText}>
-                  <Text style={styles.profileDetailLabel}>Member Since</Text>
-                  <Text style={styles.profileDetailValue}>{userInfo.joinDate}</Text>
+              
+              <View style={styles.divider} />
+              
+              <View style={styles.profileDetails}>
+                <View style={styles.profileDetailItem}>
+                  <View style={styles.iconContainer}>
+                    <Ionicons name="calendar-outline" size={20} color={colors.text.primary} />
+                  </View>
+                  <View style={styles.profileDetailText}>
+                    <Text style={styles.profileDetailLabel}>Member Since</Text>
+                    <Text style={styles.profileDetailValue}>{userInfo.joinDate}</Text>
+                  </View>
+                </View>
+                
+                <View style={styles.profileDetailItem}>
+                  <View style={styles.iconContainer}>
+                    <Ionicons name="link-outline" size={20} color={colors.text.primary} />
+                  </View>
+                  <View style={styles.profileDetailText}>
+                    <Text style={styles.profileDetailLabel}>Connected Services</Text>
+                    <Text style={styles.profileDetailValue}>{getActiveServices().length} services</Text>
+                  </View>
                 </View>
               </View>
               
-              <View style={styles.profileDetailItem}>
-                <Ionicons name="link-outline" size={20} color={colors.lightGray} />
-                <View style={styles.profileDetailText}>
-                  <Text style={styles.profileDetailLabel}>Connected Services</Text>
-                  <Text style={styles.profileDetailValue}>{getActiveServices().length} services</Text>
-                </View>
-              </View>
+              <TouchableOpacity style={styles.editProfileButton} activeOpacity={0.7}>
+                <Text style={styles.editProfileButtonText}>Edit Profile</Text>
+              </TouchableOpacity>
             </View>
-            
-            <TouchableOpacity style={styles.editProfileButton}>
-              <Text style={styles.editProfileButtonText}>Edit Profile</Text>
-            </TouchableOpacity>
-          </GlassCard>
+          </View>
           
           {/* Connected Services Section */}
           <View style={styles.sectionHeader}>
             <Text style={styles.sectionTitle}>Connected Services</Text>
-            <View style={styles.sectionDivider} />
           </View>
           
           {loading ? (
@@ -315,14 +335,16 @@ const AccountScreen = () => {
           )}
           
           {!isComposioConfigured && (
-            <GlassCard style={styles.warningCard}>
-              <View style={styles.warningContent}>
-                <Ionicons name="alert-circle-outline" size={24} color={colors.warning} />
-                <Text style={styles.warningText}>
-                  Composio API Key is not configured. Some features may be limited.
-                </Text>
+            <View style={styles.warningCardContainer}>
+              <View style={styles.warningCard}>
+                <View style={styles.warningContent}>
+                  <Ionicons name="alert-circle-outline" size={24} color={colors.warning} />
+                  <Text style={styles.warningText}>
+                    Composio API Key is not configured. Some features may be limited.
+                  </Text>
+                </View>
               </View>
-            </GlassCard>
+            </View>
           )}
           
           {/* Add some padding at the bottom */}
@@ -333,7 +355,6 @@ const AccountScreen = () => {
   );
 };
 
-// Custom styles for this screen
 const styles = {
   safeArea: {
     flex: 1,
@@ -355,6 +376,13 @@ const styles = {
     fontFamily: typography.fontFamily.brand,
     fontWeight: 'bold',
     letterSpacing: 1,
+    textTransform: 'uppercase',
+  },
+  headerSubtitle: {
+    color: colors.text.secondary,
+    fontSize: typography.fontSize.sm,
+    fontFamily: typography.fontFamily.regular,
+    marginTop: 2,
   },
   menuButton: {
     width: 40,
@@ -374,11 +402,21 @@ const styles = {
     paddingTop: spacing.sm,
     paddingBottom: spacing.xl,
   },
-  profileCard: {
-    ...glassMorphism.dark,
+  profileCardContainer: {
     marginBottom: spacing.lg,
-    borderRadius: 16,
+    borderRadius: borderRadius.lg,
     overflow: 'hidden',
+  },
+  profileCard: {
+    backgroundColor: 'rgba(20, 32, 61, 0.85)',
+    borderRadius: borderRadius.lg,
+    borderColor: 'rgba(48, 109, 255, 0.15)',
+    borderWidth: 1,
+    shadowColor: '#306DFF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   profileHeader: {
     flexDirection: 'row',
@@ -392,9 +430,11 @@ const styles = {
     width: 70,
     height: 70,
     borderRadius: 35,
-    backgroundColor: colors.emeraldTransparent,
+    backgroundColor: 'rgba(48, 109, 255, 0.15)',
     justifyContent: 'center',
     alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(48, 109, 255, 0.3)',
   },
   profileInfo: {
     flex: 1,
@@ -408,7 +448,7 @@ const styles = {
   profileEmail: {
     fontSize: typography.fontSize.sm,
     fontFamily: typography.fontFamily.regular,
-    color: colors.secondaryText,
+    color: colors.text.secondary,
     marginBottom: spacing.sm,
   },
   badgeContainer: {
@@ -441,13 +481,22 @@ const styles = {
     alignItems: 'center',
     marginBottom: spacing.md,
   },
+  iconContainer: {
+    width: 32,
+    height: 32,
+    borderRadius: 6,
+    backgroundColor: 'rgba(48, 109, 255, 0.1)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginRight: spacing.sm,
+  },
   profileDetailText: {
-    marginLeft: spacing.md,
+    marginLeft: spacing.sm,
   },
   profileDetailLabel: {
     fontSize: typography.fontSize.sm,
     fontFamily: typography.fontFamily.regular,
-    color: colors.secondaryText,
+    color: colors.text.secondary,
   },
   profileDetailValue: {
     fontSize: typography.fontSize.md,
@@ -457,9 +506,9 @@ const styles = {
   editProfileButton: {
     margin: spacing.md,
     marginTop: spacing.sm,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: '#1D4ED8',
     paddingVertical: spacing.md,
-    borderRadius: 8,
+    borderRadius: borderRadius.md,
     alignItems: 'center',
   },
   editProfileButtonText: {
@@ -473,22 +522,28 @@ const styles = {
   sectionTitle: {
     fontSize: typography.fontSize.md,
     fontFamily: typography.fontFamily.medium,
-    color: colors.primaryText,
+    color: colors.text.primary,
     marginBottom: spacing.sm,
     marginLeft: spacing.sm,
-  },
-  sectionDivider: {
-    height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   servicesContainer: {
     gap: spacing.md,
   },
-  serviceCard: {
-    ...glassMorphism.dark,
+  serviceCardContainer: {
     marginBottom: spacing.md,
-    borderRadius: 16,
+    borderRadius: borderRadius.lg,
     overflow: 'hidden',
+  },
+  serviceCard: {
+    backgroundColor: 'rgba(20, 32, 61, 0.85)',
+    borderRadius: borderRadius.lg,
+    borderColor: 'rgba(48, 109, 255, 0.15)',
+    borderWidth: 1,
+    shadowColor: '#306DFF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   cardHeader: {
     flexDirection: 'row',
@@ -528,7 +583,7 @@ const styles = {
   accountItemSubtitle: {
     fontSize: typography.fontSize.sm,
     fontFamily: typography.fontFamily.regular,
-    color: colors.secondaryText,
+    color: colors.text.secondary,
   },
   accountItemActions: {
     flexDirection: 'row',
@@ -567,7 +622,7 @@ const styles = {
   },
   noAccountsText: {
     padding: spacing.md,
-    color: colors.secondaryText,
+    color: colors.text.secondary,
     fontSize: typography.fontSize.md,
     textAlign: 'center',
     fontFamily: typography.fontFamily.regular,
@@ -591,17 +646,26 @@ const styles = {
     alignItems: 'center',
   },
   loadingText: {
-    color: colors.secondaryText,
+    color: colors.text.secondary,
     marginTop: spacing.md,
     fontSize: typography.fontSize.md,
     fontFamily: typography.fontFamily.regular,
   },
-  warningCard: {
-    ...glassMorphism.dark,
+  warningCardContainer: {
     marginTop: spacing.md,
-    borderWidth: 1,
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+  },
+  warningCard: {
+    backgroundColor: 'rgba(20, 32, 61, 0.85)',
+    borderRadius: borderRadius.lg,
     borderColor: 'rgba(245, 158, 11, 0.3)',
-    borderRadius: 16,
+    borderWidth: 1,
+    shadowColor: colors.warning,
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   },
   warningContent: {
     flexDirection: 'row',
@@ -609,11 +673,11 @@ const styles = {
     padding: spacing.md,
   },
   warningText: {
-    color: colors.warning,
+    color: colors.text.warning,
+    fontSize: typography.fontSize.md,
+    fontFamily: typography.fontFamily.medium,
     marginLeft: spacing.md,
     flex: 1,
-    fontSize: typography.fontSize.md,
-    fontFamily: typography.fontFamily.regular,
   },
 };
 
