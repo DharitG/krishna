@@ -2,10 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, StatusBar, Switch, Alert, Linking } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import GradientBackground from '../../components/GradientBackground';
+import ChatBackgroundWrapper from '../../components/chat/ChatBackgroundWrapper';
 import GlassCard from '../../components/GlassCard';
-import { colors } from '../../constants/Theme';
-import { layoutStyles, headerStyles, cardStyles, textStyles } from '../../constants/StyleGuide';
+import { colors, spacing, typography, glassMorphism } from '../../constants/Theme';
 import Constants from 'expo-constants';
 import chatStore from '../../services/chatStore';
 import { signOut } from '../../services/supabase';
@@ -152,7 +151,7 @@ const SettingsScreen = () => {
           icon: 'construct-outline',
           hasDetail: false,
           renderItem: () => (
-            <View style={cardStyles.cardItemRight}>
+            <View style={styles.cardItemRight}>
               <Switch
                 trackColor={{ false: colors.darkGray, true: colors.emeraldTransparent }}
                 thumbColor={useTools ? colors.emerald : colors.lightGray}
@@ -176,7 +175,7 @@ const SettingsScreen = () => {
             icon: 'logo-github',
             hasDetail: false,
             renderItem: () => (
-              <View style={cardStyles.cardItemRight}>
+              <View style={styles.cardItemRight}>
                 <Switch
                   trackColor={{ false: colors.darkGray, true: colors.emeraldTransparent }}
                   thumbColor={features.github ? colors.emerald : colors.lightGray}
@@ -200,7 +199,7 @@ const SettingsScreen = () => {
             icon: 'logo-slack',
             hasDetail: false,
             renderItem: () => (
-              <View style={cardStyles.cardItemRight}>
+              <View style={styles.cardItemRight}>
                 <Switch
                   trackColor={{ false: colors.darkGray, true: colors.emeraldTransparent }}
                   thumbColor={features.slack ? colors.emerald : colors.lightGray}
@@ -224,7 +223,7 @@ const SettingsScreen = () => {
             icon: 'mail-outline',
             hasDetail: false,
             renderItem: () => (
-              <View style={cardStyles.cardItemRight}>
+              <View style={styles.cardItemRight}>
                 <Switch
                   trackColor={{ false: colors.darkGray, true: colors.emeraldTransparent }}
                   thumbColor={features.gmail ? colors.emerald : colors.lightGray}
@@ -288,60 +287,61 @@ const SettingsScreen = () => {
   ];
 
   return (
-    <GradientBackground colors={[colors.black, colors.darkGray]}>
+    <ChatBackgroundWrapper>
       <StatusBar barStyle="light-content" />
-      <SafeAreaView style={layoutStyles.safeArea}>
-        <View style={headerStyles.headerWithBack}>
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
           <TouchableOpacity 
-            style={headerStyles.headerLeft} 
+            style={styles.menuButton} 
             onPress={handleBack}
           >
-            <Ionicons name="arrow-back" size={24} color={colors.white} />
+            <Ionicons name="arrow-back" size={24} color={colors.white} weight="regular" />
           </TouchableOpacity>
           
-          <View style={headerStyles.headerCenter}>
-            <Text style={headerStyles.headerTitleLarge}>Settings</Text>
+          <View style={styles.headerTitleContainer}>
+            <Text style={styles.headerTitle}>Settings</Text>
           </View>
           
-          <View style={headerStyles.headerRight} />
+          <View style={styles.headerButton} />
         </View>
         
         <ScrollView 
-          style={layoutStyles.container} 
-          contentContainerStyle={layoutStyles.contentContainer}
+          style={styles.container} 
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={true}
         >
           {settings.map((section, sectionIndex) => (
-            <View key={sectionIndex} style={layoutStyles.section}>
-              <Text style={textStyles.sectionTitle}>{section.title}</Text>
+            <View key={sectionIndex} style={styles.section}>
+              <Text style={styles.sectionTitle}>{section.title}</Text>
               
-              <GlassCard style={cardStyles.glassCard}>
+              <GlassCard style={styles.glassCard}>
                 {section.items.map((item, itemIndex) => (
                   <TouchableOpacity 
                     key={itemIndex} 
                     style={[
-                      cardStyles.cardItem,
-                      itemIndex === section.items.length - 1 ? cardStyles.cardItemLast : null,
+                      styles.cardItem,
+                      itemIndex === section.items.length - 1 ? styles.cardItemLast : null,
                       item.disabled ? { opacity: 0.5 } : null
                     ]}
                     onPress={item.onPress}
                     disabled={item.disabled}
                   >
-                    <View style={cardStyles.cardItemLeft}>
+                    <View style={styles.cardItemLeft}>
                       <Ionicons 
                         name={item.icon} 
                         size={22} 
                         color={item.labelStyle?.color || colors.emerald} 
-                        style={cardStyles.cardItemIcon} 
+                        style={styles.cardItemIcon} 
                       />
-                      <Text style={[cardStyles.cardItemLabel, item.labelStyle]}>
+                      <Text style={[styles.cardItemLabel, item.labelStyle]}>
                         {item.label}
                       </Text>
                     </View>
                     
-                    <View style={cardStyles.cardItemRight}>
+                    <View style={styles.cardItemRight}>
                       {item.renderItem ? item.renderItem() : (
                         <>
-                          {item.value && <Text style={cardStyles.cardItemValue}>{item.value}</Text>}
+                          {item.value && <Text style={styles.cardItemValue}>{item.value}</Text>}
                           {item.hasDetail && <Ionicons name="chevron-forward" size={18} color={colors.lightGray} />}
                         </>
                       )}
@@ -353,8 +353,98 @@ const SettingsScreen = () => {
           ))}
         </ScrollView>
       </SafeAreaView>
-    </GradientBackground>
+    </ChatBackgroundWrapper>
   );
+};
+
+const styles = {
+  safeArea: {
+    flex: 1,
+  },
+  header: {
+    flexDirection: 'row',
+    padding: spacing.md,
+    paddingTop: Platform.OS === 'android' ? spacing.xl : spacing.md,
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  headerTitleContainer: {
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    color: colors.white,
+    fontSize: typography.fontSize.xl,
+    fontFamily: typography.fontFamily.brand,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  menuButton: {
+    width: 40,
+    height: 40,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  headerButton: {
+    width: 40,
+    height: 40,
+  },
+  container: {
+    flex: 1,
+    paddingHorizontal: spacing.md,
+  },
+  contentContainer: {
+    paddingBottom: spacing.xl,
+  },
+  section: {
+    marginBottom: spacing.lg,
+  },
+  sectionTitle: {
+    fontSize: typography.fontSize.md,
+    fontFamily: typography.fontFamily.medium,
+    color: colors.primaryText,
+    marginBottom: spacing.sm,
+    marginLeft: spacing.sm,
+  },
+  glassCard: {
+    ...glassMorphism.dark,
+    borderRadius: 16,
+    overflow: 'hidden',
+  },
+  cardItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  cardItemLast: {
+    borderBottomWidth: 0,
+  },
+  cardItemLeft: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  cardItemIcon: {
+    marginRight: spacing.sm,
+  },
+  cardItemLabel: {
+    fontSize: typography.fontSize.md,
+    color: colors.white,
+    fontFamily: typography.fontFamily.regular,
+  },
+  cardItemRight: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  cardItemValue: {
+    fontSize: typography.fontSize.sm,
+    color: colors.secondaryText,
+    marginRight: spacing.sm,
+    fontFamily: typography.fontFamily.regular,
+  },
 };
 
 export default SettingsScreen;

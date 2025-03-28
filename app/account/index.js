@@ -1,10 +1,10 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, StatusBar, Alert, ActivityIndicator, Image } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, StatusBar, Alert, ActivityIndicator, Image, Platform } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { useRouter, Stack } from 'expo-router';
+import { useRouter } from 'expo-router';
+import ChatBackgroundWrapper from '../../components/chat/ChatBackgroundWrapper';
 import GlassCard from '../../components/GlassCard';
-import { colors } from '../../constants/Theme';
-import { layoutStyles, headerStyles, cardStyles, textStyles } from '../../constants/StyleGuide';
+import { colors, spacing, typography, glassMorphism } from '../../constants/Theme';
 import Constants from 'expo-constants';
 import accountStore from '../../services/accountStore';
 
@@ -224,150 +224,169 @@ const AccountScreen = () => {
   };
   
   return (
-    <SafeAreaView style={[layoutStyles.safeArea, { backgroundColor: colors.background.primary }]}>
+    <ChatBackgroundWrapper>
       <StatusBar barStyle="light-content" />
-      
-      <View style={styles.header}>
-        <TouchableOpacity style={styles.backButton} onPress={handleBack}>
-          <Ionicons name="chevron-back" size={24} color={colors.white} />
-        </TouchableOpacity>
-        <Text style={styles.headerTitle}>Accounts</Text>
-        <View style={styles.headerRight} />
-      </View>
-      
-      <ScrollView 
-        style={styles.scrollView}
-        contentContainerStyle={styles.scrollContent}
-        showsVerticalScrollIndicator={false}
-      >
-        {/* User Profile Card */}
-        <GlassCard style={styles.profileCard}>
-          <View style={styles.profileHeader}>
-            <View style={styles.avatarContainer}>
-              <View style={styles.avatar}>
-                <Ionicons name="person" size={40} color={colors.white} />
+      <SafeAreaView style={styles.safeArea}>
+        <View style={styles.header}>
+          <TouchableOpacity 
+            style={styles.menuButton} 
+            onPress={handleBack}
+          >
+            <Ionicons name="arrow-back" size={24} color={colors.white} weight="regular" />
+          </TouchableOpacity>
+          
+          <View style={styles.headerTitleContainer}>
+            <Text style={styles.headerTitle}>Accounts</Text>
+          </View>
+          
+          <View style={styles.headerButton} />
+        </View>
+        
+        <ScrollView 
+          style={styles.container}
+          contentContainerStyle={styles.contentContainer}
+          showsVerticalScrollIndicator={false}
+        >
+          {/* User Profile Card */}
+          <GlassCard style={styles.profileCard}>
+            <View style={styles.profileHeader}>
+              <View style={styles.avatarContainer}>
+                <View style={styles.avatar}>
+                  <Ionicons name="person" size={40} color={colors.white} />
+                </View>
               </View>
-            </View>
-            <View style={styles.profileInfo}>
-              <Text style={styles.profileName}>{userInfo.name}</Text>
-              <Text style={styles.profileEmail}>{userInfo.email}</Text>
-              <View style={styles.badgeContainer}>
-                <View style={styles.premiumBadge}>
-                  <Ionicons name="star" size={14} color={colors.warning} />
-                  <Text style={styles.premiumText}>{userInfo.accountType}</Text>
+              <View style={styles.profileInfo}>
+                <Text style={styles.profileName}>{userInfo.name}</Text>
+                <Text style={styles.profileEmail}>{userInfo.email}</Text>
+                <View style={styles.badgeContainer}>
+                  <View style={styles.premiumBadge}>
+                    <Ionicons name="star" size={14} color={colors.warning} />
+                    <Text style={styles.premiumText}>{userInfo.accountType}</Text>
+                  </View>
                 </View>
               </View>
             </View>
-          </View>
-          
-          <View style={styles.divider} />
-          
-          <View style={styles.profileDetails}>
-            <View style={styles.profileDetailItem}>
-              <Ionicons name="calendar-outline" size={20} color={colors.lightGray} />
-              <View style={styles.profileDetailText}>
-                <Text style={styles.profileDetailLabel}>Member Since</Text>
-                <Text style={styles.profileDetailValue}>{userInfo.joinDate}</Text>
+            
+            <View style={styles.divider} />
+            
+            <View style={styles.profileDetails}>
+              <View style={styles.profileDetailItem}>
+                <Ionicons name="calendar-outline" size={20} color={colors.lightGray} />
+                <View style={styles.profileDetailText}>
+                  <Text style={styles.profileDetailLabel}>Member Since</Text>
+                  <Text style={styles.profileDetailValue}>{userInfo.joinDate}</Text>
+                </View>
+              </View>
+              
+              <View style={styles.profileDetailItem}>
+                <Ionicons name="link-outline" size={20} color={colors.lightGray} />
+                <View style={styles.profileDetailText}>
+                  <Text style={styles.profileDetailLabel}>Connected Services</Text>
+                  <Text style={styles.profileDetailValue}>{getActiveServices().length} services</Text>
+                </View>
               </View>
             </View>
             
-            <View style={styles.profileDetailItem}>
-              <Ionicons name="link-outline" size={20} color={colors.lightGray} />
-              <View style={styles.profileDetailText}>
-                <Text style={styles.profileDetailLabel}>Connected Services</Text>
-                <Text style={styles.profileDetailValue}>{getActiveServices().length} services</Text>
-              </View>
-            </View>
+            <TouchableOpacity style={styles.editProfileButton}>
+              <Text style={styles.editProfileButtonText}>Edit Profile</Text>
+            </TouchableOpacity>
+          </GlassCard>
+          
+          {/* Connected Services Section */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Connected Services</Text>
+            <View style={styles.sectionDivider} />
           </View>
           
-          <TouchableOpacity style={styles.editProfileButton}>
-            <Text style={styles.editProfileButtonText}>Edit Profile</Text>
-          </TouchableOpacity>
-        </GlassCard>
-        
-        {/* Connected Services Section */}
-        <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>Connected Services</Text>
-          <View style={styles.sectionDivider} />
-        </View>
-        
-        {loading ? (
-          <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.emerald} />
-            <Text style={styles.loadingText}>Loading accounts...</Text>
-          </View>
-        ) : (
-          <View style={styles.servicesContainer}>
-            {renderServiceSection('github', accounts.github || [], 'logo-github')}
-            {renderServiceSection('slack', accounts.slack || [], 'logo-slack')}
-            {renderServiceSection('gmail', accounts.gmail || [], 'mail-outline')}
-            {renderServiceSection('discord', accounts.discord || [], 'logo-discord')}
-            {renderServiceSection('zoom', accounts.zoom || [], 'videocam-outline')}
-            {renderServiceSection('asana', accounts.asana || [], 'list-outline')}
-          </View>
-        )}
-        
-        {!isComposioConfigured && (
-          <GlassCard style={styles.warningCard}>
-            <View style={styles.warningContent}>
-              <Ionicons name="alert-circle-outline" size={24} color={colors.warning} />
-              <Text style={styles.warningText}>
-                Composio API Key is not configured. Some features may be limited.
-              </Text>
+          {loading ? (
+            <View style={styles.loadingContainer}>
+              <ActivityIndicator size="large" color={colors.emerald} />
+              <Text style={styles.loadingText}>Loading accounts...</Text>
             </View>
-          </GlassCard>
-        )}
-        
-        {/* Add some padding at the bottom */}
-        <View style={{ height: 40 }} />
-      </ScrollView>
-    </SafeAreaView>
+          ) : (
+            <View style={styles.servicesContainer}>
+              {renderServiceSection('github', accounts.github || [], 'logo-github')}
+              {renderServiceSection('slack', accounts.slack || [], 'logo-slack')}
+              {renderServiceSection('gmail', accounts.gmail || [], 'mail-outline')}
+              {renderServiceSection('discord', accounts.discord || [], 'logo-discord')}
+              {renderServiceSection('zoom', accounts.zoom || [], 'videocam-outline')}
+              {renderServiceSection('asana', accounts.asana || [], 'list-outline')}
+            </View>
+          )}
+          
+          {!isComposioConfigured && (
+            <GlassCard style={styles.warningCard}>
+              <View style={styles.warningContent}>
+                <Ionicons name="alert-circle-outline" size={24} color={colors.warning} />
+                <Text style={styles.warningText}>
+                  Composio API Key is not configured. Some features may be limited.
+                </Text>
+              </View>
+            </GlassCard>
+          )}
+          
+          {/* Add some padding at the bottom */}
+          <View style={{ height: 40 }} />
+        </ScrollView>
+      </SafeAreaView>
+    </ChatBackgroundWrapper>
   );
 };
 
 // Custom styles for this screen
 const styles = {
+  safeArea: {
+    flex: 1,
+  },
   header: {
     flexDirection: 'row',
+    padding: spacing.md,
+    paddingTop: Platform.OS === 'android' ? spacing.xl : spacing.md,
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingTop: 16,
-    paddingBottom: 8,
   },
-  backButton: {
+  headerTitleContainer: {
+    flexDirection: 'column',
+    alignItems: 'center',
+  },
+  headerTitle: {
+    color: colors.white,
+    fontSize: typography.fontSize.xl,
+    fontFamily: typography.fontFamily.brand,
+    fontWeight: 'bold',
+    letterSpacing: 1,
+  },
+  menuButton: {
     width: 40,
     height: 40,
     justifyContent: 'center',
     alignItems: 'center',
   },
-  headerTitle: {
-    fontSize: 20,
-    fontWeight: '600',
-    color: colors.white,
-  },
-  headerRight: {
+  headerButton: {
     width: 40,
+    height: 40,
   },
-  scrollView: {
+  container: {
     flex: 1,
+    paddingHorizontal: spacing.md,
   },
-  scrollContent: {
-    padding: 16,
-    paddingTop: 8,
+  contentContainer: {
+    paddingTop: spacing.sm,
+    paddingBottom: spacing.xl,
   },
   profileCard: {
-    marginBottom: 24,
+    ...glassMorphism.dark,
+    marginBottom: spacing.lg,
     borderRadius: 16,
     overflow: 'hidden',
   },
   profileHeader: {
     flexDirection: 'row',
-    padding: 16,
+    padding: spacing.md,
     alignItems: 'center',
   },
   avatarContainer: {
-    marginRight: 16,
+    marginRight: spacing.md,
   },
   avatar: {
     width: 70,
@@ -381,15 +400,16 @@ const styles = {
     flex: 1,
   },
   profileName: {
-    fontSize: 22,
-    fontWeight: '600',
+    fontSize: typography.fontSize.lg,
+    fontFamily: typography.fontFamily.bold,
     color: colors.white,
     marginBottom: 4,
   },
   profileEmail: {
-    fontSize: 14,
-    color: colors.lightGray,
-    marginBottom: 8,
+    fontSize: typography.fontSize.sm,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.secondaryText,
+    marginBottom: spacing.sm,
   },
   badgeContainer: {
     flexDirection: 'row',
@@ -403,88 +423,91 @@ const styles = {
     borderRadius: 12,
   },
   premiumText: {
-    fontSize: 12,
-    fontWeight: '500',
+    fontSize: typography.fontSize.xs,
+    fontFamily: typography.fontFamily.medium,
     color: colors.warning,
     marginLeft: 4,
   },
   divider: {
     height: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    marginHorizontal: 16,
+    marginHorizontal: spacing.md,
   },
   profileDetails: {
-    padding: 16,
+    padding: spacing.md,
   },
   profileDetailItem: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 12,
+    marginBottom: spacing.md,
   },
   profileDetailText: {
-    marginLeft: 12,
+    marginLeft: spacing.md,
   },
   profileDetailLabel: {
-    fontSize: 14,
-    color: colors.lightGray,
+    fontSize: typography.fontSize.sm,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.secondaryText,
   },
   profileDetailValue: {
-    fontSize: 16,
+    fontSize: typography.fontSize.md,
+    fontFamily: typography.fontFamily.medium,
     color: colors.white,
-    fontWeight: '500',
   },
   editProfileButton: {
-    margin: 16,
-    marginTop: 8,
+    margin: spacing.md,
+    marginTop: spacing.sm,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
-    paddingVertical: 12,
+    paddingVertical: spacing.md,
     borderRadius: 8,
     alignItems: 'center',
   },
   editProfileButtonText: {
     color: colors.white,
-    fontWeight: '500',
-    fontSize: 16,
+    fontFamily: typography.fontFamily.medium,
+    fontSize: typography.fontSize.md,
   },
   sectionHeader: {
-    marginBottom: 16,
+    marginBottom: spacing.md,
   },
   sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    color: colors.white,
-    marginBottom: 8,
+    fontSize: typography.fontSize.md,
+    fontFamily: typography.fontFamily.medium,
+    color: colors.primaryText,
+    marginBottom: spacing.sm,
+    marginLeft: spacing.sm,
   },
   sectionDivider: {
     height: 1,
     backgroundColor: 'rgba(255, 255, 255, 0.1)',
   },
   servicesContainer: {
-    gap: 16,
+    gap: spacing.md,
   },
   serviceCard: {
-    marginBottom: 16,
+    ...glassMorphism.dark,
+    marginBottom: spacing.md,
     borderRadius: 16,
     overflow: 'hidden',
   },
   cardHeader: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    padding: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
   cardTitle: {
-    fontSize: 18,
-    fontWeight: '600',
+    fontSize: typography.fontSize.md,
+    fontFamily: typography.fontFamily.medium,
     color: colors.white,
-    marginLeft: 12,
+    marginLeft: spacing.md,
   },
   accountsList: {
-    padding: 8,
+    padding: spacing.sm,
   },
   accountItem: {
-    padding: 12,
+    padding: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: 'rgba(255, 255, 255, 0.1)',
   },
@@ -497,14 +520,15 @@ const styles = {
     flex: 1,
   },
   accountItemTitle: {
-    fontSize: 16,
-    fontWeight: '500',
+    fontSize: typography.fontSize.md,
+    fontFamily: typography.fontFamily.medium,
     color: colors.white,
     marginBottom: 2,
   },
   accountItemSubtitle: {
-    fontSize: 14,
-    color: colors.lightGray,
+    fontSize: typography.fontSize.sm,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.secondaryText,
   },
   accountItemActions: {
     flexDirection: 'row',
@@ -521,8 +545,8 @@ const styles = {
   },
   accountItemButtonText: {
     color: colors.emerald,
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: typography.fontSize.sm,
+    fontFamily: typography.fontFamily.medium,
     marginLeft: 4,
   },
   removeButton: {
@@ -538,53 +562,58 @@ const styles = {
   },
   activeAccountText: {
     color: colors.emerald,
-    fontSize: 14,
-    fontWeight: '500',
+    fontSize: typography.fontSize.sm,
+    fontFamily: typography.fontFamily.medium,
   },
   noAccountsText: {
-    padding: 16,
-    color: colors.lightGray,
-    fontSize: 15,
+    padding: spacing.md,
+    color: colors.secondaryText,
+    fontSize: typography.fontSize.md,
     textAlign: 'center',
+    fontFamily: typography.fontFamily.regular,
   },
   addAccountButton: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    padding: 12,
+    padding: spacing.md,
     borderTopWidth: 1,
     borderTopColor: 'rgba(255, 255, 255, 0.1)',
   },
   addAccountButtonText: {
     color: colors.white,
-    fontSize: 15,
-    fontWeight: '500',
-    marginLeft: 8,
+    fontSize: typography.fontSize.md,
+    fontFamily: typography.fontFamily.medium,
+    marginLeft: spacing.sm,
   },
   loadingContainer: {
-    padding: 24,
+    padding: spacing.xl,
     alignItems: 'center',
   },
   loadingText: {
-    color: colors.lightGray,
-    marginTop: 12,
-    fontSize: 16,
+    color: colors.secondaryText,
+    marginTop: spacing.md,
+    fontSize: typography.fontSize.md,
+    fontFamily: typography.fontFamily.regular,
   },
   warningCard: {
-    marginTop: 16,
+    ...glassMorphism.dark,
+    marginTop: spacing.md,
     borderWidth: 1,
     borderColor: 'rgba(245, 158, 11, 0.3)',
+    borderRadius: 16,
   },
   warningContent: {
     flexDirection: 'row',
     alignItems: 'center',
-    padding: 16,
+    padding: spacing.md,
   },
   warningText: {
     color: colors.warning,
-    marginLeft: 12,
+    marginLeft: spacing.md,
     flex: 1,
-    fontSize: 15,
+    fontSize: typography.fontSize.md,
+    fontFamily: typography.fontFamily.regular,
   },
 };
 
