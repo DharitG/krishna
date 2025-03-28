@@ -121,26 +121,26 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
   // Markdown styles
   const markdownStyles = {
     body: {
-      color: isUser ? colors.text.inverse : colors.text.primary,
-      fontSize: isUser ? typography.fontSize.md : typography.fontSize.lg,
-      lineHeight: isUser ? typography.lineHeight.md : typography.lineHeight.lg,
+      color: isUser ? colors.white : colors.text.primary,
+      fontSize: typography.fontSize.md,
+      lineHeight: typography.lineHeight.md,
     },
     heading1: {
-      color: isUser ? colors.text.inverse : colors.text.primary,
+      color: isUser ? colors.white : colors.text.primary,
       fontSize: typography.fontSize.xl,
       fontWeight: 'bold',
       marginTop: spacing.md,
       marginBottom: spacing.sm,
     },
     heading2: {
-      color: isUser ? colors.text.inverse : colors.text.primary,
+      color: isUser ? colors.white : colors.text.primary,
       fontSize: typography.fontSize.lg,
       fontWeight: 'bold',
       marginTop: spacing.md,
       marginBottom: spacing.sm,
     },
     heading3: {
-      color: isUser ? colors.text.inverse : colors.text.primary,
+      color: isUser ? colors.white : colors.text.primary,
       fontSize: typography.fontSize.md,
       fontWeight: 'bold',
       marginTop: spacing.md,
