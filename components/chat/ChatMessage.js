@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Linking, Alert, Animated } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import AuthButton from './AuthButton';
@@ -11,11 +11,11 @@ import {
   spacing,
   borderRadius,
   shadows,
-  typography
+  typography,
+  glassMorphism
 } from '../../constants/Theme';
 
 // Regex pattern to detect auth requests in the message
-// Format: [AUTH_REQUEST:service]
 const AUTH_REQUEST_PATTERN = /\[AUTH_REQUEST:(\w+)\]/g;
 
 const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
@@ -41,31 +41,24 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
     }));
     
     try {
-      console.log(`Calling chatStore.authenticateService for ${service}`);
       const result = await chatStore.authenticateService(service);
-      console.log(`Authentication result for ${service}:`, result);
       
       if (result.error) {
-        console.error(`Authentication error for ${service}:`, result.message);
         setAuthStates(prev => ({
           ...prev,
           [service]: { isLoading: false, error: result.message }
         }));
         Alert.alert('Authentication Error', result.message || 'Failed to connect to service');
       } else if (result.redirectUrl) {
-        console.log(`Got redirect URL for ${service}:`, result.redirectUrl);
         setServiceToAuth(service);
         setShowAuthRedirect(true);
         
         if (result.mockMode) {
-          console.log(`Starting polling for ${service} (mock mode)`);
           startPollingAuthStatus(service);
         } else {
-          console.log(`Opening redirect URL for ${service}:`, result.redirectUrl);
           Linking.openURL(result.redirectUrl);
         }
       } else {
-        console.error(`No redirect URL for ${service}:`, result);
         setAuthStates(prev => ({
           ...prev,
           [service]: { isLoading: false, error: 'No redirect URL provided' }
@@ -73,7 +66,6 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
         Alert.alert('Authentication Error', 'No redirect URL provided');
       }
     } catch (error) {
-      console.error(`Error authenticating with ${service}:`, error);
       setAuthStates(prev => ({
         ...prev,
         [service]: { isLoading: false, error: error.message }
@@ -87,7 +79,6 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
     const pollInterval = setInterval(async () => {
       try {
         const status = await chatStore.checkToolAuth(service);
-        
         if (status.authenticated) {
           clearInterval(pollInterval);
           handleAuthComplete(service);
@@ -106,12 +97,10 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
   const handleAuthComplete = (service) => {
     setShowAuthRedirect(false);
     setServiceToAuth(null);
-    
     setAuthStates(prev => ({
       ...prev,
       [service]: { isLoading: false, isAuthenticated: true }
     }));
-    
     if (onAuthSuccess) {
       onAuthSuccess(service);
     }
@@ -121,7 +110,6 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
   const handleAuthCancel = () => {
     setShowAuthRedirect(false);
     setServiceToAuth(null);
-    
     if (serviceToAuth) {
       setAuthStates(prev => ({
         ...prev,
@@ -134,8 +122,8 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
   const markdownStyles = {
     body: {
       color: isUser ? colors.text.inverse : colors.text.primary,
-      fontSize: typography.fontSize.md,
-      lineHeight: typography.lineHeight.md,
+      fontSize: isUser ? typography.fontSize.md : typography.fontSize.lg,
+      lineHeight: isUser ? typography.lineHeight.md : typography.lineHeight.lg,
     },
     heading1: {
       color: isUser ? colors.text.inverse : colors.text.primary,
@@ -294,18 +282,20 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
       </View>
     );
   };
-  
-  return (
-    <View style={[
-      styles.container,
-      isUser ? styles.userContainer : styles.botContainer
-    ]}>
-      <View style={[
-        styles.bubble,
-        isUser ? styles.userBubble : styles.botBubble
-      ]}>
-        {renderMessageContent(message.content)}
+
+  if (isUser) {
+    return (
+      <View style={[styles.container, styles.userContainer]}>
+        <View style={[styles.bubble, styles.userBubble]}>
+          {renderMessageContent(message.content)}
+        </View>
       </View>
+    );
+  }
+
+  return (
+    <View style={[styles.container, styles.botContainer]}>
+      {renderMessageContent(message.content)}
     </View>
   );
 };
@@ -321,6 +311,8 @@ const styles = StyleSheet.create({
   botContainer: {
     alignItems: 'flex-start',
     width: '100%',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
   },
   bubble: {
     maxWidth: '85%',
@@ -333,25 +325,6 @@ const styles = StyleSheet.create({
     borderRadius: 20,
     borderBottomRightRadius: 4,
     backgroundColor: 'rgba(48, 109, 255, 0.15)',
-  },
-  botBubble: {
-    backgroundColor: 'rgba(26, 44, 75, 0.4)',
-    backdropFilter: 'blur(12px)',
-    borderRadius: 20,
-    borderBottomLeftRadius: 4,
-    borderWidth: 1,
-    borderColor: 'rgba(48, 109, 255, 0.15)',
-    width: '100%',
-  },
-  text: {
-    fontSize: typography.fontSize.md,
-    lineHeight: typography.lineHeight.md,
-  },
-  userText: {
-    color: colors.text.primary,
-  },
-  botText: {
-    color: colors.text.primary,
   },
 });
 

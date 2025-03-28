@@ -305,22 +305,10 @@ class ChatStore {
         // Create a default chat if no chats exist
         const newChat = await createChat('New Chat');
         
-        // Add welcome message
-        await addMessage(
-          newChat.id, 
-          'assistant', 
-          `Hello! I'm August, your AI super agent with tool capabilities. How can I help you today?`
-        );
-        
         this.chats = [
           {
             ...newChat,
-            messages: [
-              {
-                role: 'assistant',
-                content: `Hello! I'm August, your AI super agent with tool capabilities. How can I help you today?`
-              }
-            ],
+            messages: [],
             enabledTools: [], 
             useTools: true
           }
@@ -374,12 +362,7 @@ class ChatStore {
       {
         id: 'mock-chat-1',
         title: 'New Chat',
-        messages: [
-          {
-            role: 'assistant',
-            content: "Hello! I'm August, your AI super agent with tool capabilities. How can I help you today?"
-          }
-        ],
+        messages: [],
         created_at: new Date(),
         updated_at: new Date(),
         enabledTools: [], // Tools enabled for this chat
@@ -388,20 +371,7 @@ class ChatStore {
       {
         id: 'mock-chat-2',
         title: 'Weather forecast',
-        messages: [
-          {
-            role: 'assistant',
-            content: "Hello! I'm August, your AI super agent. How can I help you today?"
-          },
-          {
-            role: 'user',
-            content: "What's the weather forecast for this weekend?"
-          },
-          {
-            role: 'assistant',
-            content: "I don't have real-time weather data, but I can help you check the forecast using a weather service. Would you like me to guide you through checking the weather for your location this weekend?"
-          }
-        ],
+        messages: [],
         created_at: new Date(Date.now() - 2 * 60 * 60 * 1000),
         updated_at: new Date(Date.now() - 2 * 60 * 60 * 1000),
         enabledTools: [],
@@ -517,22 +487,10 @@ class ChatStore {
       // Create chat in database
       const newChat = await createChat('New Chat');
       
-      // Add welcome message
-      await addMessage(
-        newChat.id, 
-        'assistant', 
-        `Hello! I'm August, your AI super agent${useTools ? ' with tool capabilities' : ''}. How can I help you today?`
-      );
-      
       // Add to local state
       const chatWithMessages = {
         ...newChat,
-        messages: [
-          {
-            role: 'assistant',
-            content: `Hello! I'm August, your AI super agent${useTools ? ' with tool capabilities' : ''}. How can I help you today?`
-          }
-        ],
+        messages: [],
         enabledTools: [],
         useTools: useTools
       };
@@ -554,12 +512,7 @@ class ChatStore {
       const newChat = {
         id: newChatId,
         title: 'New Chat',
-        messages: [
-          {
-            role: 'assistant',
-            content: `Hello! I'm August, your AI super agent${useTools ? ' with tool capabilities' : ''}. How can I help you today?`
-          }
-        ],
+        messages: [],
         created_at: new Date(),
         updated_at: new Date(),
         enabledTools: [],

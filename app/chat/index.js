@@ -17,6 +17,7 @@ import Constants from 'expo-constants';
 import ChatMessage from '../../components/chat/ChatMessage';
 import MessageInput from '../../components/chat/MessageInput';
 import SuggestionBoxes from '../../components/chat/SuggestionBoxes';
+import WelcomeMessage from '../../components/chat/WelcomeMessage';
 import TypingIndicator from '../../components/chat/TypingIndicator';
 import ChatBackgroundWrapper from '../../components/chat/ChatBackgroundWrapper';
 import Sidebar from '../../components/Sidebar';
@@ -140,11 +141,6 @@ const ChatScreen = () => {
           
           return chatCopy;
         });
-        
-        // Scroll to the bottom as new content comes in
-        if (flatListRef.current) {
-          flatListRef.current.scrollToEnd({ animated: false });
-        }
       };
       
       // Send the message using the chat store with streaming
@@ -198,10 +194,7 @@ const ChatScreen = () => {
       const fallbackChat = {
         id: `local-chat-${Date.now()}`,
         title: 'New Chat',
-        messages: [{
-          role: 'assistant',
-          content: "Hello! I'm August. How can I help you today?"
-        }],
+        messages: [],
         created_at: new Date(),
         updated_at: new Date()
       };
@@ -296,6 +289,12 @@ const ChatScreen = () => {
         </View>
         
         <View style={styles.chatContainer}>
+          {activeChat.messages.length === 0 && (
+            <View style={styles.welcomeContainer}>
+              <WelcomeMessage userName={user?.name} />
+            </View>
+          )}
+          
           <View style={styles.messagesContainer}>
             <FlatList
               ref={flatListRef}
@@ -383,8 +382,13 @@ const styles = StyleSheet.create({
   chatContainer: {
     flex: 1,
     position: 'relative',
-    display: 'flex',
-    flexDirection: 'column',
+  },
+  welcomeContainer: {
+    position: 'absolute',
+    top: -spacing.md,
+    left: 0,
+    right: 0,
+    zIndex: 1,
   },
   messagesContainer: {
     flex: 1,
@@ -392,7 +396,7 @@ const styles = StyleSheet.create({
   },
   messageListContent: {
     paddingHorizontal: spacing.md,
-    paddingBottom: 80, // Add extra padding at the bottom to ensure messages are visible above the input
+    paddingBottom: 80,
   },
 });
 
