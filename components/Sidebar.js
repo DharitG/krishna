@@ -217,7 +217,7 @@ const Sidebar = ({ visible, onClose, onNewChat, onSelectChat, chats = [], active
                 import('expo-router').then(({ router }) => router.push('/subscription'));
               }}
             >
-              <Text style={styles.upgradeButtonText}>Upgrade to Pro</Text>
+              <Text style={styles.upgradeButtonText}>Upgrade to Utopia</Text>
             </TouchableOpacity>
           </View>
         </Animated.View>
@@ -391,14 +391,20 @@ const styles = StyleSheet.create({
   upgradeButton: {
     marginTop: spacing.md,
     padding: spacing.sm,
-    backgroundColor: colors.emerald,
-    borderRadius: borderRadius.md,
+    paddingVertical: spacing.md,
+    backgroundColor: '#1D4ED8',
+    borderRadius: 12,
     alignItems: 'center',
+    shadowColor: '#1E90FF',
+    shadowOffset: { width: 0, height: 5 },
+    shadowOpacity: 0.3,
+    shadowRadius: 10,
+    elevation: 10,
   },
   upgradeButtonText: {
-    color: colors.black,
+    color: '#FFFFFF',
+    fontWeight: '600',
     fontSize: typography.fontSize.md,
-    fontWeight: 'bold',
   },
 });
 
