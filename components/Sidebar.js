@@ -237,12 +237,12 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     width: SIDEBAR_WIDTH,
-    backgroundColor: colors.darkGray,
+    backgroundColor: '#0A1428', 
     borderRightWidth: 1,
-    borderRightColor: 'rgba(255, 255, 255, 0.1)',
+    borderRightColor: 'rgba(48, 109, 255, 0.2)', 
     height: '100%',
-    paddingTop: Platform.OS === 'ios' ? 50 : 40, // Extra padding for notches
-    paddingBottom: Platform.OS === 'ios' ? 30 : 20, // Extra padding for bottom
+    paddingTop: Platform.OS === 'ios' ? 50 : 40, 
+    paddingBottom: Platform.OS === 'ios' ? 30 : 20, 
   },
   header: {
     flexDirection: 'row',
@@ -276,7 +276,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing.sm,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(26, 44, 75, 0.9)', 
     borderRadius: borderRadius.md,
     marginRight: spacing.sm,
   },
@@ -294,7 +294,7 @@ const styles = StyleSheet.create({
   },
   newChatIcon: {
     padding: spacing.sm,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(26, 44, 75, 0.9)', 
     borderRadius: borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
@@ -303,7 +303,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(255, 255, 255, 0.1)',
+    backgroundColor: 'rgba(48, 109, 255, 0.2)', 
     marginVertical: spacing.sm,
   },
   sectionTitle: {
@@ -329,7 +329,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
   },
   activeChatItem: {
-    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    backgroundColor: 'rgba(48, 109, 255, 0.25)', 
   },
   chatItemContent: {
     flex: 1,
@@ -345,7 +345,7 @@ const styles = StyleSheet.create({
   },
   activeChatTitle: {
     fontWeight: '600',
-    color: colors.emerald,
+    color: colors.primaryText, 
   },
   matchBadge: {
     backgroundColor: colors.emerald,
@@ -372,8 +372,8 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     paddingBottom: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(255, 255, 255, 0.1)',
-    marginTop: 'auto', // Push to bottom of container
+    borderTopColor: 'rgba(48, 109, 255, 0.2)', 
+    marginTop: 'auto', 
   },
   footerButton: {
     flexDirection: 'row',

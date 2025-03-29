@@ -314,7 +314,7 @@ const SettingsScreen = () => {
             <View key={sectionIndex} style={styles.section}>
               <Text style={styles.sectionTitle}>{section.title}</Text>
               
-              <GlassCard style={styles.glassCard}>
+              <GlassCard style={[styles.glassCard, { backgroundColor: 'rgba(26, 44, 75, 0.6)', borderColor: 'rgba(48, 109, 255, 0.2)' }]}>
                 {section.items.map((item, itemIndex) => (
                   <TouchableOpacity 
                     key={itemIndex} 
@@ -407,7 +407,7 @@ const styles = {
     marginLeft: spacing.sm,
   },
   glassCard: {
-    ...glassMorphism.dark,
+    ...glassMorphism.chatBubble,
     borderRadius: 16,
     overflow: 'hidden',
   },
