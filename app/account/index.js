@@ -9,7 +9,12 @@ import {
   Alert, 
   ActivityIndicator, 
   Platform,
-  Animated
+  Animated,
+  Easing,
+  Image,
+  TextInput,
+  Modal,
+  KeyboardAvoidingView
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -18,6 +23,7 @@ import GlassCard from '../../components/GlassCard';
 import { colors, spacing, typography, glassMorphism, shadows, borderRadius } from '../../constants/Theme';
 import Constants from 'expo-constants';
 import accountStore from '../../services/accountStore';
+import * as ImagePicker from 'expo-image-picker';
 
 const AccountScreen = () => {
   const router = useRouter();
@@ -27,8 +33,27 @@ const AccountScreen = () => {
     name: 'John Doe',
     email: 'john.doe@example.com',
     accountType: 'Premium',
-    joinDate: 'March 2023'
+    joinDate: 'March 2023',
+    avatarUrl: null
   });
+  
+  // Animation state variables
+  const [serviceAnimations, setServiceAnimations] = useState({});
+  const [addAccountAnimation] = useState(new Animated.Value(0));
+  const [removeAccountAnimation] = useState(new Animated.Value(0));
+  
+  // Error handling state
+  const [errors, setErrors] = useState({});
+  
+  // Profile editing state
+  const [isEditingProfile, setIsEditingProfile] = useState(false);
+  const [editedProfile, setEditedProfile] = useState({
+    full_name: '',
+    bio: '',
+  });
+  
+  // Profile image upload state
+  const [uploading, setUploading] = useState(false);
   
   // Check if Composio is configured
   const { COMPOSIO_API_KEY } = Constants.expoConfig?.extra || {};
@@ -37,17 +62,29 @@ const AccountScreen = () => {
   useEffect(() => {
     // Fetch connected accounts on mount
     fetchConnectedAccounts();
+    
+    // Initialize animations for each service
+    const animations = {};
+    ['github', 'slack', 'gmail', 'discord', 'zoom', 'asana'].forEach(service => {
+      animations[service] = new Animated.Value(0);
+    });
+    setServiceAnimations(animations);
   }, []);
   
   const fetchConnectedAccounts = async () => {
     setLoading(true);
+    setErrors(prev => ({ ...prev, general: null }));
+    
     try {
       await accountStore.initializeAccounts();
       setAccounts(accountStore.getAccounts());
       setLoading(false);
     } catch (error) {
       console.error('Error fetching accounts:', error);
-      Alert.alert('Error', 'Failed to fetch connected accounts');
+      setErrors(prev => ({ 
+        ...prev, 
+        general: 'Failed to fetch connected accounts. Please check your connection.' 
+      }));
       setLoading(false);
     }
   };
@@ -56,28 +93,71 @@ const AccountScreen = () => {
     router.back();
   };
   
+  // Animation functions
+  const animateAddAccount = (serviceName) => {
+    // Reset animation value
+    addAccountAnimation.setValue(0);
+    
+    // Start animation
+    Animated.timing(addAccountAnimation, {
+      toValue: 1,
+      duration: 500,
+      easing: Easing.out(Easing.back(1.5)),
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const animateRemoveAccount = () => {
+    // Reset animation value
+    removeAccountAnimation.setValue(0);
+    
+    // Start animation
+    Animated.timing(removeAccountAnimation, {
+      toValue: 1,
+      duration: 300,
+      easing: Easing.inOut(Easing.ease),
+      useNativeDriver: true,
+    }).start();
+  };
+
+  const toggleServiceExpansion = (serviceName) => {
+    // Toggle animation value between 0 and 1
+    const toValue = serviceAnimations[serviceName]._value === 0 ? 1 : 0;
+    
+    Animated.timing(serviceAnimations[serviceName], {
+      toValue,
+      duration: 300,
+      easing: Easing.inOut(Easing.ease),
+      useNativeDriver: false, // We'll animate height which isn't supported by native driver
+    }).start();
+  };
+  
   const handleAddAccount = async (serviceName) => {
+    // Clear any previous errors for this service
+    setErrors(prev => ({ ...prev, [serviceName]: null }));
+    
     try {
       const result = await accountStore.authenticateService(serviceName);
       
       if (!result.success) {
-        Alert.alert('Authentication Error', result.error);
+        setErrors(prev => ({ ...prev, [serviceName]: result.error }));
         return;
       }
       
       // If we have a redirect URL, open it for authentication
       if (result.redirectUrl) {
+        // Show confirmation dialog
         Alert.alert(
           'Add ' + serviceName + ' Account',
           'You will be redirected to authenticate with ' + serviceName,
           [
             { text: 'Cancel', style: 'cancel' },
             { text: 'Continue', onPress: () => {
-              // In a real implementation, you would handle the OAuth callback
-              // and update the accounts list after successful authentication
+              // Handle OAuth flow
               console.log('Redirecting to:', result.redirectUrl);
               
-              // Simulate successful authentication and account addition
+              // In a real implementation, you would handle the OAuth callback
+              // and update the accounts list after successful authentication
               setTimeout(async () => {
                 // Mock user data for the new account
                 const mockUserData = {
@@ -89,27 +169,41 @@ const AccountScreen = () => {
                   asana: { username: 'new_asana_user', email: 'new_user@asana.com' }
                 };
                 
-                // Add the new account
-                await accountStore.addAccount(serviceName, mockUserData[serviceName]);
-                
-                // Refresh the accounts list
-                fetchConnectedAccounts();
-                
-                // Show success message
-                Alert.alert('Success', `${serviceName} account added successfully`);
+                try {
+                  // Add the new account
+                  await accountStore.addAccount(serviceName, mockUserData[serviceName]);
+                  
+                  // Refresh the accounts list
+                  fetchConnectedAccounts();
+                  
+                  // Show success message with toast instead of alert
+                  // You can implement a toast component or use a library
+                } catch (err) {
+                  setErrors(prev => ({ 
+                    ...prev, 
+                    [serviceName]: `Failed to add account: ${err.message}` 
+                  }));
+                }
               }, 1000);
             }}
           ]
         );
       } else {
-        Alert.alert('Success', `Authentication initiated for ${serviceName}`);
+        // Show a toast notification instead of an alert
+        console.log('Authentication initiated for', serviceName);
       }
     } catch (error) {
-      Alert.alert('Error', `Failed to authenticate with ${serviceName}: ${error.message}`);
+      setErrors(prev => ({ 
+        ...prev, 
+        [serviceName]: `Failed to authenticate: ${error.message}` 
+      }));
     }
   };
   
   const handleRemoveAccount = (serviceName, accountId) => {
+    // Start remove animation
+    animateRemoveAccount();
+    
     Alert.alert(
       'Remove Account',
       `Are you sure you want to remove this ${serviceName} account?`,
@@ -125,12 +219,17 @@ const AccountScreen = () => {
               if (result.success) {
                 // Refresh the accounts list
                 fetchConnectedAccounts();
-                Alert.alert('Success', `${serviceName} account removed successfully`);
               } else {
-                Alert.alert('Error', result.error || `Failed to remove ${serviceName} account`);
+                setErrors(prev => ({ 
+                  ...prev, 
+                  [serviceName]: result.error || `Failed to remove ${serviceName} account` 
+                }));
               }
             } catch (error) {
-              Alert.alert('Error', `Failed to remove ${serviceName} account: ${error.message}`);
+              setErrors(prev => ({ 
+                ...prev, 
+                [serviceName]: `Failed to remove ${serviceName} account: ${error.message}` 
+              }));
             }
           }
         }
@@ -145,12 +244,17 @@ const AccountScreen = () => {
       if (result.success) {
         // Refresh the accounts list
         fetchConnectedAccounts();
-        Alert.alert('Success', `Active ${serviceName} account updated`);
       } else {
-        Alert.alert('Error', result.error || `Failed to update active ${serviceName} account`);
+        setErrors(prev => ({ 
+          ...prev, 
+          [serviceName]: result.error || `Failed to update active ${serviceName} account` 
+        }));
       }
     } catch (error) {
-      Alert.alert('Error', `Failed to update active ${serviceName} account: ${error.message}`);
+      setErrors(prev => ({ 
+        ...prev, 
+        [serviceName]: `Failed to update active ${serviceName} account: ${error.message}` 
+      }));
     }
   };
   
@@ -160,7 +264,22 @@ const AccountScreen = () => {
                     account.workspace ? `Workspace: ${account.workspace}` : '';
     
     return (
-      <View key={account.id} style={styles.accountItem}>
+      <Animated.View 
+        key={account.id} 
+        style={[
+          styles.accountItem,
+          {
+            transform: [
+              {
+                scale: removeAccountAnimation.interpolate({
+                  inputRange: [0, 0.5, 1],
+                  outputRange: [1, 0.95, 1]
+                })
+              }
+            ]
+          }
+        ]}
+      >
         <View style={styles.accountItemContent}>
           <View style={styles.accountItemMain}>
             <Text style={styles.accountItemTitle}>{displayName}</Text>
@@ -189,40 +308,93 @@ const AccountScreen = () => {
             </TouchableOpacity>
           </View>
         </View>
-      </View>
+      </Animated.View>
     );
   };
   
   const renderServiceSection = (serviceName, serviceAccounts, icon) => {
     const formattedServiceName = serviceName.charAt(0).toUpperCase() + serviceName.slice(1);
     
+    // Animation interpolations
+    const rotateArrow = serviceAnimations[serviceName]?.interpolate({
+      inputRange: [0, 1],
+      outputRange: ['0deg', '180deg'],
+    });
+    
     return (
-      <View key={serviceName} style={styles.serviceCardContainer}>
+      <Animated.View key={serviceName} style={styles.serviceCardContainer}>
         <View style={styles.serviceCard}>
-          <View style={styles.cardHeader}>
+          <TouchableOpacity 
+            style={styles.cardHeader}
+            onPress={() => toggleServiceExpansion(serviceName)}
+          >
             <Ionicons name={icon} size={24} color={colors.white} />
             <Text style={styles.cardTitle}>{formattedServiceName}</Text>
-          </View>
+            <Animated.View style={{ transform: [{ rotate: rotateArrow }] }}>
+              <Ionicons name="chevron-down" size={20} color={colors.white} />
+            </Animated.View>
+          </TouchableOpacity>
           
-          {serviceAccounts.length > 0 ? (
-            <View style={styles.accountsList}>
-              {serviceAccounts.map(account => renderAccountItem(serviceName, account))}
-            </View>
-          ) : (
-            <Text style={styles.noAccountsText}>No {formattedServiceName} accounts connected</Text>
+          {/* Error message */}
+          {errors[serviceName] && (
+            <ErrorMessage 
+              service={serviceName}
+              message={errors[serviceName]}
+              onRetry={() => handleAddAccount(serviceName)}
+            />
           )}
           
-          <TouchableOpacity 
-            style={styles.addAccountButton}
-            onPress={() => handleAddAccount(serviceName)}
-            disabled={!isComposioConfigured}
-            activeOpacity={0.7}
+          <Animated.View 
+            style={{ 
+              opacity: serviceAnimations[serviceName],
+              maxHeight: serviceAnimations[serviceName].interpolate({
+                inputRange: [0, 1],
+                outputRange: [0, 1000]
+              })
+            }}
           >
-            <Ionicons name="add-circle-outline" size={20} color={colors.white} />
-            <Text style={styles.addAccountButtonText}>Add {formattedServiceName} Account</Text>
-          </TouchableOpacity>
+            {serviceAccounts.length > 0 ? (
+              <View style={styles.accountsList}>
+                {serviceAccounts.map(account => renderAccountItem(serviceName, account))}
+              </View>
+            ) : (
+              <View style={styles.emptyStateContainer}>
+                <Ionicons name="cloud-offline-outline" size={40} color={colors.text.secondary} />
+                <Text style={styles.noAccountsText}>No {formattedServiceName} accounts connected</Text>
+                <Text style={styles.emptyStateHint}>
+                  Connect your {formattedServiceName} account to access your data and enable AI features
+                </Text>
+              </View>
+            )}
+            
+            <TouchableOpacity 
+              style={styles.addAccountButton}
+              onPress={() => {
+                animateAddAccount(serviceName);
+                handleAddAccount(serviceName);
+              }}
+              disabled={!isComposioConfigured}
+              activeOpacity={0.7}
+            >
+              <Animated.View
+                style={{
+                  transform: [
+                    {
+                      scale: addAccountAnimation.interpolate({
+                        inputRange: [0, 0.5, 1],
+                        outputRange: [1, 1.2, 1]
+                      })
+                    }
+                  ]
+                }}
+              >
+                <Ionicons name="add-circle-outline" size={20} color={colors.white} />
+              </Animated.View>
+              <Text style={styles.addAccountButtonText}>Add {formattedServiceName} Account</Text>
+            </TouchableOpacity>
+          </Animated.View>
         </View>
-      </View>
+      </Animated.View>
     );
   };
   
@@ -235,6 +407,156 @@ const AccountScreen = () => {
       }
     });
     return activeServices;
+  };
+  
+  // Profile image functions
+  const pickImage = async () => {
+    try {
+      const permissionResult = await ImagePicker.requestMediaLibraryPermissionsAsync();
+      
+      if (!permissionResult.granted) {
+        Alert.alert('Permission Required', 'You need to grant access to your photos to change your profile picture.');
+        return;
+      }
+      
+      const result = await ImagePicker.launchImageLibraryAsync({
+        mediaTypes: ImagePicker.MediaTypeOptions.Images,
+        allowsEditing: true,
+        aspect: [1, 1],
+        quality: 0.8,
+      });
+      
+      if (!result.canceled && result.assets && result.assets.length > 0) {
+        await uploadProfileImage(result.assets[0].uri);
+      }
+    } catch (error) {
+      Alert.alert('Error', 'Failed to pick image: ' + error.message);
+    }
+  };
+
+  const uploadProfileImage = async (uri) => {
+    setUploading(true);
+    try {
+      // Create a file name for the image
+      const fileName = `profile-${Date.now()}.jpg`;
+      
+      // In a real implementation, you would upload this to Supabase storage
+      // For now, we'll simulate a successful upload
+      
+      // Update the user info with the new avatar URL
+      setUserInfo(prev => ({
+        ...prev,
+        avatarUrl: uri // For demo purposes, just use the local URI
+      }));
+      
+      setTimeout(() => {
+        setUploading(false);
+        Alert.alert('Success', 'Profile picture updated successfully');
+      }, 1000);
+    } catch (error) {
+      Alert.alert('Error', 'Failed to upload image: ' + error.message);
+      setUploading(false);
+    }
+  };
+  
+  // Error message component
+  const ErrorMessage = ({ service, message, onRetry }) => (
+    <View style={styles.errorContainer}>
+      <View style={styles.errorContent}>
+        <Ionicons name="alert-circle" size={20} color={colors.error} />
+        <Text style={styles.errorText}>{message}</Text>
+      </View>
+      <TouchableOpacity style={styles.retryButton} onPress={onRetry}>
+        <Text style={styles.retryText}>Retry</Text>
+      </TouchableOpacity>
+    </View>
+  );
+  
+  // Profile edit modal component
+  const ProfileEditModal = () => {
+    useEffect(() => {
+      setEditedProfile({
+        full_name: userInfo.name || '',
+        bio: userInfo.bio || '',
+      });
+    }, [isEditingProfile]);
+
+    const handleSave = async () => {
+      try {
+        // In a real implementation, you would save to a backend
+        setUserInfo(prev => ({
+          ...prev,
+          name: editedProfile.full_name,
+          bio: editedProfile.bio
+        }));
+        
+        setIsEditingProfile(false);
+        Alert.alert('Success', 'Profile updated successfully');
+      } catch (error) {
+        Alert.alert('Error', 'Failed to update profile: ' + error.message);
+      }
+    };
+
+    return (
+      <Modal
+        visible={isEditingProfile}
+        animationType="slide"
+        transparent={true}
+        onRequestClose={() => setIsEditingProfile(false)}
+      >
+        <View style={styles.modalOverlay}>
+          <View style={styles.modalContent}>
+            <View style={styles.modalHeader}>
+              <Text style={styles.modalTitle}>Edit Profile</Text>
+              <TouchableOpacity 
+                style={styles.modalCloseButton}
+                onPress={() => setIsEditingProfile(false)}
+              >
+                <Ionicons name="close" size={24} color={colors.text.primary} />
+              </TouchableOpacity>
+            </View>
+            
+            <View style={styles.modalBody}>
+              <Text style={styles.inputLabel}>Full Name</Text>
+              <TextInput
+                style={styles.textInput}
+                value={editedProfile.full_name}
+                onChangeText={(text) => setEditedProfile(prev => ({...prev, full_name: text}))}
+                placeholder="Enter your full name"
+                placeholderTextColor={colors.text.secondary}
+              />
+              
+              <Text style={styles.inputLabel}>Bio</Text>
+              <TextInput
+                style={[styles.textInput, styles.textAreaInput]}
+                value={editedProfile.bio}
+                onChangeText={(text) => setEditedProfile(prev => ({...prev, bio: text}))}
+                placeholder="Tell us about yourself"
+                placeholderTextColor={colors.text.secondary}
+                multiline
+                numberOfLines={4}
+              />
+            </View>
+            
+            <View style={styles.modalFooter}>
+              <TouchableOpacity 
+                style={styles.cancelButton}
+                onPress={() => setIsEditingProfile(false)}
+              >
+                <Text style={styles.cancelButtonText}>Cancel</Text>
+              </TouchableOpacity>
+              
+              <TouchableOpacity 
+                style={styles.saveButton}
+                onPress={handleSave}
+              >
+                <Text style={styles.saveButtonText}>Save Changes</Text>
+              </TouchableOpacity>
+            </View>
+          </View>
+        </View>
+      </Modal>
+    );
   };
   
   return (
@@ -267,9 +589,19 @@ const AccountScreen = () => {
             <View style={styles.profileCard}>
               <View style={styles.profileHeader}>
                 <View style={styles.avatarContainer}>
-                  <View style={styles.avatar}>
-                    <Ionicons name="person" size={40} color={colors.white} />
-                  </View>
+                  <TouchableOpacity onPress={pickImage}>
+                    <View style={styles.avatar}>
+                      {userInfo.avatarUrl ? (
+                        <Image 
+                          source={{ uri: userInfo.avatarUrl }} 
+                          style={styles.avatarImage} 
+                          resizeMode="cover"
+                        />
+                      ) : (
+                        <Ionicons name="person" size={40} color={colors.white} />
+                      )}
+                    </View>
+                  </TouchableOpacity>
                 </View>
                 <View style={styles.profileInfo}>
                   <Text style={styles.profileName}>{userInfo.name}</Text>
@@ -307,7 +639,7 @@ const AccountScreen = () => {
                 </View>
               </View>
               
-              <TouchableOpacity style={styles.editProfileButton} activeOpacity={0.7}>
+              <TouchableOpacity style={styles.editProfileButton} activeOpacity={0.7} onPress={() => setIsEditingProfile(true)}>
                 <Text style={styles.editProfileButtonText}>Edit Profile</Text>
               </TouchableOpacity>
             </View>
@@ -334,6 +666,89 @@ const AccountScreen = () => {
             </View>
           )}
           
+          {/* Subscription Section */}
+          <View style={styles.sectionHeader}>
+            <Text style={styles.sectionTitle}>Subscription</Text>
+          </View>
+
+          <View style={styles.subscriptionCardContainer}>
+            <View style={styles.subscriptionCard}>
+              <View style={styles.subscriptionHeader}>
+                <View style={styles.subscriptionBadge}>
+                  <Ionicons 
+                    name={userInfo.accountType === 'Free' ? 'leaf-outline' : 'star'} 
+                    size={20} 
+                    color={userInfo.accountType === 'Free' ? colors.emerald : colors.warning} 
+                  />
+                  <Text style={[
+                    styles.subscriptionBadgeText,
+                    {color: userInfo.accountType === 'Free' ? colors.emerald : colors.warning}
+                  ]}>
+                    {userInfo.accountType} Plan
+                  </Text>
+                </View>
+              </View>
+              
+              <View style={styles.subscriptionFeatures}>
+                {userInfo.accountType === 'Free' ? (
+                  <>
+                    <View style={styles.featureItem}>
+                      <Ionicons name="checkmark-circle" size={18} color={colors.emerald} />
+                      <Text style={styles.featureText}>Basic AI features</Text>
+                    </View>
+                    <View style={styles.featureItem}>
+                      <Ionicons name="checkmark-circle" size={18} color={colors.emerald} />
+                      <Text style={styles.featureText}>Connect up to 2 services</Text>
+                    </View>
+                    <View style={styles.featureItem}>
+                      <Ionicons name="close-circle" size={18} color={colors.text.secondary} />
+                      <Text style={[styles.featureText, {color: colors.text.secondary}]}>Advanced AI capabilities</Text>
+                    </View>
+                  </>
+                ) : userInfo.accountType === 'Premium' ? (
+                  <>
+                    <View style={styles.featureItem}>
+                      <Ionicons name="checkmark-circle" size={18} color={colors.emerald} />
+                      <Text style={styles.featureText}>All AI features</Text>
+                    </View>
+                    <View style={styles.featureItem}>
+                      <Ionicons name="checkmark-circle" size={18} color={colors.emerald} />
+                      <Text style={styles.featureText}>Unlimited service connections</Text>
+                    </View>
+                    <View style={styles.featureItem}>
+                      <Ionicons name="checkmark-circle" size={18} color={colors.emerald} />
+                      <Text style={styles.featureText}>Priority support</Text>
+                    </View>
+                  </>
+                ) : (
+                  <>
+                    <View style={styles.featureItem}>
+                      <Ionicons name="checkmark-circle" size={18} color={colors.emerald} />
+                      <Text style={styles.featureText}>All Premium features</Text>
+                    </View>
+                    <View style={styles.featureItem}>
+                      <Ionicons name="checkmark-circle" size={18} color={colors.emerald} />
+                      <Text style={styles.featureText}>Team collaboration</Text>
+                    </View>
+                    <View style={styles.featureItem}>
+                      <Ionicons name="checkmark-circle" size={18} color={colors.emerald} />
+                      <Text style={styles.featureText}>Custom integrations</Text>
+                    </View>
+                  </>
+                )}
+              </View>
+              
+              {userInfo.accountType === 'Free' && (
+                <TouchableOpacity 
+                  style={styles.upgradePlanButton}
+                  onPress={() => router.push('/subscription')}
+                >
+                  <Text style={styles.upgradePlanButtonText}>Upgrade Plan</Text>
+                </TouchableOpacity>
+              )}
+            </View>
+          </View>
+          
           {!isComposioConfigured && (
             <View style={styles.warningCardContainer}>
               <View style={styles.warningCard}>
@@ -351,6 +766,7 @@ const AccountScreen = () => {
           <View style={{ height: 40 }} />
         </ScrollView>
       </SafeAreaView>
+      <ProfileEditModal />
     </ChatBackgroundWrapper>
   );
 };
@@ -435,6 +851,11 @@ const styles = {
     alignItems: 'center',
     borderWidth: 1,
     borderColor: 'rgba(48, 109, 255, 0.3)',
+  },
+  avatarImage: {
+    width: '100%',
+    height: '100%',
+    borderRadius: 35,
   },
   profileInfo: {
     flex: 1,
@@ -678,6 +1099,182 @@ const styles = {
     fontFamily: typography.fontFamily.medium,
     marginLeft: spacing.md,
     flex: 1,
+  },
+  errorContainer: {
+    backgroundColor: colors.error,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.md,
+  },
+  errorContent: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  errorText: {
+    color: colors.white,
+    fontSize: typography.fontSize.md,
+    fontFamily: typography.fontFamily.regular,
+    marginLeft: spacing.sm,
+  },
+  retryButton: {
+    backgroundColor: colors.white,
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    marginLeft: spacing.md,
+  },
+  retryText: {
+    color: colors.error,
+    fontSize: typography.fontSize.md,
+    fontFamily: typography.fontFamily.medium,
+  },
+  modalOverlay: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  modalContent: {
+    backgroundColor: colors.background.primary,
+    borderRadius: borderRadius.lg,
+    padding: spacing.md,
+    width: '90%',
+    maxWidth: 400,
+  },
+  modalHeader: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  modalTitle: {
+    fontSize: typography.fontSize.lg,
+    fontFamily: typography.fontFamily.bold,
+    color: colors.text.primary,
+  },
+  modalCloseButton: {
+    padding: spacing.sm,
+  },
+  modalBody: {
+    marginBottom: spacing.md,
+  },
+  inputLabel: {
+    fontSize: typography.fontSize.sm,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.text.secondary,
+    marginBottom: spacing.sm,
+  },
+  textInput: {
+    backgroundColor: 'rgba(20, 32, 61, 0.1)',
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    borderColor: 'rgba(48, 109, 255, 0.3)',
+    borderWidth: 1,
+    fontSize: typography.fontSize.md,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.text.primary,
+  },
+  textAreaInput: {
+    height: 120,
+    textAlignVertical: 'top',
+  },
+  modalFooter: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+  },
+  cancelButton: {
+    backgroundColor: colors.error,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    marginRight: spacing.sm,
+  },
+  cancelButtonText: {
+    fontSize: typography.fontSize.md,
+    fontFamily: typography.fontFamily.medium,
+    color: colors.white,
+  },
+  saveButton: {
+    backgroundColor: colors.emerald,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+  },
+  saveButtonText: {
+    fontSize: typography.fontSize.md,
+    fontFamily: typography.fontFamily.medium,
+    color: colors.white,
+  },
+  emptyStateContainer: {
+    padding: spacing.md,
+    alignItems: 'center',
+  },
+  emptyStateHint: {
+    fontSize: typography.fontSize.sm,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.text.secondary,
+    marginTop: spacing.sm,
+    textAlign: 'center',
+  },
+  subscriptionCardContainer: {
+    marginBottom: spacing.md,
+    borderRadius: borderRadius.lg,
+    overflow: 'hidden',
+  },
+  subscriptionCard: {
+    backgroundColor: 'rgba(20, 32, 61, 0.85)',
+    borderRadius: borderRadius.lg,
+    borderColor: 'rgba(48, 109, 255, 0.15)',
+    borderWidth: 1,
+    shadowColor: '#306DFF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  subscriptionHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  subscriptionBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 6,
+  },
+  subscriptionBadgeText: {
+    fontSize: typography.fontSize.sm,
+    fontFamily: typography.fontFamily.medium,
+    marginLeft: 4,
+  },
+  subscriptionFeatures: {
+    padding: spacing.md,
+  },
+  featureItem: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  featureText: {
+    fontSize: typography.fontSize.sm,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.text.primary,
+    marginLeft: spacing.sm,
+  },
+  upgradePlanButton: {
+    backgroundColor: colors.emerald,
+    padding: spacing.md,
+    borderRadius: borderRadius.md,
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.md,
+  },
+  upgradePlanButtonText: {
+    fontSize: typography.fontSize.md,
+    fontFamily: typography.fontFamily.medium,
+    color: colors.white,
   },
 };
 
