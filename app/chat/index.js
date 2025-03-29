@@ -22,7 +22,7 @@ import WelcomeMessage from '../../components/chat/WelcomeMessage';
 import TypingIndicator from '../../components/chat/TypingIndicator';
 import ChatBackgroundWrapper from '../../components/chat/ChatBackgroundWrapper';
 import Sidebar from '../../components/Sidebar';
-import chatStore from '../../services/chatStore';
+import useZustandChatStore from '../../services/chatStore';
 import { colors, spacing, typography } from '../../constants/Theme';
 import * as Linking from 'expo-linking';
 import { useAuth } from '../../services/authContext';
@@ -30,8 +30,17 @@ import { useAuth } from '../../services/authContext';
 const ChatScreen = () => {
   const { user } = useAuth();
   
+  // Get chat store state and actions
+  const initialize = useZustandChatStore(state => state.initialize);
+  const loadChats = useZustandChatStore(state => state.loadChats);
+  const getActiveChat = useZustandChatStore(state => state.getActiveChat);
+  const setActiveChat = useZustandChatStore(state => state.setActiveChat);
+  const createNewChat = useZustandChatStore(state => state.createNewChat);
+  const sendMessage = useZustandChatStore(state => state.sendMessage);
+  const updateAuthStatus = useZustandChatStore(state => state.updateAuthStatus);
+  
   // Initialize state
-  const [activeChat, setActiveChat] = useState(null);
+  const [activeChat, setActiveChatState] = useState(null);
   const [chats, setChats] = useState([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isInitializing, setIsInitializing] = useState(true);
@@ -46,21 +55,21 @@ const ChatScreen = () => {
   useEffect(() => {
     const loadChatData = async () => {
       try {
-        await chatStore.initialize();
-        const activeChatData = await chatStore.getActiveChat();
-        const chatsData = await chatStore.getChats();
+        await initialize();
+        const activeChatData = await getActiveChat();
+        const chatsData = await loadChats();
         
         // Ensure messages is always an array
         if (activeChatData && !Array.isArray(activeChatData.messages)) {
           activeChatData.messages = [];
         }
         
-        setActiveChat(activeChatData);
+        setActiveChatState(activeChatData);
         setChats(chatsData);
       } catch (error) {
         console.error('Error loading chat data:', error);
         // Fallback to empty state if there's an error
-        setActiveChat({ id: 'fallback-chat', messages: [] });
+        setActiveChatState({ id: 'fallback-chat', messages: [] });
         setChats([]);
       } finally {
         setIsInitializing(false);
@@ -106,7 +115,7 @@ const ChatScreen = () => {
       // Check if activeChat.messages is an array
       if (activeChat && Array.isArray(activeChat.messages)) {
         // Update the UI immediately with user message only
-        setActiveChat({
+        setActiveChatState({
           ...activeChat,
           messages: [...activeChat.messages, userMessage]
         });
@@ -122,7 +131,7 @@ const ChatScreen = () => {
         setStreamingMessageId(streamMessage.id);
         
         // Update the active chat with the streaming message content
-        setActiveChat(prevChat => {
+        setActiveChatState(prevChat => {
           // Create a copy of the current chat state
           const chatCopy = {...prevChat};
           
@@ -157,11 +166,15 @@ const ChatScreen = () => {
       };
       
       // Send the message using the chat store with streaming
-      const response = await chatStore.sendMessage(content, handleStreamUpdate);
+      const response = await sendMessage(content, handleStreamUpdate);
       
       // Get the latest chats list for sidebar (for title updates)
-      const updatedChats = await chatStore.getChats();
+      const updatedChats = await loadChats();
       setChats(updatedChats);
+      
+      // Get the updated active chat
+      const updatedActiveChat = await getActiveChat();
+      setActiveChatState(updatedActiveChat);
       
       // Final update to clear streaming state
       setStreamingMessageId(null);
@@ -178,7 +191,7 @@ const ChatScreen = () => {
           created_at: new Date()
         };
         
-        setActiveChat({
+        setActiveChatState({
           ...activeChat,
           messages: [...activeChat.messages, errorMessage]
         });
@@ -190,16 +203,15 @@ const ChatScreen = () => {
 
   const handleNewChat = async () => {
     try {
-      await chatStore.createChat();
-      const newActiveChat = await chatStore.getActiveChat();
-      const updatedChats = await chatStore.getChats();
+      const newActiveChat = await createNewChat('New Chat');
+      const updatedChats = await loadChats();
       
       // Ensure messages is always an array
       if (newActiveChat && !Array.isArray(newActiveChat.messages)) {
         newActiveChat.messages = [];
       }
       
-      setActiveChat(newActiveChat);
+      setActiveChatState(newActiveChat);
       setChats(updatedChats);
     } catch (error) {
       console.error('Error creating new chat:', error);
@@ -212,7 +224,7 @@ const ChatScreen = () => {
         updated_at: new Date()
       };
       
-      setActiveChat(fallbackChat);
+      setActiveChatState(fallbackChat);
     } finally {
       setSidebarVisible(false);
     }
@@ -220,15 +232,14 @@ const ChatScreen = () => {
 
   const handleSelectChat = async (chatId) => {
     try {
-      await chatStore.setActiveChat(chatId);
-      const selectedChat = await chatStore.getActiveChat();
+      const selectedChat = await setActiveChat(chatId);
       
       // Ensure messages is always an array
       if (selectedChat && !Array.isArray(selectedChat.messages)) {
         selectedChat.messages = [];
       }
       
-      setActiveChat(selectedChat);
+      setActiveChatState(selectedChat);
     } catch (error) {
       console.error('Error selecting chat:', error);
     } finally {
@@ -242,13 +253,15 @@ const ChatScreen = () => {
       message={item}
       onAuthSuccess={(service) => {
         // Update authentication status in the chat store
-        chatStore.updateAuthStatus(service, true);
+        updateAuthStatus(service, true);
         
         // Update the active chat in the state
-        setActiveChat({...chatStore.getActiveChat()});
+        getActiveChat().then(updatedChat => {
+          setActiveChatState(updatedChat);
+        });
         
         // Send a message to acknowledge authentication
-        handleSendMessage(`I've successfully authenticated with ${service}`);
+        handleSendMessage(`I've successfully authenticated with ${service}.`);
       }}
       index={index}
       isStreaming={item.id === streamingMessageId}

@@ -6,7 +6,7 @@ import ChatBackgroundWrapper from '../../components/chat/ChatBackgroundWrapper';
 import GlassCard from '../../components/GlassCard';
 import { colors, spacing, typography, glassMorphism } from '../../constants/Theme';
 import Constants from 'expo-constants';
-import chatStore from '../../services/chatStore';
+import useZustandChatStore from '../../services/chatStore';
 import { signOut } from '../../services/supabase';
 import { useAuth } from '../../services/authContext';
 import subscriptionService from '../../services/subscriptionService';
@@ -14,6 +14,9 @@ import subscriptionService from '../../services/subscriptionService';
 const SettingsScreen = () => {
   const router = useRouter();
   const { user, getCurrentPlan, fetchSubscriptionStatus } = useAuth();
+  
+  // Get auth methods from chat store
+  const authenticateService = useZustandChatStore(state => state.authenticateService);
   
   // Check if Composio is configured
   const { COMPOSIO_API_KEY } = Constants.expoConfig?.extra || {};
@@ -82,7 +85,7 @@ const SettingsScreen = () => {
   
   const handleAuthenticateService = async (serviceName) => {
     try {
-      const result = await chatStore.authenticateService(serviceName);
+      const result = await authenticateService(serviceName);
       
       if (result.error) {
         Alert.alert('Authentication Error', result.message);

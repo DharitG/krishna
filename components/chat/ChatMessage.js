@@ -5,7 +5,7 @@ import AuthButton from './AuthButton';
 import AuthRedirect from './AuthRedirect';
 import DynamicAuthBlob from '../../components/chat/DynamicAuthBlob';
 import DynamicConfirmationBlob from '../../components/chat/DynamicConfirmationBlob';
-import chatStore from '../../services/chatStore';
+import useZustandChatStore from '../../services/chatStore';
 import {
   colors,
   spacing,
@@ -24,6 +24,10 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
   const [showAuthRedirect, setShowAuthRedirect] = useState(false);
   const [serviceToAuth, setServiceToAuth] = useState(null);
   
+  // Get store methods
+  const authenticateService = useZustandChatStore(state => state.authenticateService);
+  const checkToolAuth = useZustandChatStore(state => state.checkToolAuth);
+  
   // Check if the message contains an auth redirect
   useEffect(() => {
     if (message.authRedirect) {
@@ -41,7 +45,7 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
     }));
     
     try {
-      const result = await chatStore.authenticateService(service);
+      const result = await authenticateService(service);
       
       if (result.error) {
         setAuthStates(prev => ({
@@ -78,7 +82,7 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
   const startPollingAuthStatus = (service) => {
     const pollInterval = setInterval(async () => {
       try {
-        const status = await chatStore.checkToolAuth(service);
+        const status = await checkToolAuth(service);
         if (status.authenticated) {
           clearInterval(pollInterval);
           handleAuthComplete(service);
