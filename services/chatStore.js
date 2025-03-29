@@ -152,11 +152,37 @@ const useZustandChatStore = create((set, get) => ({
   },
   
   // Create a new chat
-  createNewChat: async (title = 'New Chat', useTools = true) => {
+  createNewChat: async (title = 'New Chat', useTools = true, isTemporary = false) => {
     if (!get().isInitialized) await get().initialize();
     set({ isLoadingChats: true, chatError: null });
     
     try {
+      // If it's a temporary chat, don't save to the database yet
+      if (isTemporary) {
+        const tempChatId = `temp-chat-${Date.now().toString().slice(-6)}`;
+        const tempChat = {
+          id: tempChatId,
+          title: title || 'New Chat',
+          messages: [],
+          created_at: new Date(),
+          updated_at: new Date(),
+          enabledTools: [],
+          useTools: useTools,
+          isTemporary: true
+        };
+        
+        set(state => ({ 
+          chats: [tempChat, ...state.chats],
+          currentChat: tempChat,
+          currentChatId: tempChat.id,
+          activeChat: tempChat.id,
+          isLoadingChats: false 
+        }));
+        
+        return tempChat;
+      }
+      
+      // Otherwise, create in the database
       const newChat = await createChat(title);
       
       // Add tools configuration
@@ -167,8 +193,11 @@ const useZustandChatStore = create((set, get) => ({
         useTools: useTools
       };
       
+      // Remove any temporary chats with the same title
+      const updatedChats = get().chats.filter(chat => !chat.isTemporary);
+      
       set(state => ({ 
-        chats: [chatWithTools, ...state.chats],
+        chats: [chatWithTools, ...updatedChats],
         currentChat: chatWithTools,
         currentChatId: chatWithTools.id,
         activeChat: chatWithTools.id,

@@ -50,21 +50,24 @@ const Sidebar = ({ visible, onClose, onNewChat, onSelectChat, chats = [], active
   // Update filtered chats when search query changes or chats update
   useEffect(() => {
     if (searchQuery.trim() === '') {
-      setFilteredChats(chats);
+      // Filter out temporary chats
+      setFilteredChats(chats.filter(chat => !chat.isTemporary));
       return;
     }
     
     const query = searchQuery.toLowerCase().trim();
-    const filtered = chats.filter(chat => {
-      // Check if chat.title exists before trying to use it
-      const titleMatch = chat.title && chat.title.toLowerCase().includes(query);
-      
-      // Check if chat.messages is an array before trying to use .some()
-      const messageMatch = Array.isArray(chat.messages) && 
-        chat.messages.some(msg => msg && msg.content && msg.content.toLowerCase().includes(query));
-      
-      return titleMatch || messageMatch;
-    });
+    const filtered = chats
+      .filter(chat => !chat.isTemporary) // Filter out temporary chats
+      .filter(chat => {
+        // Check if chat.title exists before trying to use it
+        const titleMatch = chat.title && chat.title.toLowerCase().includes(query);
+        
+        // Check if chat.messages is an array before trying to use .some()
+        const messageMatch = Array.isArray(chat.messages) && 
+          chat.messages.some(msg => msg && msg.content && msg.content.toLowerCase().includes(query));
+        
+        return titleMatch || messageMatch;
+      });
     
     setFilteredChats(filtered);
   }, [searchQuery, chats]);

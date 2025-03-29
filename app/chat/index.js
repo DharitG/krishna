@@ -95,6 +95,8 @@ const ChatScreen = () => {
   }, [streamingMessageId, activeChat?.messages]);
 
   const handleSendMessage = async (content) => {
+    if (!activeChat) return;
+    
     // Set loading state
     setIsLoading(true);
     
@@ -108,16 +110,43 @@ const ChatScreen = () => {
       }).start();
     }
     
+    // Hide keyboard
+    Keyboard.dismiss();
+    
     try {
+      // If this is a temporary chat, create a real chat in the database first
+      let chatToUse = activeChat;
+      if (activeChat.isTemporary) {
+        try {
+          const newActiveChat = await createNewChat('New Chat', true, false);
+          const updatedChats = await loadChats();
+          
+          // Ensure messages is always an array
+          if (newActiveChat && !Array.isArray(newActiveChat.messages)) {
+            newActiveChat.messages = [];
+          }
+          
+          chatToUse = newActiveChat;
+          setActiveChatState(newActiveChat);
+          setChats(updatedChats);
+          
+          // Remove the temporary chat from the local chats list
+          setChats(prevChats => prevChats.filter(chat => chat.id !== activeChat.id));
+        } catch (error) {
+          console.error('Error creating permanent chat:', error);
+          // Continue with the temporary chat if there's an error
+        }
+      }
+      
       // Add user message immediately for better UX
       const userMessage = { role: 'user', content, created_at: new Date() };
       
-      // Check if activeChat.messages is an array
-      if (activeChat && Array.isArray(activeChat.messages)) {
+      // Check if chatToUse.messages is an array
+      if (chatToUse && Array.isArray(chatToUse.messages)) {
         // Update the UI immediately with user message only
         setActiveChatState({
-          ...activeChat,
-          messages: [...activeChat.messages, userMessage]
+          ...chatToUse,
+          messages: [...chatToUse.messages, userMessage]
         });
         
         // Force-scroll to the bottom
@@ -203,28 +232,11 @@ const ChatScreen = () => {
 
   const handleNewChat = async () => {
     try {
-      const newActiveChat = await createNewChat('New Chat');
-      const updatedChats = await loadChats();
-      
-      // Ensure messages is always an array
-      if (newActiveChat && !Array.isArray(newActiveChat.messages)) {
-        newActiveChat.messages = [];
-      }
-      
-      setActiveChatState(newActiveChat);
-      setChats(updatedChats);
+      // Create a temporary chat that's not saved to the database yet
+      const temporaryChat = await createNewChat('New Chat', true, true);
+      setActiveChatState(temporaryChat);
     } catch (error) {
       console.error('Error creating new chat:', error);
-      // Create a local fallback chat if there's an error
-      const fallbackChat = {
-        id: `local-chat-${Date.now()}`,
-        title: 'New Chat',
-        messages: [],
-        created_at: new Date(),
-        updated_at: new Date()
-      };
-      
-      setActiveChatState(fallbackChat);
     } finally {
       setSidebarVisible(false);
     }
