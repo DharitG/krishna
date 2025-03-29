@@ -47,10 +47,6 @@ const AccountScreen = () => {
   
   // Profile editing state
   const [isEditingProfile, setIsEditingProfile] = useState(false);
-  const [editedProfile, setEditedProfile] = useState({
-    full_name: '',
-    bio: '',
-  });
   
   // Profile image upload state
   const [uploading, setUploading] = useState(false);
@@ -474,20 +470,30 @@ const AccountScreen = () => {
   
   // Profile edit modal component
   const ProfileEditModal = () => {
+    // Create local state that's independent of the parent component's state
+    const [localProfile, setLocalProfile] = useState({
+      full_name: '',
+      bio: ''
+    });
+    
+    // Initialize the local state when the modal opens
     useEffect(() => {
-      setEditedProfile({
-        full_name: userInfo.name || '',
-        bio: userInfo.bio || '',
-      });
-    }, [isEditingProfile]);
+      if (isEditingProfile) {
+        // Set the local state once when the modal opens
+        setLocalProfile({
+          full_name: userInfo.name || '',
+          bio: userInfo.bio || ''
+        });
+      }
+    }, [isEditingProfile]); // Only depend on isEditingProfile
 
     const handleSave = async () => {
       try {
-        // In a real implementation, you would save to a backend
+        // Update the parent state only when saving
         setUserInfo(prev => ({
           ...prev,
-          name: editedProfile.full_name,
-          bio: editedProfile.bio
+          name: localProfile.full_name,
+          bio: localProfile.bio
         }));
         
         setIsEditingProfile(false);
@@ -496,6 +502,9 @@ const AccountScreen = () => {
         Alert.alert('Error', 'Failed to update profile: ' + error.message);
       }
     };
+
+    // Don't render anything if the modal is not visible
+    if (!isEditingProfile) return null;
 
     return (
       <Modal
@@ -520,8 +529,8 @@ const AccountScreen = () => {
               <Text style={styles.inputLabel}>Full Name</Text>
               <TextInput
                 style={styles.textInput}
-                value={editedProfile.full_name}
-                onChangeText={(text) => setEditedProfile(prev => ({...prev, full_name: text}))}
+                value={localProfile.full_name}
+                onChangeText={(text) => setLocalProfile(prev => ({...prev, full_name: text}))}
                 placeholder="Enter your full name"
                 placeholderTextColor={colors.text.secondary}
               />
@@ -529,8 +538,8 @@ const AccountScreen = () => {
               <Text style={styles.inputLabel}>Bio</Text>
               <TextInput
                 style={[styles.textInput, styles.textAreaInput]}
-                value={editedProfile.bio}
-                onChangeText={(text) => setEditedProfile(prev => ({...prev, bio: text}))}
+                value={localProfile.bio}
+                onChangeText={(text) => setLocalProfile(prev => ({...prev, bio: text}))}
                 placeholder="Tell us about yourself"
                 placeholderTextColor={colors.text.secondary}
                 multiline
