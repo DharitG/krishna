@@ -1,12 +1,11 @@
 import React, { useState, useEffect } from 'react';
-import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, StatusBar, Switch, Alert, Linking, Platform } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, SafeAreaView, StatusBar, Alert, Linking, Platform, Switch } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import ChatBackgroundWrapper from '../../components/chat/ChatBackgroundWrapper';
 import GlassCard from '../../components/GlassCard';
 import { colors, spacing, typography, glassMorphism } from '../../constants/Theme';
 import Constants from 'expo-constants';
-import useZustandChatStore from '../../services/chatStore';
 import { signOut } from '../../services/supabase';
 import { useAuth } from '../../services/authContext';
 import subscriptionService from '../../services/subscriptionService';
@@ -15,21 +14,12 @@ const SettingsScreen = () => {
   const router = useRouter();
   const { user, getCurrentPlan, fetchSubscriptionStatus } = useAuth();
   
-  // Get auth methods from chat store
-  const authenticateService = useZustandChatStore(state => state.authenticateService);
-  
-  // Check if Composio is configured
-  const { COMPOSIO_API_KEY } = Constants.expoConfig?.extra || {};
-  const isComposioConfigured = !!COMPOSIO_API_KEY;
-  
-  // State for toggles and subscription
-  const [useTools, setUseTools] = useState(true);
+  // State for subscription
   const [currentPlan, setCurrentPlan] = useState('free');
-  const [features, setFeatures] = useState({
-    github: true,
-    slack: true,
-    gmail: true,
-  });
+  
+  // New state variables for settings toggles
+  const [notifications, setNotifications] = useState(true);
+  const [analyticsEnabled, setAnalyticsEnabled] = useState(true);
   
   // Fetch current subscription plan
   useEffect(() => {
@@ -83,60 +73,18 @@ const SettingsScreen = () => {
     }
   };
   
-  const handleAuthenticateService = async (serviceName) => {
-    try {
-      const result = await authenticateService(serviceName);
-      
-      if (result.error) {
-        Alert.alert('Authentication Error', result.message);
-        return;
-      }
-      
-      // If we have a redirect URL, open it for authentication
-      if (result.redirectUrl) {
-        Alert.alert(
-          'Authenticate with ' + serviceName,
-          'You will be redirected to authenticate with ' + serviceName,
-          [
-            { text: 'Cancel', style: 'cancel' },
-            { text: 'Continue', onPress: () => Linking.openURL(result.redirectUrl) }
-          ]
-        );
-      } else {
-        Alert.alert('Success', `Authentication initiated for ${serviceName}`);
-      }
-    } catch (error) {
-      Alert.alert('Error', `Failed to authenticate with ${serviceName}: ${error.message}`);
-    }
+  const handleToggleNotifications = (value) => {
+    setNotifications(value);
+    // In a real app, this would update notification settings
   };
   
-  const handleToggleGithub = (value) => {
-    setFeatures(prev => ({ ...prev, github: value }));
-  };
-  
-  const handleToggleSlack = (value) => {
-    setFeatures(prev => ({ ...prev, slack: value }));
-  };
-  
-  const handleToggleGmail = (value) => {
-    setFeatures(prev => ({ ...prev, gmail: value }));
+  const handleToggleAnalytics = (value) => {
+    setAnalyticsEnabled(value);
+    // In a real app, this would update analytics preferences
   };
   
   // These would be connected to real settings in a full app
   const settings = [
-    {
-      title: 'General',
-      items: [
-        { label: 'API Key', icon: 'key-outline', hasDetail: true, value: '••••••••••••••••' },
-        { label: 'Theme', icon: 'color-palette-outline', hasDetail: true, value: 'Dark' },
-        { 
-          label: 'Sign Out', 
-          icon: 'log-out-outline', 
-          hasDetail: false,
-          onPress: handleSignOut
-        },
-      ]
-    },
     {
       title: 'Chat',
       items: [
@@ -147,113 +95,49 @@ const SettingsScreen = () => {
       ]
     },
     {
-      title: 'Composio Integration',
+      title: 'Notifications',
       items: [
         {
-          label: 'Use Tools',
-          icon: 'construct-outline',
+          label: 'Push Notifications',
+          icon: 'notifications-outline',
           hasDetail: false,
           renderItem: () => (
             <View style={styles.cardItemRight}>
               <Switch
                 trackColor={{ false: colors.darkGray, true: colors.emeraldTransparent }}
-                thumbColor={useTools ? colors.emerald : colors.lightGray}
+                thumbColor={notifications ? colors.emerald : colors.lightGray}
                 ios_backgroundColor={colors.darkGray}
-                onValueChange={setUseTools}
-                value={useTools}
-                disabled={!isComposioConfigured}
+                onValueChange={handleToggleNotifications}
+                value={notifications}
               />
             </View>
           ),
         },
-        ...(!isComposioConfigured ? [{
-          label: 'Composio API Key Not Configured',
-          icon: 'alert-circle-outline',
-          hasDetail: false,
-          labelStyle: { color: colors.warning },
-        }] : []),
-        ...(isComposioConfigured ? [
-          {
-            label: 'GitHub',
-            icon: 'logo-github',
-            hasDetail: false,
-            renderItem: () => (
-              <View style={styles.cardItemRight}>
-                <Switch
-                  trackColor={{ false: colors.darkGray, true: colors.emeraldTransparent }}
-                  thumbColor={features.github ? colors.emerald : colors.lightGray}
-                  ios_backgroundColor={colors.darkGray}
-                  onValueChange={handleToggleGithub}
-                  value={features.github}
-                  disabled={!useTools}
-                />
-              </View>
-            ),
-          },
-          {
-            label: 'Authenticate GitHub',
-            icon: 'key-outline',
-            hasDetail: false,
-            onPress: () => handleAuthenticateService('github'),
-            disabled: !features.github || !useTools,
-          },
-          {
-            label: 'Slack',
-            icon: 'logo-slack',
-            hasDetail: false,
-            renderItem: () => (
-              <View style={styles.cardItemRight}>
-                <Switch
-                  trackColor={{ false: colors.darkGray, true: colors.emeraldTransparent }}
-                  thumbColor={features.slack ? colors.emerald : colors.lightGray}
-                  ios_backgroundColor={colors.darkGray}
-                  onValueChange={handleToggleSlack}
-                  value={features.slack}
-                  disabled={!useTools}
-                />
-              </View>
-            ),
-          },
-          {
-            label: 'Authenticate Slack',
-            icon: 'key-outline',
-            hasDetail: false,
-            onPress: () => handleAuthenticateService('slack'),
-            disabled: !features.slack || !useTools,
-          },
-          {
-            label: 'Gmail',
-            icon: 'mail-outline',
-            hasDetail: false,
-            renderItem: () => (
-              <View style={styles.cardItemRight}>
-                <Switch
-                  trackColor={{ false: colors.darkGray, true: colors.emeraldTransparent }}
-                  thumbColor={features.gmail ? colors.emerald : colors.lightGray}
-                  ios_backgroundColor={colors.darkGray}
-                  onValueChange={handleToggleGmail}
-                  value={features.gmail}
-                  disabled={!useTools}
-                />
-              </View>
-            ),
-          },
-          {
-            label: 'Authenticate Gmail',
-            icon: 'key-outline',
-            hasDetail: false,
-            onPress: () => handleAuthenticateService('gmail'),
-            disabled: !features.gmail || !useTools,
-          }
-        ] : []),
+        { label: 'Notification Sound', icon: 'volume-medium-outline', hasDetail: true, value: 'Default' },
+        { label: 'Chat Messages', icon: 'chatbox-outline', hasDetail: true, value: 'All' },
       ]
     },
     {
-      title: 'Features',
+      title: 'Data & Privacy',
       items: [
-        { label: 'Image Generation', icon: 'image-outline', hasDetail: true, value: 'On' },
-        { label: 'Voice Commands', icon: 'mic-outline', hasDetail: true, value: 'Off' },
-        { label: 'Web Search', icon: 'search-outline', hasDetail: true, value: 'On' },
+        {
+          label: 'Analytics',
+          icon: 'analytics-outline',
+          hasDetail: false,
+          renderItem: () => (
+            <View style={styles.cardItemRight}>
+              <Switch
+                trackColor={{ false: colors.darkGray, true: colors.emeraldTransparent }}
+                thumbColor={analyticsEnabled ? colors.emerald : colors.lightGray}
+                ios_backgroundColor={colors.darkGray}
+                onValueChange={handleToggleAnalytics}
+                value={analyticsEnabled}
+              />
+            </View>
+          ),
+        },
+        { label: 'Export Data', icon: 'download-outline', hasDetail: false },
+        { label: 'Delete Account', icon: 'trash-outline', hasDetail: false, labelStyle: { color: colors.warning } },
       ]
     },
     {
@@ -285,6 +169,18 @@ const SettingsScreen = () => {
         { label: 'Version', icon: 'information-circle-outline', hasDetail: true, value: '1.0.0' },
         { label: 'Terms of Service', icon: 'document-text-outline', hasDetail: true },
         { label: 'Privacy Policy', icon: 'shield-outline', hasDetail: true },
+      ]
+    },
+    {
+      title: 'Account',
+      items: [
+        { 
+          label: 'Sign Out', 
+          icon: 'log-out-outline', 
+          hasDetail: false,
+          onPress: handleSignOut,
+          labelStyle: { color: colors.warning }
+        },
       ]
     },
   ];
