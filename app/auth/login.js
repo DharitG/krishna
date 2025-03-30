@@ -162,6 +162,11 @@ export default function LoginScreen() {
 
           {/* Title */}
           <View style={styles.logoContainer}>
+            <Image 
+              source={require('../../assets/images/august.png')} 
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
             <Text style={styles.appTitle}>August</Text>
           </View>
         </ImageBackground>
@@ -410,10 +415,15 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: 'center',
   },
+  logoImage: {
+    width: 80,
+    height: 80,
+    marginBottom: 12,
+  },
   appTitle: {
     fontSize: 48,
     color: 'white',
-    fontFamily: 'NeueMachina-Ultrabold',
+    fontFamily: 'Inter-Medium',
     letterSpacing: 1,
   },
   bottomSection: {

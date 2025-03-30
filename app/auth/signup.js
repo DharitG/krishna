@@ -173,6 +173,11 @@ export default function SignupScreen() {
 
           {/* Title */}
           <View style={styles.logoContainer}>
+            <Image 
+              source={require('../../assets/images/august.png')} 
+              style={styles.logoImage}
+              resizeMode="contain"
+            />
             <Text style={styles.appTitle}>August</Text>
           </View>
         </ImageBackground>
@@ -195,7 +200,24 @@ export default function SignupScreen() {
               style={styles.googleButton}
               activeOpacity={0.8}
             >
-              <GoogleIcon />
+              <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <Path
+                  d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
+                  fill="#4285F4"
+                />
+                <Path
+                  d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
+                  fill="#34A853"
+                />
+                <Path
+                  d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
+                  fill="#FBBC05"
+                />
+                <Path
+                  d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
+                  fill="#EA4335"
+                />
+              </Svg>
               <Text style={styles.googleButtonText}>Continue with Google</Text>
             </TouchableOpacity>
 
@@ -204,7 +226,16 @@ export default function SignupScreen() {
               style={styles.appleButton}
               activeOpacity={0.8}
             >
-              <AppleIcon />
+              <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+                <Path
+                  d="M17.05 12.536c-.021-2.403 1.97-3.58 2.062-3.633-1.128-1.646-2.878-1.873-3.493-1.89-1.466-.154-2.896.877-3.645.877-.77 0-1.935-.862-3.19-.837-1.614.024-3.13.956-3.965 2.404-1.718 2.976-.437 7.35 1.208 9.758.823 1.176 1.783 2.49 3.043 2.444 1.23-.05 1.69-.785 3.177-.785 1.467 0 1.898.785 3.177.757 1.317-.021 2.147-1.185 2.94-2.37.95-1.36 1.33-2.7 1.348-2.77-.03-.01-2.57-.98-2.6-3.91l-.062-.045z"
+                  fill="white"
+                />
+                <Path
+                  d="M14.918 6.574c.66-.823 1.116-1.95 1.002-3.094-.968.042-2.178.663-2.876 1.465-.617.724-1.172 1.91-1.028 3.022 1.092.082 2.208-.55 2.902-1.393z"
+                  fill="white"
+                />
+              </Svg>
               <Text style={styles.buttonText}>Continue with Apple</Text>
             </TouchableOpacity>
 
@@ -263,7 +294,17 @@ export default function SignupScreen() {
                     style={styles.eyeIcon} 
                     onPress={() => setShowPassword(!showPassword)}
                   >
-                    {showPassword ? <EyeOffIcon /> : <EyeIcon />}
+                    {showPassword ? (
+                      <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <Path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" />
+                        <Path d="M1 1l22 22" />
+                      </Svg>
+                    ) : (
+                      <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <Path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <Circle cx="12" cy="12" r="3" />
+                      </Svg>
+                    )}
                   </TouchableOpacity>
                 </View>
                 {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
@@ -286,7 +327,17 @@ export default function SignupScreen() {
                     style={styles.eyeIcon} 
                     onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
-                    {showConfirmPassword ? <EyeOffIcon /> : <EyeIcon />}
+                    {showConfirmPassword ? (
+                      <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <Path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" />
+                        <Path d="M1 1l22 22" />
+                      </Svg>
+                    ) : (
+                      <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                        <Path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
+                        <Circle cx="12" cy="12" r="3" />
+                      </Svg>
+                    )}
                   </TouchableOpacity>
                 </View>
                 {confirmPasswordError ? <Text style={styles.errorText}>{confirmPasswordError}</Text> : null}
@@ -326,73 +377,6 @@ export default function SignupScreen() {
         </ScrollView>
       </Animated.View>
     </KeyboardAvoidingView>
-  );
-}
-
-function GoogleIcon() {
-  return (
-    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"
-        fill="#4285F4"
-      />
-      <Path
-        d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"
-        fill="#34A853"
-      />
-      <Path
-        d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l3.66-2.84z"
-        fill="#FBBC05"
-      />
-      <Path
-        d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
-        fill="#EA4335"
-      />
-    </Svg>
-  );
-}
-
-function AppleIcon() {
-  return (
-    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none">
-      <Path
-        d="M17.05 12.536c-.021-2.403 1.97-3.58 2.062-3.633-1.128-1.646-2.878-1.873-3.493-1.89-1.466-.154-2.896.877-3.645.877-.77 0-1.935-.862-3.19-.837-1.614.024-3.13.956-3.965 2.404-1.718 2.976-.437 7.35 1.208 9.758.823 1.176 1.783 2.49 3.043 2.444 1.23-.05 1.69-.785 3.177-.785 1.467 0 1.898.785 3.177.757 1.317-.021 2.147-1.185 2.94-2.37.95-1.36 1.33-2.7 1.348-2.77-.03-.01-2.57-.98-2.6-3.91l-.062-.045z"
-        fill="white"
-      />
-      <Path
-        d="M14.918 6.574c.66-.823 1.116-1.95 1.002-3.094-.968.042-2.178.663-2.876 1.465-.617.724-1.172 1.91-1.028 3.022 1.092.082 2.208-.55 2.902-1.393z"
-        fill="white"
-      />
-    </Svg>
-  );
-}
-
-function EyeIcon() {
-  return (
-    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z" />
-      <Circle cx="12" cy="12" r="3" />
-    </Svg>
-  );
-}
-
-function EyeOffIcon() {
-  return (
-    <Svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="#999" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <Path d="M17.94 17.94A10.07 10.07 0 0112 20c-7 0-11-8-11-8a18.45 18.45 0 015.06-5.94M9.9 4.24A9.12 9.12 0 0112 4c7 0 11 8 11 8a18.5 18.5 0 01-2.16 3.19m-6.72-1.07a3 3 0 11-4.24-4.24" />
-      <Path d="M1 1l22 22" />
-    </Svg>
-  );
-}
-
-function LogoIcon() {
-  return (
-    <Svg width="64" height="64" viewBox="0 0 1024 1024" fill="none">
-      <Path
-        d="M575.27 843.46c-15.29 2.93-30.3 4.98-45.39 5.71-40.93 1.98-80.99-3.49-120.06-15.79-27.92-8.79-54.06-21.33-79.05-36.69-41.14-25.3-73.28-59.4-99.95-99.15-24.24-36.13-40.2-75.72-48.97-118.26-5.77-28.03-7.68-56.42-6-84.9 2.82-47.56 14.37-92.88 36.8-135.19 15.76-29.72 34.02-57.7 57.51-81.92 36.67-37.8 79.52-65.84 129.68-82.83 27.61-9.35 55.79-14.75 84.62-17.9 29.69-3.24 59.05-1.14 88.37 3.94 52.51 9.11 99.89 30.02 142.37 61.96 47.72 35.87 81.93 82.58 106.46 136.48 12.86 28.26 20.41 58.24 24.84 89.05 2.93 20.38 3.62 40.82 2.58 61.24-1.79 35.05-8.54 69.23-21.04 102.14-8.84 23.28-20.86 44.83-34.56 65.64-22.11 33.59-48.23 63.29-81.18 86.51-41.43 29.2-86.55 50.25-137.04 59.96M563.14 298.48c-9.66-1.69-19.25-3.94-28.98-4.95-24.86-2.58-49.62-.92-73.8 5.25-52.21 13.31-94.83 41.21-126.62 85.08-27.5 37.94-39.52 81.04-41.17 127.17-.8 22.16 3.02 43.99 9.78 65.28 16.63 52.37 47.51 94.06 93.95 123.35 44.39 28 93.14 38.14 145.26 30.96 23.41-3.22 45.88-9.85 66.96-20.6 40.08-20.44 71.44-50.18 94-89.17 27.39-47.34 34.68-98.09 24.45-151.3-5.7-29.65-17.13-57.27-34.49-82.3-31.72-45.75-74.29-75.56-129.34-88.77z"
-        fill="white"
-      />
-    </Svg>
   );
 }
 
@@ -437,10 +421,15 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: 'center',
   },
+  logoImage: {
+    width: 80,
+    height: 80,
+    marginBottom: 12,
+  },
   appTitle: {
     fontSize: 48,
     color: 'white',
-    fontFamily: 'NeueMachina-Ultrabold',
+    fontFamily: 'Inter-Medium',
     letterSpacing: 1,
   },
   bottomSection: {
