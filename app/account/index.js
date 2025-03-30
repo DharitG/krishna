@@ -33,7 +33,7 @@ const AccountScreen = () => {
   const [userInfo, setUserInfo] = useState({
     name: 'John Doe',
     email: 'john.doe@example.com',
-    accountType: 'Premium',
+    accountType: 'Eden',
     joinDate: 'March 2023',
     avatarUrl: null
   });
@@ -611,15 +611,54 @@ const AccountScreen = () => {
                         <Ionicons name="person" size={40} color={colors.white} />
                       )}
                     </View>
+                    <View style={styles.avatarEditBadge}>
+                      <Ionicons name="add-circle" size={22} color={colors.emerald} />
+                    </View>
                   </TouchableOpacity>
                 </View>
                 <View style={styles.profileInfo}>
                   <Text style={styles.profileName}>{userInfo.name}</Text>
                   <Text style={styles.profileEmail}>{userInfo.email}</Text>
                   <View style={styles.badgeContainer}>
-                    <View style={styles.premiumBadge}>
-                      <Ionicons name="star" size={14} color={colors.warning} />
-                      <Text style={styles.premiumText}>{userInfo.accountType}</Text>
+                    <View style={[
+                      styles.planBadge, 
+                      { 
+                        backgroundColor: userInfo.accountType === 'Free' 
+                          ? 'rgba(16, 185, 129, 0.15)' 
+                          : userInfo.accountType === 'Eden'
+                            ? 'rgba(79, 70, 229, 0.15)'
+                            : 'rgba(245, 158, 11, 0.15)'
+                      }
+                    ]}>
+                      <Ionicons 
+                        name={
+                          userInfo.accountType === 'Free' 
+                            ? 'leaf-outline' 
+                            : userInfo.accountType === 'Eden'
+                              ? 'sparkles-outline'
+                              : 'star'
+                        } 
+                        size={16} 
+                        color={
+                          userInfo.accountType === 'Free' 
+                            ? colors.emerald 
+                            : userInfo.accountType === 'Eden'
+                              ? '#6366F1'
+                              : colors.warning
+                        } 
+                      />
+                      <Text style={[
+                        styles.planBadgeText, 
+                        { 
+                          color: userInfo.accountType === 'Free' 
+                            ? colors.emerald 
+                            : userInfo.accountType === 'Eden'
+                              ? '#6366F1'
+                              : colors.warning
+                        }
+                      ]}>
+                        {userInfo.accountType} Plan
+                      </Text>
                     </View>
                   </View>
                 </View>
@@ -848,6 +887,7 @@ const styles = {
   },
   avatarContainer: {
     marginRight: spacing.md,
+    position: 'relative',
   },
   avatar: {
     width: 70,
@@ -863,6 +903,19 @@ const styles = {
     width: '100%',
     height: '100%',
     borderRadius: 35,
+  },
+  avatarEditBadge: {
+    position: 'absolute',
+    right: -5,
+    bottom: -5,
+    backgroundColor: 'rgba(20, 32, 61, 0.9)',
+    width: 26,
+    height: 26,
+    borderRadius: 13,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.4)',
   },
   profileInfo: {
     flex: 1,
@@ -882,19 +935,19 @@ const styles = {
   badgeContainer: {
     flexDirection: 'row',
   },
-  premiumBadge: {
+  planBadge: {
     flexDirection: 'row',
     alignItems: 'center',
-    backgroundColor: 'rgba(245, 158, 11, 0.15)',
-    paddingHorizontal: 8,
-    paddingVertical: 4,
-    borderRadius: 12,
+    paddingHorizontal: 10,
+    paddingVertical: 6,
+    borderRadius: 20,
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.1)',
   },
-  premiumText: {
+  planBadgeText: {
     fontSize: typography.fontSize.xs,
     fontFamily: typography.fontFamily.medium,
-    color: colors.warning,
-    marginLeft: 4,
+    marginLeft: 6,
   },
   divider: {
     height: 1,
@@ -1138,25 +1191,35 @@ const styles = {
     flex: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    backgroundColor: 'rgba(0, 0, 0, 0.7)',
   },
   modalContent: {
-    backgroundColor: colors.background.primary,
+    backgroundColor: 'rgba(20, 32, 61, 0.95)',
     borderRadius: borderRadius.lg,
     padding: spacing.md,
     width: '90%',
     maxWidth: 400,
+    borderWidth: 1,
+    borderColor: 'rgba(48, 109, 255, 0.3)',
+    shadowColor: '#306DFF',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 12,
+    elevation: 8,
   },
   modalHeader: {
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
     marginBottom: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+    paddingBottom: spacing.sm,
   },
   modalTitle: {
     fontSize: typography.fontSize.lg,
     fontFamily: typography.fontFamily.bold,
-    color: colors.text.primary,
+    color: colors.white,
   },
   modalCloseButton: {
     padding: spacing.sm,
@@ -1166,19 +1229,20 @@ const styles = {
   },
   inputLabel: {
     fontSize: typography.fontSize.sm,
-    fontFamily: typography.fontFamily.regular,
-    color: colors.text.secondary,
+    fontFamily: typography.fontFamily.medium,
+    color: colors.text.primary,
     marginBottom: spacing.sm,
   },
   textInput: {
-    backgroundColor: 'rgba(20, 32, 61, 0.1)',
+    backgroundColor: 'rgba(16, 24, 44, 0.8)',
     padding: spacing.md,
     borderRadius: borderRadius.md,
     borderColor: 'rgba(48, 109, 255, 0.3)',
     borderWidth: 1,
     fontSize: typography.fontSize.md,
     fontFamily: typography.fontFamily.regular,
-    color: colors.text.primary,
+    color: colors.white,
+    marginBottom: spacing.md,
   },
   textAreaInput: {
     height: 120,
