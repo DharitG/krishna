@@ -14,7 +14,8 @@ import {
   Image,
   TextInput,
   Modal,
-  KeyboardAvoidingView
+  KeyboardAvoidingView,
+  FlatList
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
@@ -54,6 +55,24 @@ const AccountScreen = () => {
   // Check if Composio is configured
   const { COMPOSIO_API_KEY } = Constants.expoConfig?.extra || {};
   const isComposioConfigured = !!COMPOSIO_API_KEY;
+  
+  // New state for search
+  const [searchQuery, setSearchQuery] = useState('');
+  const [filteredServices, setFilteredServices] = useState([]);
+  
+  // List of all available services with their icons and display names
+  const allServices = [
+    { id: 'github', name: 'GitHub', icon: 'logo-github', color: '#24292e' },
+    { id: 'slack', name: 'Slack', icon: 'logo-slack', color: '#4A154B' },
+    { id: 'gmail', name: 'Gmail', icon: 'mail-outline', color: '#D44638' },
+    { id: 'discord', name: 'Discord', icon: 'logo-discord', color: '#5865F2' },
+    { id: 'zoom', name: 'Zoom', icon: 'videocam-outline', color: '#2D8CFF' },
+    { id: 'asana', name: 'Asana', icon: 'list-outline', color: '#FC636B' },
+    { id: 'dropbox', name: 'Dropbox', icon: 'cloud-outline', color: '#0061FF' },
+    { id: 'notion', name: 'Notion', icon: 'document-text-outline', color: '#000000' },
+    { id: 'figma', name: 'Figma', icon: 'color-palette-outline', color: '#F24E1E' },
+    { id: 'stripe', name: 'Stripe', icon: 'card-outline', color: '#635BFF' }
+  ];
   
   useEffect(() => {
     // Fetch connected accounts on mount
@@ -308,89 +327,72 @@ const AccountScreen = () => {
     );
   };
   
-  const renderServiceSection = (serviceName, serviceAccounts, icon) => {
-    const formattedServiceName = serviceName.charAt(0).toUpperCase() + serviceName.slice(1);
-    
-    // Animation interpolations
-    const rotateArrow = serviceAnimations[serviceName]?.interpolate({
-      inputRange: [0, 1],
-      outputRange: ['0deg', '180deg'],
-    });
+  // Filter services based on search query
+  useEffect(() => {
+    if (searchQuery.trim() === '') {
+      setFilteredServices(allServices);
+    } else {
+      const filtered = allServices.filter(service => 
+        service.name.toLowerCase().includes(searchQuery.toLowerCase())
+      );
+      setFilteredServices(filtered);
+    }
+  }, [searchQuery]);
+  
+  // Initialize filtered services with all services
+  useEffect(() => {
+    setFilteredServices(allServices);
+  }, []);
+  
+  // Redesigned service card for a more compact and attractive view
+  const renderServiceCard = (service) => {
+    const serviceAccounts = accounts[service.id] || [];
+    const connectedCount = serviceAccounts.length;
+    const isConnected = connectedCount > 0;
     
     return (
-      <Animated.View key={serviceName} style={styles.serviceCardContainer}>
-        <View style={styles.serviceCard}>
-          <TouchableOpacity 
-            style={styles.cardHeader}
-            onPress={() => toggleServiceExpansion(serviceName)}
-          >
-            <Ionicons name={icon} size={24} color={colors.white} />
-            <Text style={styles.cardTitle}>{formattedServiceName}</Text>
-            <Animated.View style={{ transform: [{ rotate: rotateArrow }] }}>
-              <Ionicons name="chevron-down" size={20} color={colors.white} />
-            </Animated.View>
-          </TouchableOpacity>
-          
-          {/* Error message */}
-          {errors[serviceName] && (
-            <ErrorMessage 
-              service={serviceName}
-              message={errors[serviceName]}
-              onRetry={() => handleAddAccount(serviceName)}
-            />
-          )}
-          
-          <Animated.View 
-            style={{ 
-              opacity: serviceAnimations[serviceName],
-              maxHeight: serviceAnimations[serviceName].interpolate({
-                inputRange: [0, 1],
-                outputRange: [0, 1000]
-              })
-            }}
-          >
-            {serviceAccounts.length > 0 ? (
-              <View style={styles.accountsList}>
-                {serviceAccounts.map(account => renderAccountItem(serviceName, account))}
-              </View>
-            ) : (
-              <View style={styles.emptyStateContainer}>
-                <Ionicons name="cloud-offline-outline" size={40} color={colors.text.secondary} />
-                <Text style={styles.noAccountsText}>No {formattedServiceName} accounts connected</Text>
-                <Text style={styles.emptyStateHint}>
-                  Connect your {formattedServiceName} account to access your data and enable AI features
-                </Text>
-              </View>
-            )}
-            
-            <TouchableOpacity 
-              style={styles.addAccountButton}
-              onPress={() => {
-                animateAddAccount(serviceName);
-                handleAddAccount(serviceName);
-              }}
-              disabled={!isComposioConfigured}
-              activeOpacity={0.7}
-            >
-              <Animated.View
-                style={{
-                  transform: [
-                    {
-                      scale: addAccountAnimation.interpolate({
-                        inputRange: [0, 0.5, 1],
-                        outputRange: [1, 1.2, 1]
-                      })
-                    }
-                  ]
-                }}
-              >
-                <Ionicons name="add-circle-outline" size={20} color={colors.white} />
-              </Animated.View>
-              <Text style={styles.addAccountButtonText}>Add {formattedServiceName} Account</Text>
-            </TouchableOpacity>
-          </Animated.View>
+      <TouchableOpacity 
+        key={service.id}
+        style={[
+          styles.serviceCardNew,
+          { borderColor: isConnected ? 'rgba(16, 185, 129, 0.3)' : 'rgba(48, 109, 255, 0.15)' }
+        ]}
+        onPress={() => toggleServiceExpansion(service.id)}
+        activeOpacity={0.8}
+      >
+        <View style={[styles.serviceIconContainer, { backgroundColor: `${service.color}30` }]}>
+          <Ionicons name={service.icon} size={22} color={service.color} />
         </View>
-      </Animated.View>
+        <View style={styles.serviceCardContent}>
+          <Text style={styles.serviceCardTitle}>{service.name}</Text>
+          <Text style={styles.serviceCardSubtitle}>
+            {isConnected 
+              ? `${connectedCount} account${connectedCount > 1 ? 's' : ''} connected` 
+              : 'Not connected'}
+          </Text>
+        </View>
+        <View style={styles.serviceCardAction}>
+          {isConnected ? (
+            <TouchableOpacity 
+              style={styles.connectedBadge}
+              onPress={() => toggleServiceExpansion(service.id)}
+            >
+              <Ionicons name="checkmark-circle" size={16} color={colors.emerald} />
+              <Text style={styles.connectedText}>Manage</Text>
+            </TouchableOpacity>
+          ) : (
+            <TouchableOpacity 
+              style={styles.connectButton}
+              onPress={() => {
+                animateAddAccount(service.id);
+                handleAddAccount(service.id);
+              }}
+            >
+              <Text style={styles.connectButtonText}>Connect</Text>
+            </TouchableOpacity>
+          )}
+        </View>
+      </TouchableOpacity>
     );
   };
   
@@ -581,8 +583,7 @@ const AccountScreen = () => {
           </TouchableOpacity>
           
           <View style={styles.headerTitleContainer}>
-            <Text style={styles.headerTitle}>August</Text>
-            <Text style={styles.headerSubtitle}>Account Settings</Text>
+            <Text style={styles.headerTitle}>Account</Text>
           </View>
           
           <View style={styles.headerButton} />
@@ -659,104 +660,101 @@ const AccountScreen = () => {
             <Text style={styles.sectionTitle}>Connected Services</Text>
           </View>
           
+          {/* Search Bar */}
+          <View style={styles.searchContainer}>
+            <Ionicons name="search-outline" size={20} color={colors.text.secondary} style={styles.searchIcon} />
+            <TextInput
+              style={styles.searchInput}
+              placeholder="Search services..."
+              placeholderTextColor={colors.text.secondary}
+              value={searchQuery}
+              onChangeText={setSearchQuery}
+            />
+            {searchQuery.length > 0 && (
+              <TouchableOpacity onPress={() => setSearchQuery('')} style={styles.clearButton}>
+                <Ionicons name="close-circle" size={18} color={colors.text.secondary} />
+              </TouchableOpacity>
+            )}
+          </View>
+          
           {loading ? (
             <View style={styles.loadingContainer}>
               <ActivityIndicator size="large" color={colors.emerald} />
               <Text style={styles.loadingText}>Loading accounts...</Text>
             </View>
           ) : (
-            <View style={styles.servicesContainer}>
-              {renderServiceSection('github', accounts.github || [], 'logo-github')}
-              {renderServiceSection('slack', accounts.slack || [], 'logo-slack')}
-              {renderServiceSection('gmail', accounts.gmail || [], 'mail-outline')}
-              {renderServiceSection('discord', accounts.discord || [], 'logo-discord')}
-              {renderServiceSection('zoom', accounts.zoom || [], 'videocam-outline')}
-              {renderServiceSection('asana', accounts.asana || [], 'list-outline')}
+            <View style={styles.servicesGridContainer}>
+              {filteredServices.map(service => renderServiceCard(service))}
             </View>
           )}
           
-          {/* Subscription Section */}
-          <View style={styles.sectionHeader}>
-            <Text style={styles.sectionTitle}>Subscription</Text>
-          </View>
-
-          <View style={styles.subscriptionCardContainer}>
-            <View style={styles.subscriptionCard}>
-              <View style={styles.subscriptionHeader}>
-                <View style={styles.subscriptionBadge}>
-                  <Ionicons 
-                    name={userInfo.accountType === 'Free' ? 'leaf-outline' : 'star'} 
-                    size={20} 
-                    color={userInfo.accountType === 'Free' ? colors.emerald : colors.warning} 
-                  />
-                  <Text style={[
-                    styles.subscriptionBadgeText,
-                    {color: userInfo.accountType === 'Free' ? colors.emerald : colors.warning}
-                  ]}>
-                    {userInfo.accountType} Plan
+          {/* Service Details Modal (shows when a service is clicked) */}
+          {Object.keys(accounts).map(serviceName => {
+            const serviceAccounts = accounts[serviceName] || [];
+            if (serviceAccounts.length === 0) return null;
+            
+            const rotateArrow = serviceAnimations[serviceName]?.interpolate({
+              inputRange: [0, 1],
+              outputRange: ['0deg', '180deg'],
+            });
+            
+            return (
+              <Animated.View 
+                key={serviceName}
+                style={[
+                  styles.serviceDetailCard,
+                  {
+                    opacity: serviceAnimations[serviceName],
+                    maxHeight: serviceAnimations[serviceName].interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 1000]
+                    }),
+                    marginTop: serviceAnimations[serviceName].interpolate({
+                      inputRange: [0, 1],
+                      outputRange: [0, 10]
+                    })
+                  }
+                ]}
+              >
+                <View style={styles.serviceDetailHeader}>
+                  <Text style={styles.serviceDetailTitle}>
+                    {serviceName.charAt(0).toUpperCase() + serviceName.slice(1)} Accounts
                   </Text>
+                  <TouchableOpacity onPress={() => toggleServiceExpansion(serviceName)}>
+                    <Ionicons name="close" size={22} color={colors.white} />
+                  </TouchableOpacity>
                 </View>
-              </View>
-              
-              <View style={styles.subscriptionFeatures}>
-                {userInfo.accountType === 'Free' ? (
-                  <>
-                    <View style={styles.featureItem}>
-                      <Ionicons name="checkmark-circle" size={18} color={colors.emerald} />
-                      <Text style={styles.featureText}>Basic AI features</Text>
-                    </View>
-                    <View style={styles.featureItem}>
-                      <Ionicons name="checkmark-circle" size={18} color={colors.emerald} />
-                      <Text style={styles.featureText}>Connect up to 2 services</Text>
-                    </View>
-                    <View style={styles.featureItem}>
-                      <Ionicons name="close-circle" size={18} color={colors.text.secondary} />
-                      <Text style={[styles.featureText, {color: colors.text.secondary}]}>Advanced AI capabilities</Text>
-                    </View>
-                  </>
-                ) : userInfo.accountType === 'Premium' ? (
-                  <>
-                    <View style={styles.featureItem}>
-                      <Ionicons name="checkmark-circle" size={18} color={colors.emerald} />
-                      <Text style={styles.featureText}>All AI features</Text>
-                    </View>
-                    <View style={styles.featureItem}>
-                      <Ionicons name="checkmark-circle" size={18} color={colors.emerald} />
-                      <Text style={styles.featureText}>Unlimited service connections</Text>
-                    </View>
-                    <View style={styles.featureItem}>
-                      <Ionicons name="checkmark-circle" size={18} color={colors.emerald} />
-                      <Text style={styles.featureText}>Priority support</Text>
-                    </View>
-                  </>
-                ) : (
-                  <>
-                    <View style={styles.featureItem}>
-                      <Ionicons name="checkmark-circle" size={18} color={colors.emerald} />
-                      <Text style={styles.featureText}>All Premium features</Text>
-                    </View>
-                    <View style={styles.featureItem}>
-                      <Ionicons name="checkmark-circle" size={18} color={colors.emerald} />
-                      <Text style={styles.featureText}>Team collaboration</Text>
-                    </View>
-                    <View style={styles.featureItem}>
-                      <Ionicons name="checkmark-circle" size={18} color={colors.emerald} />
-                      <Text style={styles.featureText}>Custom integrations</Text>
-                    </View>
-                  </>
-                )}
-              </View>
-              
-              {userInfo.accountType === 'Free' && (
+                
+                <View style={styles.accountsList}>
+                  {serviceAccounts.map(account => renderAccountItem(serviceName, account))}
+                </View>
+                
                 <TouchableOpacity 
-                  style={styles.upgradePlanButton}
-                  onPress={() => router.push('/subscription')}
+                  style={styles.addAccountButtonNew}
+                  onPress={() => {
+                    animateAddAccount(serviceName);
+                    handleAddAccount(serviceName);
+                  }}
                 >
-                  <Text style={styles.upgradePlanButtonText}>Upgrade Plan</Text>
+                  <Animated.View
+                    style={{
+                      transform: [
+                        {
+                          scale: addAccountAnimation.interpolate({
+                            inputRange: [0, 0.5, 1],
+                            outputRange: [1, 1.2, 1]
+                          })
+                        }
+                      ]
+                    }}
+                  >
+                    <Ionicons name="add-circle-outline" size={18} color={colors.white} />
+                  </Animated.View>
+                  <Text style={styles.addAccountButtonText}>Add Another Account</Text>
                 </TouchableOpacity>
-              )}
-            </View>
-          </View>
+              </Animated.View>
+            );
+          })}
           
           {!isComposioConfigured && (
             <View style={styles.warningCardContainer}>
@@ -1284,6 +1282,146 @@ const styles = {
     fontSize: typography.fontSize.md,
     fontFamily: typography.fontFamily.medium,
     color: colors.white,
+  },
+  searchContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(20, 32, 61, 0.6)',
+    borderRadius: borderRadius.md,
+    marginBottom: spacing.md,
+    paddingHorizontal: spacing.md,
+    height: 48,
+    borderWidth: 1,
+    borderColor: 'rgba(48, 109, 255, 0.2)',
+  },
+  searchIcon: {
+    marginRight: spacing.sm,
+  },
+  searchInput: {
+    flex: 1,
+    height: '100%',
+    color: colors.white,
+    fontSize: typography.fontSize.md,
+    fontFamily: typography.fontFamily.regular,
+  },
+  clearButton: {
+    padding: spacing.xs,
+  },
+  servicesGridContainer: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    justifyContent: 'space-between',
+    marginBottom: spacing.lg,
+  },
+  serviceCardNew: {
+    width: '48%',
+    backgroundColor: 'rgba(20, 32, 61, 0.8)',
+    borderRadius: borderRadius.md,
+    borderWidth: 1,
+    marginBottom: spacing.md,
+    padding: spacing.sm,
+    overflow: 'hidden',
+    flexDirection: 'column',
+    shadowColor: '#306DFF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.1,
+    shadowRadius: 4,
+    elevation: 3,
+  },
+  serviceIconContainer: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginBottom: spacing.sm,
+  },
+  serviceCardContent: {
+    flex: 1,
+    marginBottom: spacing.sm,
+  },
+  serviceCardTitle: {
+    fontSize: typography.fontSize.md,
+    fontFamily: typography.fontFamily.medium,
+    color: colors.white,
+    marginBottom: 2,
+  },
+  serviceCardSubtitle: {
+    fontSize: typography.fontSize.xs,
+    fontFamily: typography.fontFamily.regular,
+    color: colors.text.secondary,
+  },
+  serviceCardAction: {
+    flexDirection: 'row',
+    justifyContent: 'flex-start',
+  },
+  connectButton: {
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
+  },
+  connectButtonText: {
+    color: colors.emerald,
+    fontSize: typography.fontSize.xs,
+    fontFamily: typography.fontFamily.medium,
+  },
+  connectedBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.1)',
+    paddingVertical: 6,
+    paddingHorizontal: 12,
+    borderRadius: 12,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
+  },
+  connectedText: {
+    color: colors.emerald,
+    fontSize: typography.fontSize.xs,
+    fontFamily: typography.fontFamily.medium,
+    marginLeft: 4,
+  },
+  serviceDetailCard: {
+    backgroundColor: 'rgba(20, 32, 61, 0.85)',
+    borderRadius: borderRadius.lg,
+    borderColor: 'rgba(48, 109, 255, 0.15)',
+    borderWidth: 1,
+    shadowColor: '#306DFF',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
+    overflow: 'hidden',
+    marginBottom: spacing.md,
+  },
+  serviceDetailHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    padding: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: 'rgba(255, 255, 255, 0.1)',
+  },
+  serviceDetailTitle: {
+    fontSize: typography.fontSize.md,
+    fontFamily: typography.fontFamily.medium,
+    color: colors.white,
+  },
+  addAccountButtonNew: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+    padding: spacing.sm,
+    borderRadius: borderRadius.md,
+    margin: spacing.md,
+    borderWidth: 1,
+    borderColor: 'rgba(16, 185, 129, 0.3)',
   },
 };
 
