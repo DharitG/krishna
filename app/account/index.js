@@ -53,8 +53,8 @@ const AccountScreen = () => {
   const [uploading, setUploading] = useState(false);
   
   // Check if Composio is configured
-  const { COMPOSIO_API_KEY } = Constants.expoConfig?.extra || {};
-  const isComposioConfigured = !!COMPOSIO_API_KEY;
+  const { FEATURE_COMPOSIO } = Constants.expoConfig?.extra || {};
+  const isComposioConfigured = !!FEATURE_COMPOSIO;
   
   // New state for search
   const [searchQuery, setSearchQuery] = useState('');
@@ -801,7 +801,7 @@ const AccountScreen = () => {
                 <View style={styles.warningContent}>
                   <Ionicons name="alert-circle-outline" size={24} color={colors.warning} />
                   <Text style={styles.warningText}>
-                    Composio API Key is not configured. Some features may be limited.
+                    Composio is not configured. Some features may be limited.
                   </Text>
                 </View>
               </View>

@@ -5,9 +5,9 @@ import * as SecureStore from 'expo-secure-store';
 import supabase from './supabase'; // Correct import for the default export
 import socketService from './socket';
 
-// Azure OpenAI Configuration from environment
+// Get configuration from environment
 const {
-  AZURE_OPENAI_API_KEY = 'your-azure-api-key',
+  FEATURE_AZURE_OPENAI = true,
   AZURE_OPENAI_ENDPOINT = 'https://your-resource-name.openai.azure.com',
   AZURE_OPENAI_DEPLOYMENT_NAME = 'your-deployment-name',
   MODEL_TEMPERATURE = '0.7',

@@ -15,21 +15,21 @@ import supabase from './supabase';
 
 // Get environment variables
 const { 
-  AZURE_OPENAI_API_KEY,
+  FEATURE_AZURE_OPENAI = true,
   AZURE_OPENAI_ENDPOINT,
   AZURE_OPENAI_DEPLOYMENT_NAME,
-  COMPOSIO_API_KEY
+  FEATURE_COMPOSIO = true
 } = Constants.expoConfig?.extra || {};
 
 // Check if all required Azure config is present
 const isAzureConfigured = !!(
-  AZURE_OPENAI_API_KEY && 
+  FEATURE_AZURE_OPENAI && 
   AZURE_OPENAI_ENDPOINT && 
   AZURE_OPENAI_DEPLOYMENT_NAME
 );
 
 // Check if Composio is configured
-const isComposioConfigured = !!COMPOSIO_API_KEY;
+const isComposioConfigured = !!FEATURE_COMPOSIO;
 
 // Create a store for chat state
 const useZustandChatStore = create((set, get) => ({

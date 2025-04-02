@@ -1,24 +1,37 @@
 import Constants from 'expo-constants';
 import axios from 'axios';
+import * as SecureStore from 'expo-secure-store';
 
 // Get configuration from environment
 const { 
   BACKEND_URL = 'http://localhost:3000',
-  COMPOSIO_API_KEY = 'your-composio-api-key'
+  FEATURE_COMPOSIO = true
 } = Constants.expoConfig?.extra || {};
 
 class ComposioService {
   constructor() {
     this.backendUrl = BACKEND_URL;
-    this.apiKey = COMPOSIO_API_KEY;
-    this.isConfigured = !!COMPOSIO_API_KEY;
+    this.isConfigured = FEATURE_COMPOSIO;
     
     // Log configuration status for debugging
     console.log('Composio service configuration:', { 
       backendUrl: this.backendUrl,
-      isConfigured: this.isConfigured,
-      hasApiKey: !!COMPOSIO_API_KEY
+      isConfigured: this.isConfigured
     });
+  }
+
+  /**
+   * Get auth token for requests
+   * @returns {Promise<string|null>} - Auth token or null
+   */
+  async getAuthToken() {
+    try {
+      const token = await SecureStore.getItemAsync('auth_token');
+      return token;
+    } catch (error) {
+      console.error('Error getting auth token:', error);
+      return null;
+    }
   }
 
   /**
@@ -33,13 +46,14 @@ class ComposioService {
     }
 
     try {
+      const token = await this.getAuthToken();
       const response = await axios.post(
         `${this.backendUrl}/api/composio/tools`,
         { actions },
         {
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.apiKey}`
+            'Authorization': token ? `Bearer ${token}` : ''
           }
         }
       );
@@ -71,13 +85,14 @@ class ComposioService {
     console.log('Processing tool calls:', toolCalls);
 
     try {
+      const token = await this.getAuthToken();
       const response = await axios.post(
         `${this.backendUrl}/api/composio/tool_calls`,
         { toolCalls },
         {
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.apiKey}`
+            'Authorization': token ? `Bearer ${token}` : ''
           }
         }
       );
@@ -103,13 +118,14 @@ class ComposioService {
     console.log(`Initializing authentication for ${appName}`);
     
     try {
+      const token = await this.getAuthToken();
       const response = await axios.post(
         `${this.backendUrl}/api/composio/auth/${appName}`,
         {},
         {
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${this.apiKey}`
+            'Authorization': token ? `Bearer ${token}` : ''
           }
         }
       );

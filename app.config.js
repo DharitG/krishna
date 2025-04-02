@@ -39,17 +39,17 @@ export default {
     SUPABASE_URL: process.env.SUPABASE_URL,
     SUPABASE_ANON_KEY: process.env.SUPABASE_ANON_KEY,
     
-    // Azure OpenAI Configuration
-    AZURE_OPENAI_API_KEY: process.env.AZURE_OPENAI_API_KEY,
+    // Feature flags to replace API keys
+    FEATURE_AZURE_OPENAI: true,
+    FEATURE_COMPOSIO: true,
+    
+    // Azure OpenAI Configuration (still needed but without keys)
     AZURE_OPENAI_ENDPOINT: process.env.AZURE_OPENAI_ENDPOINT,
     AZURE_OPENAI_DEPLOYMENT_NAME: process.env.AZURE_OPENAI_DEPLOYMENT_NAME,
     
     // Optional: Model configuration
     MODEL_TEMPERATURE: process.env.MODEL_TEMPERATURE,
     MODEL_MAX_TOKENS: process.env.MODEL_MAX_TOKENS,
-    
-    // Composio Configuration
-    COMPOSIO_API_KEY: process.env.COMPOSIO_API_KEY,
     
     // Backend Configuration
     BACKEND_URL: process.env.BACKEND_URL || 'http://localhost:3000',
