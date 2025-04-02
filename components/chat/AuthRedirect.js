@@ -25,8 +25,27 @@ const AuthRedirect = ({ serviceName, onAuthComplete, onCancel }) => {
       const url = event.url;
       console.log('Deep link detected:', url);
       
+      // Check for auth callback with more detailed logging
       if (url.includes('auth/callback')) {
+        console.log(`Processing auth callback for ${serviceName}...`);
         try {
+          // Extract parameters from URL for debugging
+          const urlObj = new URL(url);
+          const code = urlObj.searchParams.get('code');
+          const state = urlObj.searchParams.get('state');
+          const connectedAccountId = urlObj.searchParams.get('connectedAccountId');
+          
+          console.log('Auth callback parameters:', { 
+            hasCode: !!code, 
+            hasState: !!state,
+            hasConnectedAccountId: !!connectedAccountId,
+            service: serviceName
+          });
+          
+          if (!code || !connectedAccountId) {
+            throw new Error(`Missing required parameters in callback URL. Needs code and connectedAccountId.`);
+          }
+          
           // Handle the OAuth callback
           const result = await composioService.handleOAuthCallback(url);
           
@@ -51,7 +70,10 @@ const AuthRedirect = ({ serviceName, onAuthComplete, onCancel }) => {
     // Get initial URL (in case app was opened from URL)
     Linking.getInitialURL().then((url) => {
       if (url) {
+        console.log(`Initial URL detected: ${url}`);
         handleUrl({ url });
+      } else {
+        console.log('No initial URL detected');
       }
     });
 

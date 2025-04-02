@@ -157,20 +157,41 @@ class ComposioService {
     try {
       console.log('Handling OAuth callback URL:', url);
       
-      // Extract the service name and auth code from the URL
-      // Example URL: august://auth/callback?service=github&code=abc123
+      // Extract parameters from the URL
       const urlObj = new URL(url);
       const service = urlObj.searchParams.get('service');
       const code = urlObj.searchParams.get('code');
+      const connectedAccountId = urlObj.searchParams.get('connectedAccountId');
+      const state = urlObj.searchParams.get('state');
       
-      if (!service || !code) {
-        throw new Error('Missing service or code in callback URL');
+      console.log('Extracted callback parameters:', {
+        service,
+        hasCode: !!code,
+        hasConnectedAccountId: !!connectedAccountId,
+        hasState: !!state
+      });
+      
+      // Validate required parameters
+      if (!service) {
+        throw new Error('Missing service parameter in callback URL');
       }
       
-      // Send the auth code to the backend
+      if (!code) {
+        throw new Error('Missing code parameter in callback URL');
+      }
+      
+      if (!connectedAccountId) {
+        throw new Error('Missing connectedAccountId parameter in callback URL');
+      }
+      
+      // Send the auth code and connectedAccountId to the backend
       const response = await axios.post(
         `${this.backendUrl}/api/composio/auth/${service}/callback`,
-        { code },
+        { 
+          code,
+          connectedAccountId,
+          state
+        },
         {
           headers: {
             'Content-Type': 'application/json'
@@ -178,16 +199,25 @@ class ComposioService {
         }
       );
       
+      console.log(`Authentication completed for ${service}:`, response.data);
+      
       return {
         service,
         success: true,
         ...response.data
       };
     } catch (error) {
-      console.error('Error handling OAuth callback:', error.message);
+      console.error('Error handling OAuth callback:', error);
+      
+      // Provide more detailed error information
+      let errorMessage = error.message;
+      if (error.response) {
+        errorMessage = `Server error: ${error.response.status} - ${JSON.stringify(error.response.data)}`;
+      }
+      
       return {
         success: false,
-        error: error.message
+        error: errorMessage
       };
     }
   }
