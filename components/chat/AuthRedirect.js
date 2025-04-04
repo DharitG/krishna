@@ -10,13 +10,13 @@ import DynamicAuthBlob from '../../components/chat/DynamicAuthBlob';
  * Component to handle authentication redirects for tools
  * @param {Object} props - Component props
  * @param {String} props.serviceName - Name of the service to authenticate with
+ * @param {String} props.redirectUrl - URL to redirect to for authentication
  * @param {Function} props.onAuthComplete - Callback for when authentication is complete. Should update auth state and retry the last action.
  * @param {Function} props.onCancel - Callback for when authentication is cancelled
  */
-const AuthRedirect = ({ serviceName, onAuthComplete, onCancel }) => {
-  const [loading, setLoading] = useState(true);
+const AuthRedirect = ({ serviceName, redirectUrl, onAuthComplete, onCancel }) => {
+  const [loading, setLoading] = useState(false);
   const [error, setError] = useState(null);
-  const [authUrl, setAuthUrl] = useState(null);
 
   // Handle deep linking for auth callbacks
   useEffect(() => {
@@ -24,7 +24,7 @@ const AuthRedirect = ({ serviceName, onAuthComplete, onCancel }) => {
     const handleUrl = async (event) => {
       const url = event.url;
       console.log('Deep link detected:', url);
-      
+
       // Check for auth callback with more detailed logging
       if (url.includes('auth/callback')) {
         console.log(`Processing auth callback for ${serviceName}...`);
@@ -34,21 +34,21 @@ const AuthRedirect = ({ serviceName, onAuthComplete, onCancel }) => {
           const code = urlObj.searchParams.get('code');
           const state = urlObj.searchParams.get('state');
           const connectedAccountId = urlObj.searchParams.get('connectedAccountId');
-          
-          console.log('Auth callback parameters:', { 
-            hasCode: !!code, 
+
+          console.log('Auth callback parameters:', {
+            hasCode: !!code,
             hasState: !!state,
             hasConnectedAccountId: !!connectedAccountId,
             service: serviceName
           });
-          
+
           if (!code || !connectedAccountId) {
             throw new Error(`Missing required parameters in callback URL. Needs code and connectedAccountId.`);
           }
-          
+
           // Handle the OAuth callback
           const result = await composioService.handleOAuthCallback(url);
-          
+
           if (result.success) {
             console.log('Authentication successful:', result);
             // Update auth state and retry last action
@@ -83,46 +83,37 @@ const AuthRedirect = ({ serviceName, onAuthComplete, onCancel }) => {
     };
   }, [serviceName, onAuthComplete]);
 
-  // Get auth URL on component mount
+  // Handle authentication button press immediately when component mounts
   useEffect(() => {
-    const getAuthUrl = async () => {
-      try {
-        setLoading(true);
-        
-        // Check if tool requires authentication
-        const authResult = await checkToolAuth(serviceName);
-        
-        if (authResult.needsAuth) {
-          setAuthUrl(authResult.redirectUrl);
-        } else {
-          // Already authenticated
-          onAuthComplete && onAuthComplete(serviceName);
-        }
-      } catch (error) {
-        console.error('Error getting auth URL:', error);
-        setError(`Error: ${error.message}`);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    getAuthUrl();
-  }, [serviceName, onAuthComplete]);
+    if (redirectUrl) {
+      handleAuthPress();
+    } else {
+      setError('No redirect URL provided');
+    }
+  }, [redirectUrl]);
 
   // Handle authentication button press
   const handleAuthPress = async () => {
-    if (!authUrl) return;
-    
+    if (!redirectUrl) {
+      setError('No redirect URL provided');
+      return;
+    }
+
     try {
+      console.log(`Opening auth URL: ${redirectUrl}`);
+      setLoading(true);
+
       // Open auth URL in browser
       if (Platform.OS === 'web') {
-        window.open(authUrl, '_blank');
+        window.open(redirectUrl, '_blank');
       } else {
-        await WebBrowser.openAuthSessionAsync(authUrl);
+        await WebBrowser.openAuthSessionAsync(redirectUrl);
       }
     } catch (error) {
       console.error('Error opening auth URL:', error);
       setError(`Error: ${error.message}`);
+    } finally {
+      setLoading(false);
     }
   };
 
@@ -138,19 +129,19 @@ const AuthRedirect = ({ serviceName, onAuthComplete, onCancel }) => {
         onErrorDismiss={() => window.location.reload()}
         size="large"
       />
-      
+
       {!loading && !error && (
         <Text style={styles.helpText}>
-          You'll be redirected to {serviceName} to authorize August. After completing authorization, 
+          You'll be redirected to {serviceName} to authorize August. After completing authorization,
           you'll be returned to this app automatically.
         </Text>
       )}
-      
-      <Button 
-        title="Cancel" 
-        onPress={onCancel} 
-        type="secondary" 
-        style={styles.cancelButton} 
+
+      <Button
+        title="Cancel"
+        onPress={onCancel}
+        type="secondary"
+        style={styles.cancelButton}
       />
     </View>
   );

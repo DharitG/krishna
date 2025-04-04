@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { View, Text, StyleSheet, Linking, Alert, Animated } from 'react-native';
 import Markdown from 'react-native-markdown-display';
+import Constants from 'expo-constants';
 import AuthButton from './AuthButton';
 import AuthRedirect from './AuthRedirect';
 import DynamicAuthBlob from '../../components/chat/DynamicAuthBlob';
@@ -23,11 +24,12 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
   const [authStates, setAuthStates] = useState({});
   const [showAuthRedirect, setShowAuthRedirect] = useState(false);
   const [serviceToAuth, setServiceToAuth] = useState(null);
-  
+  const [redirectUrl, setRedirectUrl] = useState(null);
+
   // Get store methods
   const authenticateService = useZustandChatStore(state => state.authenticateService);
   const checkToolAuth = useZustandChatStore(state => state.checkToolAuth);
-  
+
   // Check if the message contains an auth redirect
   useEffect(() => {
     if (message.authRedirect) {
@@ -35,7 +37,7 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
       setShowAuthRedirect(true);
     }
   }, [message]);
-  
+
   // Function to handle authentication
   const handleAuthenticate = async (service) => {
     console.log(`Starting authentication for service: ${service}`);
@@ -43,26 +45,43 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
       ...prev,
       [service]: { isLoading: true }
     }));
-    
+
     try {
-      const result = await authenticateService(service);
-      
+      // Use a direct fetch approach to ensure the request is made
+      const backendUrl = Constants.expoConfig?.extra?.BACKEND_URL || 'http://localhost:3000';
+      console.log(`Using backend URL: ${backendUrl}`);
+
+      const response = await fetch(`${backendUrl}/api/composio/auth/init/${service}`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json'
+        }
+      });
+
+      if (!response.ok) {
+        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
+      }
+
+      const result = await response.json();
+      console.log('Authentication response:', result);
+
       if (result.error) {
         setAuthStates(prev => ({
           ...prev,
-          [service]: { isLoading: false, error: result.message }
+          [service]: { isLoading: false, error: result.message || result.error }
         }));
-        Alert.alert('Authentication Error', result.message || 'Failed to connect to service');
+        Alert.alert('Authentication Error', result.message || result.error || 'Failed to connect to service');
       } else if (result.redirectUrl) {
+        console.log(`Got redirect URL: ${result.redirectUrl}`);
         setServiceToAuth(service);
+        setRedirectUrl(result.redirectUrl);
         setShowAuthRedirect(true);
-        
+
         if (result.mockMode) {
           startPollingAuthStatus(service);
-        } else {
-          Linking.openURL(result.redirectUrl);
         }
       } else {
+        console.error('No redirect URL in response:', result);
         setAuthStates(prev => ({
           ...prev,
           [service]: { isLoading: false, error: 'No redirect URL provided' }
@@ -70,6 +89,7 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
         Alert.alert('Authentication Error', 'No redirect URL provided');
       }
     } catch (error) {
+      console.error(`Authentication error for ${service}:`, error);
       setAuthStates(prev => ({
         ...prev,
         [service]: { isLoading: false, error: error.message }
@@ -77,7 +97,7 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
       Alert.alert('Authentication Error', error.message || 'An unexpected error occurred');
     }
   };
-  
+
   // Poll for authentication status
   const startPollingAuthStatus = (service) => {
     const pollInterval = setInterval(async () => {
@@ -91,12 +111,12 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
         console.error('Error polling auth status:', error);
       }
     }, 2000);
-    
+
     setTimeout(() => {
       clearInterval(pollInterval);
     }, 60000);
   };
-  
+
   // Handle authentication completion
   const handleAuthComplete = (service) => {
     setShowAuthRedirect(false);
@@ -109,7 +129,7 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
       onAuthSuccess(service);
     }
   };
-  
+
   // Handle authentication cancellation
   const handleAuthCancel = () => {
     setShowAuthRedirect(false);
@@ -121,7 +141,7 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
       }));
     }
   };
-  
+
   // Markdown styles
   const markdownStyles = {
     body: {
@@ -204,19 +224,20 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
       padding: spacing.sm,
     },
   };
-  
+
   // Function to parse message content and render auth buttons
   const renderMessageContent = (content) => {
     if (showAuthRedirect && serviceToAuth) {
       return (
         <AuthRedirect
           serviceName={serviceToAuth}
+          redirectUrl={redirectUrl}
           onAuthComplete={handleAuthComplete}
           onCancel={handleAuthCancel}
         />
       );
     }
-    
+
     if (!content || !content.includes('[AUTH_REQUEST:')) {
       return (
         <Markdown style={markdownStyles}>
@@ -224,11 +245,11 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
         </Markdown>
       );
     }
-    
+
     const parts = [];
     let lastIndex = 0;
     let match;
-    
+
     while ((match = AUTH_REQUEST_PATTERN.exec(content)) !== null) {
       if (match.index > lastIndex) {
         parts.push({
@@ -236,22 +257,22 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
           content: content.substring(lastIndex, match.index)
         });
       }
-      
+
       parts.push({
         type: 'auth',
         service: match[1]
       });
-      
+
       lastIndex = match.index + match[0].length;
     }
-    
+
     if (lastIndex < content.length) {
       parts.push({
         type: 'text',
         content: content.substring(lastIndex)
       });
     }
-    
+
     return (
       <View>
         {parts.map((part, i) => {
@@ -264,7 +285,7 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
           } else if (part.type === 'auth') {
             const service = part.service;
             const authState = authStates[service] || {};
-            
+
             return (
               <DynamicAuthBlob
                 key={i}
