@@ -51,10 +51,20 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
       const backendUrl = Constants.expoConfig?.extra?.BACKEND_URL || 'http://localhost:3000';
       console.log(`Using backend URL: ${backendUrl}`);
 
+      // Get the authentication token
+      const { getAuthToken } = require('../../services/api');
+      const token = await getAuthToken();
+      
+      // Check if we have a valid token
+      if (!token) {
+        throw new Error('Authentication required. Please log in again.');
+      }
+
       const response = await fetch(`${backendUrl}/api/composio/auth/init/${service}`, {
         method: 'POST',
         headers: {
-          'Content-Type': 'application/json'
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`
         }
       });
 

@@ -374,13 +374,18 @@ export const authenticateService = async (serviceName) => {
     // Fix: Use the correct endpoint path that matches the backend route
     console.log(`Making request to: /api/composio/auth/init/${serviceName}`);
 
-    // Important: Even if we don't have a token, we can still make the request
-    // The backend will handle it as an anonymous user
+    // Authentication is now required for all endpoints
+    // Ensure we have a valid token before making the request
+    if (!token) {
+      console.error('No authentication token available');
+      throw new Error('Authentication required. Please log in again.');
+    }
+    
     const response = await fetch(`${BACKEND_URL}/api/composio/auth/init/${serviceName}`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        ...(token ? { 'Authorization': `Bearer ${token}` } : {})
+        'Authorization': `Bearer ${token}`
       }
     });
 
