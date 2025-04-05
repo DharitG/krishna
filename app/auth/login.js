@@ -7,7 +7,6 @@ import {
   StyleSheet, 
   KeyboardAvoidingView, 
   Platform,
-  ActivityIndicator,
   ScrollView,
   Image,
   ImageBackground,
@@ -277,7 +276,7 @@ export default function LoginScreen() {
                 activeOpacity={0.8}
               >
                 {isLoading ? (
-                  <ActivityIndicator color="#fff" />
+                  <LoadingIndicator size="small" color="#fff" />
                 ) : (
                   <Text style={styles.loginButtonText}>Sign In</Text>
                 )}

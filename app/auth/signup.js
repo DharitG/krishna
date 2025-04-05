@@ -7,7 +7,6 @@ import {
   StyleSheet, 
   KeyboardAvoidingView, 
   Platform,
-  ActivityIndicator,
   ScrollView,
   Image,
   ImageBackground,
@@ -350,7 +349,7 @@ export default function SignupScreen() {
                 activeOpacity={0.8}
               >
                 {isLoading ? (
-                  <ActivityIndicator color="#fff" />
+                  <LoadingIndicator size="small" color="#fff" />
                 ) : (
                   <Text style={styles.signupButtonText}>Sign Up</Text>
                 )}

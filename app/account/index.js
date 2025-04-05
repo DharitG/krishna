@@ -7,7 +7,6 @@ import {
   SafeAreaView, 
   StatusBar, 
   Alert, 
-  ActivityIndicator, 
   Platform,
   Animated,
   Easing,
@@ -17,6 +16,7 @@ import {
   KeyboardAvoidingView,
   FlatList
 } from 'react-native';
+import LoadingIndicator from '../../components/LoadingIndicator';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import ChatBackgroundWrapper from '../../components/chat/ChatBackgroundWrapper';
@@ -718,7 +718,7 @@ const AccountScreen = () => {
           
           {loading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={colors.emerald} />
+              <LoadingIndicator size="large" color={colors.info} />
               <Text style={styles.loadingText}>Loading accounts...</Text>
             </View>
           ) : (

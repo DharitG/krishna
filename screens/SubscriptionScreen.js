@@ -10,9 +10,10 @@ import {
   Image,
   Linking,
   Platform,
-  ActivityIndicator,
-  Alert
+  Alert,
+  Dimensions,
 } from 'react-native';
+import LoadingIndicator from '../components/LoadingIndicator';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { 
@@ -231,7 +232,7 @@ const SubscriptionScreen = () => {
           disabled={isActive || loading}
         >
           {isSelected && loading ? (
-            <ActivityIndicator color={colors.white} size="small" />
+            <LoadingIndicator color={colors.white} size="small" />
           ) : (
             <Text style={styles.selectButtonText}>
               {isActive ? 'Current Plan' : (isSelected ? 'Processing...' : 'Select Plan')}
@@ -272,7 +273,7 @@ const SubscriptionScreen = () => {
           
           {loading ? (
             <View style={styles.loadingContainer}>
-              <ActivityIndicator size="large" color={colors.emerald} />
+              <LoadingIndicator size="large" color={colors.info} />
               <Text style={styles.loadingText}>Loading subscription plans...</Text>
             </View>
           ) : (

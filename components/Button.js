@@ -3,10 +3,10 @@ import {
   TouchableOpacity, 
   Text, 
   StyleSheet, 
-  ActivityIndicator,
   View 
 } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
+import LoadingIndicator from './LoadingIndicator';
 import { 
   colors, 
   borderRadius, 
@@ -29,7 +29,7 @@ const Button = ({
   // Determine button style based on variant
   const getButtonContent = () => {
     if (isLoading) {
-      return <ActivityIndicator color={variant === 'primary' ? colors.white : colors.emerald} />;
+      return <LoadingIndicator size="small" color={variant === 'primary' ? colors.white : colors.info} />;
     }
 
     return (

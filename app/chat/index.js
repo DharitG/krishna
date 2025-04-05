@@ -10,9 +10,9 @@ import {
   Text,
   TouchableOpacity,
   Keyboard,
-  ActivityIndicator,
   Animated,
 } from 'react-native';
+import LoadingIndicator from '../../components/LoadingIndicator';
 import { SidebarSimple, Plus } from 'phosphor-react-native';
 import Constants from 'expo-constants';
 import ChatMessage from '../../components/chat/ChatMessage';
@@ -294,7 +294,7 @@ const ChatScreen = () => {
         <StatusBar barStyle="light-content" />
         <SafeAreaView style={styles.safeArea}>
           <View style={styles.loadingContainer}>
-            <ActivityIndicator size="large" color={colors.emerald} />
+            <LoadingIndicator size="large" color={colors.info} />
             <Text style={styles.loadingText}>Loading chats...</Text>
           </View>
         </SafeAreaView>

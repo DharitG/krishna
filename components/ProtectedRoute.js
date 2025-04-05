@@ -1,8 +1,9 @@
 import React, { useEffect, useRef } from 'react';
-import { View, ActivityIndicator, StyleSheet, Animated } from 'react-native';
+import { View, StyleSheet, Animated } from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
 import { useAuth } from '../services/authContext';
 import { colors, animation } from '../constants/Theme';
+import LoadingIndicator from './LoadingIndicator';
 
 /**
  * Component to protect routes that require authentication
@@ -49,7 +50,7 @@ export default function ProtectedRoute({ children }) {
   if (loading) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.emerald} />
+        <LoadingIndicator size="large" color={colors.info} />
       </View>
     );
   }

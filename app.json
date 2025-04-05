@@ -5,12 +5,12 @@
     "description": "An AI super agent app like ChatGPT",
     "version": "1.0.0",
     "orientation": "portrait",
-    "icon": "./assets/images/icon.png",
+    "icon": "./assets/images/august.png",
     "scheme": "august",
     "userInterfaceStyle": "dark",
     "newArchEnabled": true,
     "splash": {
-      "image": "./assets/images/splash-icon.png",
+      "image": "./assets/images/august.png",
       "resizeMode": "contain",
       "backgroundColor": "#121214"
     },
@@ -20,7 +20,7 @@
     },
     "android": {
       "adaptiveIcon": {
-        "foregroundImage": "./assets/images/adaptive-icon.png",
+        "foregroundImage": "./assets/images/august.png",
         "backgroundColor": "#121214"
       },
       "package": "com.yourusername.august"
@@ -28,14 +28,14 @@
     "web": {
       "bundler": "metro",
       "output": "static",
-      "favicon": "./assets/images/favicon.png"
+      "favicon": "./assets/images/august.png"
     },
     "plugins": [
       "expo-router",
       [
         "expo-splash-screen",
         {
-          "image": "./assets/images/splash-icon.png",
+          "image": "./assets/images/august.png",
           "imageWidth": 200,
           "resizeMode": "contain",
           "backgroundColor": "#121214"

@@ -9,12 +9,14 @@ import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import socketService from '../services/socket';
 import { Socket } from 'socket.io-client';
+import CustomSplashScreen from '../components/CustomSplashScreen';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
 
 export default function RootLayout() {
   const [fontsLoaded, setFontsLoaded] = useState(false);
+  const [showCustomSplash, setShowCustomSplash] = useState(true);
 
   useEffect(() => {
     async function loadResources() {
@@ -37,9 +39,16 @@ export default function RootLayout() {
 
   useEffect(() => {
     if (fontsLoaded) {
+      // Hide the native splash screen when fonts are loaded
       SplashScreen.hideAsync();
+      // Our custom splash screen will remain visible and animate out
     }
   }, [fontsLoaded]);
+  
+  // Handler for when our custom splash animation completes
+  const handleSplashAnimationComplete = () => {
+    setShowCustomSplash(false);
+  };
 
   useEffect(() => {
     const initSocket = async () => {
@@ -87,6 +96,11 @@ export default function RootLayout() {
           </ProtectedRoute>
         </AuthProvider>
       </SafeAreaProvider>
+      
+      {/* Show our custom animated splash screen */}
+      {showCustomSplash && (
+        <CustomSplashScreen onAnimationComplete={handleSplashAnimationComplete} />
+      )}
     </GestureHandlerRootView>
   );
 }

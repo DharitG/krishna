@@ -1,8 +1,9 @@
 import { Redirect } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { View, ActivityIndicator, StyleSheet } from 'react-native';
+import { View, StyleSheet } from 'react-native';
 import { useAuth } from '../services/authContext';
 import { colors } from '../constants/Theme';
+import LoadingIndicator from '../components/LoadingIndicator';
 
 export default function Index() {
   const { isAuthenticated, loading } = useAuth();
@@ -23,7 +24,7 @@ export default function Index() {
   if (loading || isInitializing) {
     return (
       <View style={styles.loadingContainer}>
-        <ActivityIndicator size="large" color={colors.emerald} />
+        <LoadingIndicator size="large" color={colors.info} />
       </View>
     );
   }

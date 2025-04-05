@@ -7,9 +7,10 @@ import {
   StyleSheet, 
   KeyboardAvoidingView, 
   Platform,
-  ActivityIndicator,
-  Image
+  Image,
+  Alert,
 } from 'react-native';
+import LoadingIndicator from '../../components/LoadingIndicator';
 import { StatusBar } from 'expo-status-bar';
 import { useRouter } from 'expo-router';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -112,7 +113,7 @@ export default function ForgotPasswordScreen() {
               disabled={isLoading}
             >
               {isLoading ? (
-                <ActivityIndicator color={colors.white} />
+                <LoadingIndicator size="small" color={colors.white} />
               ) : (
                 <Text style={styles.resetButtonText}>Send Reset Link</Text>
               )}
