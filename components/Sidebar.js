@@ -12,7 +12,6 @@ import {
   Platform
 } from 'react-native';
 import { 
-  ChatCircle, 
   PlusCircle, 
   Gear, 
   SignOut, 
@@ -25,6 +24,30 @@ import { colors, spacing, borderRadius, typography } from '../constants/Theme';
 
 const { width } = Dimensions.get('window');
 const SIDEBAR_WIDTH = width * 0.85;
+
+// Helper function to format the date
+const formatDate = (dateString) => {
+  if (!dateString) return 'New';
+  
+  const date = new Date(dateString);
+  const now = new Date();
+  const yesterday = new Date(now);
+  yesterday.setDate(yesterday.getDate() - 1);
+  
+  // Check if date is today
+  if (date.toDateString() === now.toDateString()) {
+    return 'Today';
+  }
+  
+  // Check if date is yesterday
+  if (date.toDateString() === yesterday.toDateString()) {
+    return 'Yesterday';
+  }
+  
+  // Return day of the month
+  const options = { month: 'short', day: 'numeric' };
+  return date.toLocaleDateString(undefined, options);
+};
 
 const Sidebar = ({ visible, onClose, onNewChat, onSelectChat, chats = [], activeChat }) => {
   const [searchQuery, setSearchQuery] = useState('');
@@ -92,21 +115,26 @@ const Sidebar = ({ visible, onClose, onNewChat, onSelectChat, chats = [], active
       ).length;
     }
     
+    // Get the date to display (use updated_at if available, or created_at)
+    const dateToUse = chat.updated_at || chat.created_at;
+    const formattedDate = formatDate(dateToUse);
+    
     return (
       <TouchableOpacity 
         key={chat.id} 
         style={[styles.chatItem, isActive && styles.activeChatItem]}
         onPress={() => onSelectChat(chat.id)}
       >
-        <ChatCircle 
-          size={22} 
-          color={isActive ? colors.emerald : colors.white} 
-          weight={isActive ? "fill" : "regular"}
-        />
         <View style={styles.chatItemContent}>
           <Text style={[styles.chatTitle, isActive && styles.activeChatTitle]} numberOfLines={1}>
             {chat.title || `Chat ${index + 1}`}
           </Text>
+          
+          <View style={[styles.dateIndicator, isActive && styles.activeDateIndicator]}>
+            <Text style={[styles.dateText, isActive && styles.activeDateText]}>
+              {formattedDate}
+            </Text>
+          </View>
           
           {highlightCount > 0 && (
             <View style={styles.matchBadge}>
@@ -339,12 +367,12 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'center',
-    marginLeft: spacing.sm,
   },
   chatTitle: {
     flex: 1,
     color: colors.white,
     fontSize: typography.fontSize.md,
+    marginRight: spacing.xs,
   },
   activeChatTitle: {
     fontWeight: '600',
@@ -405,6 +433,27 @@ const styles = StyleSheet.create({
     color: '#FFFFFF',
     fontWeight: '600',
     fontSize: typography.fontSize.md,
+  },
+  dateIndicator: {
+    backgroundColor: 'rgba(26, 44, 75, 0.9)',
+    borderRadius: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginLeft: 'auto',
+    marginRight: spacing.xs,
+  },
+  activeDateIndicator: {
+    backgroundColor: 'rgba(16, 185, 129, 0.2)',
+  },
+  dateText: {
+    color: colors.lightGray,
+    fontSize: typography.fontSize.xs,
+    fontWeight: '600',
+  },
+  activeDateText: {
+    color: colors.emerald,
   },
 });
 

@@ -38,6 +38,7 @@ const ChatScreen = () => {
   const createNewChat = useZustandChatStore(state => state.createNewChat);
   const sendMessage = useZustandChatStore(state => state.sendMessage);
   const updateAuthStatus = useZustandChatStore(state => state.updateAuthStatus);
+  const updateChatTitle = useZustandChatStore(state => state.updateChatTitle);
   
   // Initialize state
   const [activeChat, setActiveChatState] = useState(null);
@@ -152,6 +153,13 @@ const ChatScreen = () => {
         // Force-scroll to the bottom
         if (flatListRef.current) {
           flatListRef.current.scrollToEnd({ animated: false });
+        }
+        
+        // If this is the first message (after welcome message) AND the chat has a default title
+        // Update the chat title with the first user message (truncated if needed)
+        if (chatToUse.messages.length <= 1 && (chatToUse.title === 'New Chat' || !chatToUse.title)) {
+          const titleText = content.length > 30 ? content.substring(0, 27) + '...' : content;
+          await updateChatTitle(chatToUse.id, titleText);
         }
       }
       
