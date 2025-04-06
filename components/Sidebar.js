@@ -261,7 +261,10 @@ const Sidebar = ({ visible, onClose, onNewChat, onSelectChat, chats = [], active
               style={styles.footerButton}
               onPress={() => {
                 onClose();
-                import('expo-router').then(({ router }) => router.navigate('/account'));
+                import('expo-router').then(({ router }) => {
+                  // Use navigate without the leading slash
+                  router.navigate('account');
+                });
               }}
             >
               <User size={22} color={colors.white} weight="regular" />
@@ -272,7 +275,10 @@ const Sidebar = ({ visible, onClose, onNewChat, onSelectChat, chats = [], active
               style={styles.footerButton}
               onPress={() => {
                 onClose();
-                import('expo-router').then(({ router }) => router.push('/settings'));
+                import('expo-router').then(({ router }) => {
+                  // Use navigate instead of push and try without the leading slash
+                  router.navigate('settings');
+                });
               }}
             >
               <Gear size={22} color={colors.white} weight="regular" />
@@ -283,7 +289,10 @@ const Sidebar = ({ visible, onClose, onNewChat, onSelectChat, chats = [], active
               style={styles.upgradeButton}
               onPress={() => {
                 onClose();
-                import('expo-router').then(({ router }) => router.push('/subscription'));
+                import('expo-router').then(({ router }) => {
+                  // Use navigate without the leading slash
+                  router.navigate('subscription');
+                });
               }}
             >
               <Text style={styles.upgradeButtonText}>Upgrade to Utopia</Text>

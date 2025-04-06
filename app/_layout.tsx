@@ -90,9 +90,8 @@ export default function RootLayout() {
               screenOptions={{
                 headerShown: false,
               }}
-            >
-              <Stack.Screen name="settings/index" options={{ headerShown: false }} />
-            </Stack>
+            />
+
           </ProtectedRoute>
         </AuthProvider>
       </SafeAreaProvider>

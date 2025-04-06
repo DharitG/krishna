@@ -4,23 +4,24 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import ChatBackgroundWrapper from '../../components/chat/ChatBackgroundWrapper';
 import GlassCard from '../../components/GlassCard';
-import { colors, spacing, typography, glassMorphism } from '../../constants/Theme';
+import { colors, spacing, typography, glassMorphism, borderRadius } from '../../constants/Theme';
 import Constants from 'expo-constants';
 import { signOut } from '../../services/supabase';
 import { useAuth } from '../../services/authContext';
 import subscriptionService from '../../services/subscriptionService';
+import MemorySettings from '../../components/settings/MemorySettings';
 
 const SettingsScreen = () => {
   const router = useRouter();
   const { user, getCurrentPlan, fetchSubscriptionStatus } = useAuth();
-  
+
   // State for subscription
   const [currentPlan, setCurrentPlan] = useState('free');
-  
+
   // New state variables for settings toggles
   const [notifications, setNotifications] = useState(true);
   const [analyticsEnabled, setAnalyticsEnabled] = useState(true);
-  
+
   // Fetch current subscription plan
   useEffect(() => {
     const loadSubscriptionData = async () => {
@@ -30,10 +31,10 @@ const SettingsScreen = () => {
         setCurrentPlan(plan);
       }
     };
-    
+
     loadSubscriptionData();
   }, [user]);
-  
+
   const getPlanDisplayName = (plan) => {
     switch(plan) {
       case 'utopia': return 'Utopia';
@@ -41,11 +42,11 @@ const SettingsScreen = () => {
       default: return 'Free';
     }
   };
-  
+
   const handleBack = () => {
     router.back();
   };
-  
+
   const handleSignOut = async () => {
     try {
       Alert.alert(
@@ -53,8 +54,8 @@ const SettingsScreen = () => {
         'Are you sure you want to sign out?',
         [
           { text: 'Cancel', style: 'cancel' },
-          { 
-            text: 'Sign Out', 
+          {
+            text: 'Sign Out',
             style: 'destructive',
             onPress: async () => {
               try {
@@ -72,17 +73,17 @@ const SettingsScreen = () => {
       Alert.alert('Error', `Failed to sign out: ${error.message}`);
     }
   };
-  
+
   const handleToggleNotifications = (value) => {
     setNotifications(value);
     // In a real app, this would update notification settings
   };
-  
+
   const handleToggleAnalytics = (value) => {
     setAnalyticsEnabled(value);
     // In a real app, this would update analytics preferences
   };
-  
+
   // These would be connected to real settings in a full app
   const settings = [
     {
@@ -93,6 +94,10 @@ const SettingsScreen = () => {
         { label: 'Chat History', icon: 'time-outline', hasDetail: true },
         { label: 'Speech Output', icon: 'volume-high-outline', hasDetail: true, value: 'Off' },
       ]
+    },
+    {
+      title: 'Memory',
+      component: <MemorySettings />
     },
     {
       title: 'Notifications',
@@ -143,21 +148,21 @@ const SettingsScreen = () => {
     {
       title: 'Subscription',
       items: [
-        { 
-          label: 'Current Plan', 
-          icon: 'ribbon-outline', 
-          hasDetail: true, 
-          value: getPlanDisplayName(currentPlan) 
-        },
-        { 
-          label: 'Manage Subscription', 
-          icon: 'card-outline', 
+        {
+          label: 'Current Plan',
+          icon: 'ribbon-outline',
           hasDetail: true,
-          onPress: () => router.push('/subscription') 
+          value: getPlanDisplayName(currentPlan)
         },
-        { 
-          label: 'Upgrade', 
-          icon: 'arrow-up-circle-outline', 
+        {
+          label: 'Manage Subscription',
+          icon: 'card-outline',
+          hasDetail: true,
+          onPress: () => router.push('/subscription')
+        },
+        {
+          label: 'Upgrade',
+          icon: 'arrow-up-circle-outline',
           hasDetail: true,
           onPress: () => router.push('/subscription')
         },
@@ -174,9 +179,9 @@ const SettingsScreen = () => {
     {
       title: 'Account',
       items: [
-        { 
-          label: 'Sign Out', 
-          icon: 'log-out-outline', 
+        {
+          label: 'Sign Out',
+          icon: 'log-out-outline',
           hasDetail: false,
           onPress: handleSignOut,
           labelStyle: { color: colors.warning }
@@ -190,64 +195,68 @@ const SettingsScreen = () => {
       <StatusBar barStyle="light-content" />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.menuButton} 
+          <TouchableOpacity
+            style={styles.menuButton}
             onPress={handleBack}
           >
             <Ionicons name="arrow-back" size={24} color={colors.white} weight="regular" />
           </TouchableOpacity>
-          
+
           <View style={styles.headerTitleContainer}>
             <Text style={styles.headerTitle}>Settings</Text>
           </View>
-          
+
           <View style={styles.headerButton} />
         </View>
-        
-        <ScrollView 
-          style={styles.container} 
+
+        <ScrollView
+          style={styles.container}
           contentContainerStyle={styles.contentContainer}
           showsVerticalScrollIndicator={true}
         >
           {settings.map((section, sectionIndex) => (
             <View key={sectionIndex} style={styles.section}>
               <Text style={styles.sectionTitle}>{section.title}</Text>
-              
-              <GlassCard style={[styles.glassCard, { backgroundColor: 'rgba(26, 44, 75, 0.6)', borderColor: 'rgba(48, 109, 255, 0.2)' }]}>
-                {section.items.map((item, itemIndex) => (
-                  <TouchableOpacity 
-                    key={itemIndex} 
-                    style={[
-                      styles.cardItem,
-                      itemIndex === section.items.length - 1 ? styles.cardItemLast : null,
-                      item.disabled ? { opacity: 0.5 } : null
-                    ]}
-                    onPress={item.onPress}
-                    disabled={item.disabled}
-                  >
-                    <View style={styles.cardItemLeft}>
-                      <Ionicons 
-                        name={item.icon} 
-                        size={22} 
-                        color={item.labelStyle?.color || colors.emerald} 
-                        style={styles.cardItemIcon} 
-                      />
-                      <Text style={[styles.cardItemLabel, item.labelStyle]}>
-                        {item.label}
-                      </Text>
-                    </View>
-                    
-                    <View style={styles.cardItemRight}>
-                      {item.renderItem ? item.renderItem() : (
-                        <>
-                          {item.value && <Text style={styles.cardItemValue}>{item.value}</Text>}
-                          {item.hasDetail && <Ionicons name="chevron-forward" size={18} color={colors.lightGray} />}
-                        </>
-                      )}
-                    </View>
-                  </TouchableOpacity>
-                ))}
-              </GlassCard>
+
+              {section.component ? (
+                section.component
+              ) : (
+                <GlassCard style={[styles.glassCard, { backgroundColor: 'rgba(26, 44, 75, 0.6)', borderColor: 'rgba(48, 109, 255, 0.2)' }]}>
+                  {section.items.map((item, itemIndex) => (
+                    <TouchableOpacity
+                      key={itemIndex}
+                      style={[
+                        styles.cardItem,
+                        itemIndex === section.items.length - 1 ? styles.cardItemLast : null,
+                        item.disabled ? { opacity: 0.5 } : null
+                      ]}
+                      onPress={item.onPress}
+                      disabled={item.disabled}
+                    >
+                      <View style={styles.cardItemLeft}>
+                        <Ionicons
+                          name={item.icon}
+                          size={22}
+                          color={item.labelStyle?.color || colors.emerald}
+                          style={styles.cardItemIcon}
+                        />
+                        <Text style={[styles.cardItemLabel, item.labelStyle]}>
+                          {item.label}
+                        </Text>
+                      </View>
+
+                      <View style={styles.cardItemRight}>
+                        {item.renderItem ? item.renderItem() : (
+                          <>
+                            {item.value && <Text style={styles.cardItemValue}>{item.value}</Text>}
+                            {item.hasDetail && <Ionicons name="chevron-forward" size={18} color={colors.lightGray} />}
+                          </>
+                        )}
+                      </View>
+                    </TouchableOpacity>
+                  ))}
+                </GlassCard>
+              )}
             </View>
           ))}
         </ScrollView>
@@ -307,7 +316,7 @@ const styles = {
   },
   glassCard: {
     ...glassMorphism.chatBubble,
-    borderRadius: 16,
+    borderRadius: borderRadius.lg,
     overflow: 'hidden',
   },
   cardItem: {
@@ -346,4 +355,5 @@ const styles = {
   },
 };
 
+// Make sure to export the component as default
 export default SettingsScreen;

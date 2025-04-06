@@ -96,7 +96,7 @@ const ChatScreen = () => {
     }
   }, [streamingMessageId, activeChat?.messages]);
 
-  const handleSendMessage = async (content) => {
+  const handleSendMessage = async (content, contextData = {}) => {
     if (!activeChat) return;
 
     // Set loading state
@@ -204,7 +204,7 @@ const ChatScreen = () => {
       };
 
       // Send the message using the chat store with streaming
-      const response = await sendMessage(content, handleStreamUpdate);
+      const response = await sendMessage(content, handleStreamUpdate, contextData);
 
       // Get the latest chats list for sidebar (for title updates)
       const updatedChats = await loadChats();

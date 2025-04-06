@@ -240,6 +240,8 @@ const createEventSource = (url, options = {}) => {
  * @param {Boolean} useTools - Whether to use tools or not
  * @param {Object} authStatus - Status of authenticated services
  * @param {Function} onChunk - Callback for each chunk of the response
+ * @param {Object} contextData - Contextual data for memory system
+ * @param {String} chatId - Chat ID
  * @returns {Object} - The final assistant's response message
  */
 export const sendMessage = async (
@@ -247,7 +249,9 @@ export const sendMessage = async (
   enabledTools = DEFAULT_ENABLED_TOOLS,
   useTools = true,
   authStatus = {},
-  onChunk = null
+  onChunk = null,
+  contextData = {},
+  chatId = null
 ) => {
   try {
     // First test the connection to the backend
@@ -313,11 +317,11 @@ export const sendMessage = async (
         console.error('Falling back to HTTP request');
 
         // Fall back to non-streaming request
-        return sendMessageFallback(messages, enabledTools, useTools, authStatus);
+        return sendMessageFallback(messages, enabledTools, useTools, authStatus, contextData, chatId);
       }
     } else {
       // For non-streaming requests, use regular HTTP
-      return sendMessageFallback(messages, enabledTools, useTools, authStatus);
+      return sendMessageFallback(messages, enabledTools, useTools, authStatus, contextData, chatId);
     }
   } catch (error) {
     console.error('Error sending message and getting response:', error.message);
@@ -330,9 +334,9 @@ export const sendMessage = async (
 /**
  * Fallback method to send a message via HTTP (no streaming)
  */
-const sendMessageFallback = async (messages, enabledTools, useTools, authStatus) => {
+const sendMessageFallback = async (messages, enabledTools, useTools, authStatus, contextData = {}, providedChatId = null) => {
   // Determine which endpoint to use based on whether tools are enabled and if we have a chat ID
-  const chatId = messages[0]?.chatId;
+  const chatId = providedChatId || messages[0]?.chatId;
   let endpoint;
 
   if (chatId) {
@@ -349,7 +353,9 @@ const sendMessageFallback = async (messages, enabledTools, useTools, authStatus)
     content: messages[messages.length - 1]?.content, // For chat-specific endpoint
     enabledTools: useTools ? enabledTools : [],
     stream: false,
-    authStatus
+    authStatus,
+    contextData,
+    chatId
   });
 
   return {
@@ -380,7 +386,7 @@ export const authenticateService = async (serviceName) => {
       console.error('No authentication token available');
       throw new Error('Authentication required. Please log in again.');
     }
-    
+
     const response = await fetch(`${BACKEND_URL}/api/composio/auth/init/${serviceName}`, {
       method: 'POST',
       headers: {

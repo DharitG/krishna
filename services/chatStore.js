@@ -406,7 +406,7 @@ const useZustandChatStore = create((set, get) => ({
   },
 
   // Send a message and get a response
-  sendMessage: async (message, onStreamUpdate = null) => {
+  sendMessage: async (message, onStreamUpdate = null, contextData = {}) => {
     if (!get().isInitialized) await get().initialize();
 
     const { activeChat, chats, authStatus } = get();
@@ -450,7 +450,8 @@ const useZustandChatStore = create((set, get) => ({
         enabledTools,
         useTools,
         authStatus,
-        handleStreamUpdate
+        handleStreamUpdate,
+        contextData
       );
 
       // Reset streaming state

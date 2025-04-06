@@ -315,6 +315,7 @@ export const addMessage = async (chatId, role, content) => {
  * @param {Boolean} useTools - Whether to use tools
  * @param {Object} authStatus - Authentication status for services
  * @param {Function} onStream - Callback for streaming responses
+ * @param {Object} contextData - Contextual data for memory system
  * @returns {Object} - AI response message
  */
 export const sendMessageAndGetResponse = async (
@@ -323,7 +324,8 @@ export const sendMessageAndGetResponse = async (
   enabledTools,
   useTools = true,
   authStatus = {},
-  onStream = null
+  onStream = null,
+  contextData = {}
 ) => {
   try {
     // Check if this is a mock chat ID
@@ -376,7 +378,9 @@ export const sendMessageAndGetResponse = async (
         enabledTools,
         useTools,
         authStatus,
-        handleStreamChunk
+        handleStreamChunk,
+        contextData,
+        chatId
       );
 
       // Update the assistant message in database with final content
