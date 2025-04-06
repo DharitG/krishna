@@ -12,6 +12,12 @@ const REVENUECAT_API_KEYS = {
 
 // Plan IDs mapping - define product IDs exactly as they are in RevenueCat dashboard
 const PLAN_IDS = {
+  nirvana: {
+    monthly: Platform.select({
+      ios: 'nirvana_monthly_ios',
+      android: 'nirvana_monthly_android',
+    }),
+  },
   eden: {
     monthly: Platform.select({
       ios: 'eden_monthly_ios',
@@ -28,6 +34,7 @@ const PLAN_IDS = {
 
 // Plan entitlement IDs 
 const ENTITLEMENTS = {
+  nirvana: 'nirvana_access',
   eden: 'eden_access',
   utopia: 'utopia_access',
 };
@@ -146,6 +153,7 @@ export const getCurrentSubscriptionStatus = async () => {
  */
 export const hasActiveSubscription = (customerInfo) => {
   return (
+    !!customerInfo?.entitlements?.active?.[ENTITLEMENTS.nirvana] ||
     !!customerInfo?.entitlements?.active?.[ENTITLEMENTS.eden] ||
     !!customerInfo?.entitlements?.active?.[ENTITLEMENTS.utopia]
   );
@@ -161,6 +169,8 @@ export const getCurrentPlan = (customerInfo) => {
     return 'utopia';
   } else if (customerInfo.entitlements.active[ENTITLEMENTS.eden]) {
     return 'eden';
+  } else if (customerInfo.entitlements.active[ENTITLEMENTS.nirvana]) {
+    return 'nirvana';
   }
   
   return 'free';
@@ -173,7 +183,9 @@ const savePurchaseToBackend = async (userId, customerInfo, productIdentifier) =>
   try {
     // Determine plan from product identifier
     let planId = '';
-    if (productIdentifier.includes('eden')) {
+    if (productIdentifier.includes('nirvana')) {
+      planId = 'nirvana_monthly';
+    } else if (productIdentifier.includes('eden')) {
       planId = 'eden_monthly';
     } else if (productIdentifier.includes('utopia')) {
       planId = 'utopia_monthly';
@@ -210,7 +222,7 @@ const savePurchaseToBackend = async (userId, customerInfo, productIdentifier) =>
       platform,
       product_id: productIdentifier,
       purchase_date: purchaseDate.toISOString(),
-      amount_usd: planId.includes('eden') ? 20.00 : 50.00,
+      amount_usd: planId.includes('nirvana') ? 10.00 : (planId.includes('eden') ? 20.00 : 50.00),
     };
     
     await supabaseService.savePurchaseHistory(purchaseData);

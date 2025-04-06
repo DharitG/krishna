@@ -101,34 +101,44 @@ export const getSubscriptionPlans = async () => {
           description: 'Basic access with limited features',
           price: 0,
           features: [
-            '10 requests per day',
             'Basic AI features',
             'Standard support'
+          ]
+        },
+        {
+          id: 'nirvana',
+          name: 'Nirvana',
+          description: 'Affordable plan with essential features',
+          price: 10,
+          features: [
+            'Enhanced AI features',
+            'Email support',
+            'Up to 10 connected accounts'
           ]
         },
         {
           id: 'eden',
           name: 'Eden',
           description: 'Enhanced access with more features',
-          price: 9.99,
+          price: 20,
           features: [
-            '100 requests per day',
             'Advanced AI features',
             'Email support',
-            'File uploads'
+            'File uploads',
+            'Up to 20 connected accounts'
           ]
         },
         {
           id: 'utopia',
           name: 'Utopia',
           description: 'Premium access with all features',
-          price: 19.99,
+          price: 50,
           features: [
-            'Unlimited requests',
             'All AI features',
             'Priority support',
             'Unlimited file uploads',
-            'Custom integrations'
+            'Custom integrations',
+            'Unlimited connected accounts'
           ]
         }
       ]

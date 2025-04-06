@@ -87,7 +87,11 @@ const SubscriptionScreen = () => {
       
       // Find the package that matches the selected plan
       let packageToPurchase;
-      if (planId === 'eden') {
+      if (planId === 'nirvana') {
+        packageToPurchase = offering.availablePackages.find(
+          pkg => pkg.identifier === 'monthly' && pkg.product.identifier.includes('nirvana')
+        );
+      } else if (planId === 'eden') {
         packageToPurchase = offering.availablePackages.find(
           pkg => pkg.identifier === 'monthly' && pkg.product.identifier.includes('eden')
         );
@@ -145,6 +149,21 @@ const SubscriptionScreen = () => {
   
   const plans = [
     {
+      id: 'nirvana',
+      name: 'Nirvana',
+      price: '$10',
+      period: 'month',
+      description: 'Affordable plan with essential features',
+      icon: (props) => <Planet {...props} />,
+      color: '#4299E1', // Blue
+      features: [
+        '5x more requests than free plan',
+        'SOTA AI models with higher accuracy than free',
+        'Up to 10 connected accounts',
+        'Standard response time'
+      ]
+    },
+    {
       id: 'eden',
       name: 'Eden',
       price: '$20',
@@ -155,7 +174,7 @@ const SubscriptionScreen = () => {
       features: [
         '10x more requests than free plan',
         'SOTA AI models with significantly higher accuracy than free',
-        'Manage 10x more accounts than free',
+        'Up to 20 connected accounts',
         'Standard response time'
       ]
     },
@@ -170,7 +189,7 @@ const SubscriptionScreen = () => {
       features: [
         'Unlimited requests',
         'SOTA AI models with significantly higher accuracy than free',
-        'Unlimited accounts',
+        'Unlimited connected accounts',
         'File uploads & analysis',
         'Priority response time',
         'Enhanced security features'

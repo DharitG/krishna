@@ -9,11 +9,21 @@ const mockOfferings = {
       {
         identifier: 'monthly',
         product: {
+          identifier: 'nirvana_monthly',
+          title: 'Nirvana Monthly',
+          description: 'Affordable plan with essential features',
+          price: 10,
+          priceString: '$10',
+        }
+      },
+      {
+        identifier: 'monthly',
+        product: {
           identifier: 'eden_monthly',
           title: 'Eden Monthly',
-          description: 'Perfect for personal use with essential features',
-          price: 19.99,
-          priceString: '$19.99',
+          description: 'Enhanced access with more features',
+          price: 20,
+          priceString: '$20',
         }
       },
       {
@@ -21,9 +31,9 @@ const mockOfferings = {
         product: {
           identifier: 'utopia_monthly',
           title: 'Utopia Monthly',
-          description: 'Advanced features for professionals',
-          price: 49.99,
-          priceString: '$49.99',
+          description: 'Premium access with all features',
+          price: 50,
+          priceString: '$50',
         }
       }
     ]
@@ -78,9 +88,14 @@ export const purchasePackage = async (packageToPurchase, userId) => {
   console.log('[MOCK] Purchasing package:', packageToPurchase.product.identifier);
   
   // Simulate purchase success
-  const mockEntitlementId = packageToPurchase.product.identifier.includes('eden') 
-    ? 'eden_access' 
-    : 'utopia_access';
+  let mockEntitlementId;
+  if (packageToPurchase.product.identifier.includes('nirvana')) {
+    mockEntitlementId = 'nirvana_access';
+  } else if (packageToPurchase.product.identifier.includes('eden')) {
+    mockEntitlementId = 'eden_access';
+  } else {
+    mockEntitlementId = 'utopia_access';
+  }
   
   const mockInfo = {
     ...mockCustomerInfo,
@@ -128,6 +143,8 @@ export const getCurrentPlan = (customerInfo) => {
     return 'utopia';
   } else if (customerInfo.entitlements.active['eden_access']) {
     return 'eden';
+  } else if (customerInfo.entitlements.active['nirvana_access']) {
+    return 'nirvana';
   }
   
   return 'free';
@@ -171,6 +188,13 @@ const getPeriodFromIdentifier = (identifier) => {
 
 // Plan IDs mapping
 const PLAN_IDS = {
+  nirvana: {
+    monthly: Platform.select({
+      ios: 'nirvana_monthly_ios',
+      android: 'nirvana_monthly_android',
+      default: 'nirvana_monthly',
+    }),
+  },
   eden: {
     monthly: Platform.select({
       ios: 'eden_monthly_ios',
@@ -189,6 +213,7 @@ const PLAN_IDS = {
 
 // Plan entitlement IDs 
 const ENTITLEMENTS = {
+  nirvana: 'nirvana_access',
   eden: 'eden_access',
   utopia: 'utopia_access',
 };
