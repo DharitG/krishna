@@ -4,7 +4,7 @@ import * as SecureStore from 'expo-secure-store';
 import supabase from './supabase';
 
 // Get backend URL from environment variables
-const BACKEND_URL = Constants.expoConfig?.extra?.backendUrl || 'http://localhost:3000';
+const BACKEND_URL = Constants.expoConfig?.extra?.BACKEND_URL || 'http://localhost:3000';
 
 // Socket.io instance
 let socket = null;

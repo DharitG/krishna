@@ -2,12 +2,14 @@ import Constants from 'expo-constants';
 import { create } from 'zustand';
 import socketService from './socket';
 import axios from 'axios';
+import * as SecureStore from 'expo-secure-store';
+import supabase from './supabase';
 
 // Get API URL from constants
-const API_URL = Constants.expoConfig?.extra?.API_URL || 'http://localhost:3000/api';
+const API_URL = (Constants.expoConfig?.extra?.BACKEND_URL || 'http://localhost:3000') + '/api';
 
 // Development mode flag
-const DEV_MODE = process.env.NODE_ENV === 'development' || true; // Force dev mode for now
+const DEV_MODE = process.env.NODE_ENV === 'development'; // Use actual environment
 
 // Account management store using Zustand
 const useAccountStore = create((set, get) => ({
@@ -27,17 +29,45 @@ const useAccountStore = create((set, get) => ({
   // Error state
   error: null,
   
+  // Get authentication token from Supabase or SecureStore
+  getAuthToken: async () => {
+    try {
+      // First try to get token from Supabase session
+      const { data } = await supabase.auth.getSession();
+      if (data && data.session) {
+        return data.session.access_token;
+      }
+      
+      // Fall back to SecureStore
+      const token = await SecureStore.getItemAsync('supabase.auth.token');
+      return token;
+    } catch (error) {
+      console.error('Error getting auth token:', error);
+      return null;
+    }
+  },
+  
   // Initialize accounts from backend
   initializeAccounts: async () => {
     set({ loading: true, error: null });
     
     try {
+      // Get auth token
+      const token = await get().getAuthToken();
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+      
       // Use the test endpoint in development mode
       const endpoint = DEV_MODE ? `${API_URL}/test-get-accounts` : `${API_URL}/accounts`;
       console.log('Initializing accounts from API:', endpoint);
       
-      // Fetch accounts from the API
-      const response = await axios.get(endpoint);
+      // Fetch accounts from the API with auth token
+      const response = await axios.get(endpoint, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       
       if (response.data.success) {
         console.log('Successfully loaded accounts');
@@ -49,28 +79,21 @@ const useAccountStore = create((set, get) => ({
     } catch (error) {
       console.error('Error initializing accounts:', error);
       
-      // Fallback to mock data if API fails
-      console.log('Falling back to mock data');
-      const mockAccounts = {
-        github: [
-          { id: 'gh1', username: 'user1', email: 'user1@github.com', isActive: true },
-          { id: 'gh2', username: 'user2', email: 'user2@github.com', isActive: false }
-        ],
-        slack: [
-          { id: 'sl1', username: 'user1', workspace: 'Workspace 1', isActive: true }
-        ],
-        gmail: [
-          { id: 'gm1', email: 'user@gmail.com', isActive: true }
-        ],
+      // Use empty accounts instead of mock data
+      console.log('Using empty accounts due to API error');
+      const emptyAccounts = {
+        github: [],
+        slack: [],
+        gmail: [],
         discord: [],
         zoom: [],
         asana: []
       };
       
       set({ 
-        accounts: mockAccounts, 
+        accounts: emptyAccounts, 
         loading: false,
-        error: 'Failed to load accounts from server. Using mock data.'
+        error: 'Failed to load accounts from server. Please check your connection and authentication.'
       });
     }
   },
@@ -80,12 +103,22 @@ const useAccountStore = create((set, get) => ({
     set({ loading: true, error: null });
     
     try {
+      // Get auth token
+      const token = await get().getAuthToken();
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+      
       // Use the test endpoint in development mode
       const endpoint = DEV_MODE ? `${API_URL}/test-add-account` : `${API_URL}/accounts`;
       // Call the API to add the account
       const response = await axios.post(endpoint, {
         serviceName,
         accountData
+      }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
       });
       
       if (response.data.success) {
@@ -110,10 +143,20 @@ const useAccountStore = create((set, get) => ({
     set({ loading: true, error: null });
     
     try {
+      // Get auth token
+      const token = await get().getAuthToken();
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+      
       // Use the test endpoint in development mode
       const endpoint = DEV_MODE ? `${API_URL}/test-remove-account` : `${API_URL}/accounts/${accountId}`;
       // Call the API to remove the account
-      const response = await axios.delete(endpoint);
+      const response = await axios.delete(endpoint, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       
       if (response.data.success) {
         // Refresh accounts to get the updated list
@@ -137,10 +180,20 @@ const useAccountStore = create((set, get) => ({
     set({ loading: true, error: null });
     
     try {
+      // Get auth token
+      const token = await get().getAuthToken();
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+      
       // Use the test endpoint in development mode
       const endpoint = DEV_MODE ? `${API_URL}/test-set-active-account` : `${API_URL}/accounts/${accountId}/active`;
       // Call the API to set the account as active
-      const response = await axios.put(endpoint);
+      const response = await axios.put(endpoint, { serviceName }, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       
       if (response.data.success) {
         // Refresh accounts to get the updated list
@@ -164,10 +217,20 @@ const useAccountStore = create((set, get) => ({
     set({ loading: true, error: null });
     
     try {
+      // Get auth token
+      const token = await get().getAuthToken();
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+      
       // Use the test endpoint in development mode
       const endpoint = DEV_MODE ? `${API_URL}/test-authenticate-service` : `${API_URL}/accounts/auth/${serviceName}`;
-      // Call the API to initiate OAuth
-      const response = await axios.get(endpoint);
+      // Call the API to authenticate with the service
+      const response = await axios.get(endpoint, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       
       if (response.data.success) {
         set({ loading: false });
@@ -190,10 +253,20 @@ const useAccountStore = create((set, get) => ({
     set({ loading: true, error: null });
     
     try {
+      // Get auth token
+      const token = await get().getAuthToken();
+      if (!token) {
+        throw new Error('No authentication token available');
+      }
+      
       // Use the test endpoint in development mode
       const endpoint = DEV_MODE ? `${API_URL}/test-handle-oauth-callback` : `${API_URL}/accounts/auth/${serviceName}/callback?code=${code}`;
       // Call the API to handle the OAuth callback
-      const response = await axios.get(endpoint);
+      const response = await axios.get(endpoint, {
+        headers: {
+          Authorization: `Bearer ${token}`
+        }
+      });
       
       if (response.data.success) {
         // Refresh accounts to get the updated list
