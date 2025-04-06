@@ -299,14 +299,6 @@ const SubscriptionScreen = () => {
             <>
               {plans.map(renderPlanCard)}
               
-              <TouchableOpacity 
-                style={styles.restoreButton}
-                onPress={handleRestorePurchases}
-              >
-                <ArrowClockwise size={20} color={colors.lightGray} />
-                <Text style={styles.restoreButtonText}>Restore Purchases</Text>
-              </TouchableOpacity>
-              
               <GlassCard style={styles.enterpriseCard}>
                 <View style={styles.enterpriseHeader}>
                   <Buildings size={28} color={colors.white} weight="fill" />
@@ -332,6 +324,14 @@ const SubscriptionScreen = () => {
                   <Text style={styles.contactButtonText}>Contact Sales</Text>
                 </TouchableOpacity>
               </GlassCard>
+              
+              <TouchableOpacity 
+                style={styles.restoreButton}
+                onPress={handleRestorePurchases}
+              >
+                <ArrowClockwise size={20} color={colors.lightGray} />
+                <Text style={styles.restoreButtonText}>Restore Purchases</Text>
+              </TouchableOpacity>
               
               {!isAuthenticated && (
                 <View style={styles.unauthenticatedNote}>
