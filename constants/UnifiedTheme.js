@@ -1,5 +1,5 @@
 // Unified Theme System for August AI
-// This file combines the styles from Theme.js and NewTheme.js 
+// This file combines the styles from Theme.js and NewTheme.js
 // while preserving all original values and adding component-specific hardcoded values
 
 // ============================================================
@@ -13,7 +13,7 @@ const baseColors = {
   lightGray: '#8E8EA0',
   offWhite: '#F0F0F5',
   white: '#FFFFFF',
-  
+
   // Theme colors from Theme.js
   backgroundTop: '#020305',
   backgroundMid1: '#061022',
@@ -24,20 +24,20 @@ const baseColors = {
   secondaryText: '#9BB1DD',
   buttonBackground: 'rgba(26, 44, 75, 0.8)',
   inputBackground: 'rgba(20, 32, 61, 0.85)',
-  
+
   // Accent colors from Theme.js
   emerald: '#10B981',
   emeraldLight: '#34D399',
   emeraldTransparent: 'rgba(16, 185, 129, 0.25)',
   purple: '#8B5CF6',
   purpleDark: '#6D28D9',
-  
+
   // Status colors from Theme.js
   warning: '#F59E0B',
   error: '#EF4444',
   success: '#10B981',
   info: '#3B82F6',
-  
+
   // Additional hardcoded colors from components
   chatInputBackground: '#0C1B3B',
   buttonBlue: '#1D4ED8',
@@ -56,7 +56,7 @@ const baseColors = {
 // Semantic color tokens (from Theme.js)
 export const colors = {
   ...baseColors,
-  
+
   // Background colors
   background: {
     primary: baseColors.backgroundTop,
@@ -66,7 +66,7 @@ export const colors = {
     input: baseColors.inputBackground,
     overlay: 'rgba(18, 18, 20, 0.8)',
   },
-  
+
   // Text colors
   text: {
     primary: baseColors.primaryText,
@@ -78,7 +78,7 @@ export const colors = {
     warning: baseColors.warning,
     info: baseColors.info,
   },
-  
+
   // Border colors
   border: {
     primary: 'rgba(255, 255, 255, 0.1)',
@@ -86,7 +86,7 @@ export const colors = {
     focus: baseColors.emerald,
     error: baseColors.error,
   },
-  
+
   // Interactive colors
   interactive: {
     primary: baseColors.emerald,
@@ -95,7 +95,7 @@ export const colors = {
     active: baseColors.purpleDark,
     disabled: baseColors.lightGray,
   },
-  
+
   // Gradient definitions
   gradients: {
     primary: [baseColors.backgroundTop, baseColors.backgroundMid1, baseColors.backgroundBottom],
@@ -111,12 +111,30 @@ export const colors = {
     ],
     // Gradients from NewTheme.js
     github: ['#2A2F3A', '#4078c0'],
-    gmail: ['#4285F4', '#EA4335'],
-    slack: ['#4A154B', '#611f69'],
-    calendar: ['#0F9D58', '#4285F4'],
-    dropbox: ['#0061FF', '#00BFFF'],
-    asana: ['#FC636B', '#FF8450'],
-    default: ['#2DD4BF', '#7C3AED'],
+    gmail: ['#2A2F3A', '#EA4335'],
+    google: ['#2A2F3A', '#4285F4'],
+    slack: ['#2A2F3A', '#611f69'],
+    calendar: ['#2A2F3A', '#4285F4'],
+    dropbox: ['#2A2F3A', '#0061FF'],
+    asana: ['#2A2F3A', '#FC636B'],
+    discord: ['#2A2F3A', '#5865F2'],
+    zoom: ['#2A2F3A', '#2D8CFF'],
+    notion: ['#2A2F3A', '#000000'],
+    figma: ['#2A2F3A', '#F24E1E'],
+    stripe: ['#2A2F3A', '#635BFF'],
+    outlook: ['#2A2F3A', '#0078D4'],
+    trello: ['#2A2F3A', '#0079BF'],
+    twitter: ['#2A2F3A', '#1DA1F2'],
+    linkedin: ['#2A2F3A', '#0A66C2'],
+    reddit: ['#2A2F3A', '#FF4500'],
+    youtube: ['#2A2F3A', '#FF0000'],
+    onedrive: ['#2A2F3A', '#0078D4'],
+    calendly: ['#2A2F3A', '#006BFF'],
+    blackboard: ['#2A2F3A', '#444444'],
+    weathermap: ['#2A2F3A', '#29B6F6'],
+    canvas: ['#2A2F3A', '#E11D3F'],
+    perplexityai: ['#2A2F3A', '#5436DA'],
+    default: ['#2A2F3A', '#7C3AED'],
   }
 };
 
@@ -130,7 +148,7 @@ export const spacing = {
   lg: 24,
   xl: 32,
   xxl: 48,
-  
+
   // Component-specific spacing
   container: {
     padding: 16,
@@ -159,7 +177,7 @@ export const borderRadius = {
   lg: 24,
   xl: 32,
   round: 9999,
-  
+
   // Component-specific radius
   button: {
     sm: 8,
@@ -188,7 +206,7 @@ export const typography = {
     mono: 'InterVariable',
     brand: 'InterDisplay-Bold'
   },
-  
+
   // Font sizes
   fontSize: {
     xs: 12,
@@ -199,7 +217,7 @@ export const typography = {
     xxl: 32,
     xxxl: 40
   },
-  
+
   // Line heights
   lineHeight: {
     xs: 16,
@@ -209,7 +227,7 @@ export const typography = {
     xl: 32,
     xxl: 40
   },
-  
+
   // Font weights
   fontWeight: {
     regular: '400',
@@ -217,7 +235,7 @@ export const typography = {
     semibold: '600',
     bold: '700'
   },
-  
+
   // Component-specific typography
   heading: {
     h1: {
@@ -284,10 +302,10 @@ export const shadows = {
     shadowRadius: 16,
     elevation: 8
   },
-  
+
   // Shadow from NewTheme.js
   newThemeLg: '0 10px 20px rgba(0, 0, 0, 0.3)',
-  
+
   // Component-specific shadows
   card: {
     default: {
@@ -425,12 +443,30 @@ export const theme = {
     border: 'rgba(255, 255, 255, 0.1)',
     gradients: {
       github: ['#2A2F3A', '#4078c0'],
-      gmail: ['#4285F4', '#EA4335'],
-      slack: ['#4A154B', '#611f69'],
-      calendar: ['#0F9D58', '#4285F4'],
-      dropbox: ['#0061FF', '#00BFFF'],
-      asana: ['#FC636B', '#FF8450'],
-      default: ['#2DD4BF', '#7C3AED'],
+      gmail: ['#2A2F3A', '#EA4335'],
+      google: ['#2A2F3A', '#4285F4'],
+      slack: ['#2A2F3A', '#611f69'],
+      calendar: ['#2A2F3A', '#4285F4'],
+      dropbox: ['#2A2F3A', '#0061FF'],
+      asana: ['#2A2F3A', '#FC636B'],
+      discord: ['#2A2F3A', '#5865F2'],
+      zoom: ['#2A2F3A', '#2D8CFF'],
+      notion: ['#2A2F3A', '#000000'],
+      figma: ['#2A2F3A', '#F24E1E'],
+      stripe: ['#2A2F3A', '#635BFF'],
+      outlook: ['#2A2F3A', '#0078D4'],
+      trello: ['#2A2F3A', '#0079BF'],
+      twitter: ['#2A2F3A', '#1DA1F2'],
+      linkedin: ['#2A2F3A', '#0A66C2'],
+      reddit: ['#2A2F3A', '#FF4500'],
+      youtube: ['#2A2F3A', '#FF0000'],
+      onedrive: ['#2A2F3A', '#0078D4'],
+      calendly: ['#2A2F3A', '#006BFF'],
+      blackboard: ['#2A2F3A', '#444444'],
+      weathermap: ['#2A2F3A', '#29B6F6'],
+      canvas: ['#2A2F3A', '#E11D3F'],
+      perplexityai: ['#2A2F3A', '#5436DA'],
+      default: ['#2A2F3A', '#7C3AED'],
     },
   },
   spacing: {
@@ -469,4 +505,4 @@ export default {
   zIndex,
   animation,
   theme // Nested theme from NewTheme.js
-}; 
+};

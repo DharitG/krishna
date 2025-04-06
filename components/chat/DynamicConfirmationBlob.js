@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { Feather } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../constants/NewTheme';
 
 const { width } = Dimensions.get('window');
@@ -21,37 +21,37 @@ const DynamicConfirmationBlob = ({
   const actionConfig = {
     email: {
       title: 'Send Email',
-      icon: 'mail',
+      icon: 'mail-outline',
       gradientColors: theme.colors.gradients.gmail,
       dangerLevel: 'medium'
     },
     delete: {
       title: 'Delete Content',
-      icon: 'trash-2',
+      icon: 'trash-outline',
       gradientColors: ['#EA4335', '#FF5252'],
       dangerLevel: 'high'
     },
     post: {
       title: 'Post Content',
-      icon: 'send',
+      icon: 'send-outline',
       gradientColors: ['#673AB7', '#3F51B5'],
       dangerLevel: 'medium'
     },
     access: {
       title: 'Access Data',
-      icon: 'database',
+      icon: 'server-outline',
       gradientColors: ['#009688', '#4CAF50'],
       dangerLevel: 'low'
     },
     create: {
       title: 'Create Content',
-      icon: 'file-plus',
+      icon: 'create-outline',
       gradientColors: ['#FF9800', '#F44336'],
       dangerLevel: 'medium'
     },
     default: {
       title: 'Confirm Action',
-      icon: 'alert-circle',
+      icon: 'alert-circle-outline',
       gradientColors: theme.colors.gradients.default,
       dangerLevel: 'medium'
     }
@@ -88,8 +88,8 @@ const DynamicConfirmationBlob = ({
         styles.dangerBadge,
         config.dangerLevel === 'high' ? styles.highDangerBadge : styles.mediumDangerBadge,
       ]}>
-        <Feather
-          name={config.dangerLevel === 'high' ? 'alert-triangle' : 'alert-circle'}
+        <Ionicons
+          name={config.dangerLevel === 'high' ? 'warning-outline' : 'alert-circle-outline'}
           size={14}
           color={theme.colors.text.primary}
         />
@@ -127,7 +127,7 @@ const DynamicConfirmationBlob = ({
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.iconContainer}>
-              <Feather name={config.icon} size={28} color={theme.colors.text.primary} />
+              <Ionicons name={config.icon} size={28} color={theme.colors.text.primary} />
             </View>
             <View style={styles.titleContainer}>
               <Text style={styles.title}>{config.title}</Text>
@@ -168,8 +168,8 @@ const DynamicConfirmationBlob = ({
                 {isLoading ? 'Processing...' : 'Confirm'}
               </Text>
               {!isLoading && (
-                <Feather
-                  name={config.dangerLevel === 'high' ? 'alert-triangle' : 'check'}
+                <Ionicons
+                  name={config.dangerLevel === 'high' ? 'warning-outline' : 'checkmark-circle'}
                   size={18}
                   color={theme.colors.text.primary}
                   style={styles.confirmIcon}

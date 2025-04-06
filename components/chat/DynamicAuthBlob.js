@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, Dimensions } from 'react-native';
 import { LinearGradient } from 'expo-linear-gradient';
 import * as Haptics from 'expo-haptics';
-import { Feather } from '@expo/vector-icons';
+import { Ionicons } from '@expo/vector-icons';
 import { theme } from '../../constants/NewTheme';
 
 const { width } = Dimensions.get('window');
@@ -21,37 +21,127 @@ const DynamicAuthBlob = ({
   const serviceConfig = {
     github: {
       title: 'GitHub',
-      icon: 'github',
+      icon: 'logo-github',
       description: 'Access repository details, issues, and PRs'
     },
     gmail: {
       title: 'Gmail',
-      icon: 'mail',
+      icon: 'mail-outline',
       description: 'Read and send emails on your behalf'
+    },
+    google: {
+      title: 'Google',
+      icon: 'logo-google',
+      description: 'Access Google services (Gmail, Drive, Calendar)'
     },
     slack: {
       title: 'Slack',
-      icon: 'slack',
+      icon: 'logo-slack',
       description: 'Send messages and access channels'
     },
     calendar: {
       title: 'Calendar',
-      icon: 'calendar',
+      icon: 'calendar-outline',
       description: 'View and create calendar events'
     },
     dropbox: {
       title: 'Dropbox',
-      icon: 'dropbox',
+      icon: 'cloud-outline',
       description: 'Access your Dropbox files and folders'
     },
     asana: {
       title: 'Asana',
-      icon: 'check-square',
+      icon: 'list-outline',
       description: 'Access tasks and projects'
+    },
+    discord: {
+      title: 'Discord',
+      icon: 'logo-discord',
+      description: 'Access Discord channels and messages'
+    },
+    zoom: {
+      title: 'Zoom',
+      icon: 'videocam-outline',
+      description: 'Schedule and join Zoom meetings'
+    },
+    notion: {
+      title: 'Notion',
+      icon: 'document-text-outline',
+      description: 'Access Notion pages and databases'
+    },
+    figma: {
+      title: 'Figma',
+      icon: 'color-palette-outline',
+      description: 'Access Figma designs and projects'
+    },
+    stripe: {
+      title: 'Stripe',
+      icon: 'card-outline',
+      description: 'Process payments and manage subscriptions'
+    },
+    outlook: {
+      title: 'Outlook',
+      icon: 'mail-outline',
+      description: 'Access emails and calendar events'
+    },
+    trello: {
+      title: 'Trello',
+      icon: 'grid-outline',
+      description: 'Manage boards, lists, and cards'
+    },
+    twitter: {
+      title: 'Twitter',
+      icon: 'logo-twitter',
+      description: 'Access tweets and post updates'
+    },
+    linkedin: {
+      title: 'LinkedIn',
+      icon: 'logo-linkedin',
+      description: 'Access professional network and posts'
+    },
+    reddit: {
+      title: 'Reddit',
+      icon: 'logo-reddit',
+      description: 'Access subreddits and posts'
+    },
+    youtube: {
+      title: 'YouTube',
+      icon: 'logo-youtube',
+      description: 'Access videos and channels'
+    },
+    onedrive: {
+      title: 'OneDrive',
+      icon: 'cloud-outline',
+      description: 'Access files and folders'
+    },
+    calendly: {
+      title: 'Calendly',
+      icon: 'calendar-outline',
+      description: 'Schedule and manage appointments'
+    },
+    blackboard: {
+      title: 'Blackboard',
+      icon: 'school-outline',
+      description: 'Access courses and assignments'
+    },
+    weathermap: {
+      title: 'Weather',
+      icon: 'cloudy-outline',
+      description: 'Access weather data and forecasts'
+    },
+    canvas: {
+      title: 'Canvas',
+      icon: 'school-outline',
+      description: 'Access courses, assignments, and grades'
+    },
+    perplexityai: {
+      title: 'Perplexity AI',
+      icon: 'help-circle-outline',
+      description: 'Access AI-powered search and answers'
     },
     default: {
       title: 'Connect',
-      icon: 'link',
+      icon: 'link-outline',
       description: 'Connect to an external service'
     }
   };
@@ -99,7 +189,7 @@ const DynamicAuthBlob = ({
           {/* Header */}
           <View style={styles.header}>
             <View style={styles.iconContainer}>
-              <Feather name={config.icon} size={24} color={theme.colors.text.primary} />
+              <Ionicons name={config.icon} size={24} color={theme.colors.text.primary} />
             </View>
             <View style={styles.titleContainer}>
               <Text style={styles.title}>{config.title}</Text>
@@ -113,7 +203,7 @@ const DynamicAuthBlob = ({
           {error ? (
             <View style={styles.errorContainer}>
               <View style={styles.errorContent}>
-                <Feather name="alert-circle" size={16} color="#FF4D4F" />
+                <Ionicons name="alert-circle-outline" size={16} color="#FF4D4F" />
                 <Text style={styles.errorText}>{error}</Text>
               </View>
               <TouchableOpacity
@@ -139,8 +229,8 @@ const DynamicAuthBlob = ({
               {isConnected ? 'Connected' : isLoading ? 'Connecting...' : 'Connect'}
             </Text>
             {isConnected && (
-              <Feather
-                name="check"
+              <Ionicons
+                name="checkmark-circle"
                 size={18}
                 color={theme.colors.text.primary}
                 style={styles.checkIcon}
