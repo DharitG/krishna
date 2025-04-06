@@ -1,10 +1,10 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  View, 
-  FlatList, 
-  StyleSheet, 
-  KeyboardAvoidingView, 
-  Platform, 
+import {
+  View,
+  FlatList,
+  StyleSheet,
+  KeyboardAvoidingView,
+  Platform,
   SafeAreaView,
   StatusBar,
   Text,
@@ -29,7 +29,7 @@ import { useAuth } from '../../services/authContext';
 
 const ChatScreen = () => {
   const { user } = useAuth();
-  
+
   // Get chat store state and actions
   const initialize = useZustandChatStore(state => state.initialize);
   const loadChats = useZustandChatStore(state => state.loadChats);
@@ -39,7 +39,8 @@ const ChatScreen = () => {
   const sendMessage = useZustandChatStore(state => state.sendMessage);
   const updateAuthStatus = useZustandChatStore(state => state.updateAuthStatus);
   const updateChatTitle = useZustandChatStore(state => state.updateChatTitle);
-  
+  const loadChatsWithMessages = useZustandChatStore(state => state.loadChatsWithMessages);
+
   // Initialize state
   const [activeChat, setActiveChatState] = useState(null);
   const [chats, setChats] = useState([]);
@@ -49,7 +50,7 @@ const ChatScreen = () => {
   const [streamingMessageId, setStreamingMessageId] = useState(null);
   const [hasUserSentMessage, setHasUserSentMessage] = useState(false);
   const suggestionBoxAnimation = useRef(new Animated.Value(1)).current;
-  
+
   const flatListRef = useRef(null);
 
   // Initialize chat store
@@ -59,12 +60,12 @@ const ChatScreen = () => {
         await initialize();
         const activeChatData = await getActiveChat();
         const chatsData = await loadChats();
-        
+
         // Ensure messages is always an array
         if (activeChatData && !Array.isArray(activeChatData.messages)) {
           activeChatData.messages = [];
         }
-        
+
         setActiveChatState(activeChatData);
         setChats(chatsData);
       } catch (error) {
@@ -76,7 +77,7 @@ const ChatScreen = () => {
         setIsInitializing(false);
       }
     };
-    
+
     loadChatData();
   }, [user?.id]);
 
@@ -97,10 +98,10 @@ const ChatScreen = () => {
 
   const handleSendMessage = async (content) => {
     if (!activeChat) return;
-    
+
     // Set loading state
     setIsLoading(true);
-    
+
     // If this is the first message, trigger fade out animation
     if (!hasUserSentMessage) {
       setHasUserSentMessage(true);
@@ -110,10 +111,10 @@ const ChatScreen = () => {
         useNativeDriver: true,
       }).start();
     }
-    
+
     // Hide keyboard
     Keyboard.dismiss();
-    
+
     try {
       // If this is a temporary chat, create a real chat in the database first
       let chatToUse = activeChat;
@@ -121,16 +122,16 @@ const ChatScreen = () => {
         try {
           const newActiveChat = await createNewChat('New Chat', true, false);
           const updatedChats = await loadChats();
-          
+
           // Ensure messages is always an array
           if (newActiveChat && !Array.isArray(newActiveChat.messages)) {
             newActiveChat.messages = [];
           }
-          
+
           chatToUse = newActiveChat;
           setActiveChatState(newActiveChat);
           setChats(updatedChats);
-          
+
           // Remove the temporary chat from the local chats list
           setChats(prevChats => prevChats.filter(chat => chat.id !== activeChat.id));
         } catch (error) {
@@ -138,10 +139,10 @@ const ChatScreen = () => {
           // Continue with the temporary chat if there's an error
         }
       }
-      
+
       // Add user message immediately for better UX
       const userMessage = { role: 'user', content, created_at: new Date() };
-      
+
       // Check if chatToUse.messages is an array
       if (chatToUse && Array.isArray(chatToUse.messages)) {
         // Update the UI immediately with user message only
@@ -149,12 +150,12 @@ const ChatScreen = () => {
           ...chatToUse,
           messages: [...chatToUse.messages, userMessage]
         });
-        
+
         // Force-scroll to the bottom
         if (flatListRef.current) {
           flatListRef.current.scrollToEnd({ animated: false });
         }
-        
+
         // If this is the first message (after welcome message) AND the chat has a default title
         // Update the chat title with the first user message (truncated if needed)
         if (chatToUse.messages.length <= 1 && (chatToUse.title === 'New Chat' || !chatToUse.title)) {
@@ -162,26 +163,26 @@ const ChatScreen = () => {
           await updateChatTitle(chatToUse.id, titleText);
         }
       }
-      
+
       // Stream handler function that updates the UI with each chunk
       const handleStreamUpdate = (streamMessage) => {
         setStreamingMessageId(streamMessage.id);
-        
+
         // Update the active chat with the streaming message content
         setActiveChatState(prevChat => {
           // Create a copy of the current chat state
           const chatCopy = {...prevChat};
-          
+
           // Ensure messages is an array
           if (!Array.isArray(chatCopy.messages)) {
             chatCopy.messages = [];
           }
-          
+
           // Find the streaming message by ID
-          const messageIndex = chatCopy.messages.findIndex(msg => 
+          const messageIndex = chatCopy.messages.findIndex(msg =>
             msg.id === streamMessage.id
           );
-          
+
           if (messageIndex !== -1) {
             // Update existing message with new content
             chatCopy.messages[messageIndex] = {
@@ -192,32 +193,32 @@ const ChatScreen = () => {
             // Add new message if not found
             chatCopy.messages.push(streamMessage);
           }
-          
+
           // Scroll to the bottom as new content comes in
           if (flatListRef.current) {
             flatListRef.current.scrollToEnd({ animated: false });
           }
-          
+
           return chatCopy;
         });
       };
-      
+
       // Send the message using the chat store with streaming
       const response = await sendMessage(content, handleStreamUpdate);
-      
+
       // Get the latest chats list for sidebar (for title updates)
       const updatedChats = await loadChats();
       setChats(updatedChats);
-      
+
       // Get the updated active chat
       const updatedActiveChat = await getActiveChat();
       setActiveChatState(updatedActiveChat);
-      
+
       // Final update to clear streaming state
       setStreamingMessageId(null);
     } catch (error) {
       console.error('Error in chat:', error);
-      
+
       // Provide a fallback message if there's an error
       if (activeChat && Array.isArray(activeChat.messages)) {
         // Add an error message to the local state only
@@ -227,7 +228,7 @@ const ChatScreen = () => {
           content: 'Sorry, I encountered an error. Please try again later.',
           created_at: new Date()
         };
-        
+
         setActiveChatState({
           ...activeChat,
           messages: [...activeChat.messages, errorMessage]
@@ -253,12 +254,12 @@ const ChatScreen = () => {
   const handleSelectChat = async (chatId) => {
     try {
       const selectedChat = await setActiveChat(chatId);
-      
+
       // Ensure messages is always an array
       if (selectedChat && !Array.isArray(selectedChat.messages)) {
         selectedChat.messages = [];
       }
-      
+
       setActiveChatState(selectedChat);
     } catch (error) {
       console.error('Error selecting chat:', error);
@@ -274,12 +275,12 @@ const ChatScreen = () => {
       onAuthSuccess={(service) => {
         // Update authentication status in the chat store
         updateAuthStatus(service, true);
-        
+
         // Update the active chat in the state
         getActiveChat().then(updatedChat => {
           setActiveChatState(updatedChat);
         });
-        
+
         // Send a message to acknowledge authentication
         handleSendMessage(`I've successfully authenticated with ${service}.`);
       }}
@@ -315,32 +316,32 @@ const ChatScreen = () => {
       <StatusBar barStyle="light-content" />
       <SafeAreaView style={styles.safeArea}>
         <View style={styles.header}>
-          <TouchableOpacity 
-            style={styles.menuButton} 
+          <TouchableOpacity
+            style={styles.menuButton}
             onPress={() => setSidebarVisible(true)}
           >
             <SidebarSimple size={24} color={colors.white} weight="regular" />
           </TouchableOpacity>
-          
+
           <View style={styles.headerTitleContainer}>
             <Text style={styles.headerTitle}>August</Text>
           </View>
-          
-          <TouchableOpacity 
-            style={styles.headerButton} 
+
+          <TouchableOpacity
+            style={styles.headerButton}
             onPress={handleNewChat}
           >
             <Plus size={24} color={colors.white} weight="regular" />
           </TouchableOpacity>
         </View>
-        
+
         <View style={styles.chatContainer}>
           {activeChat.messages.length === 0 && (
             <View style={styles.welcomeContainer}>
               <WelcomeMessage userName={user?.name} />
             </View>
           )}
-          
+
           <View style={styles.messagesContainer}>
             <FlatList
               ref={flatListRef}
@@ -357,14 +358,14 @@ const ChatScreen = () => {
               removeClippedSubviews={false}
             />
           </View>
-          
+
           <KeyboardAvoidingView
             behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
             keyboardVerticalOffset={Platform.OS === 'ios' ? 100 : 80}
           >
             {!hasUserSentMessage && (
-              <SuggestionBoxes 
-                onSelectSuggestion={handleSendMessage} 
+              <SuggestionBoxes
+                onSelectSuggestion={handleSendMessage}
                 style={{
                   opacity: suggestionBoxAnimation,
                   transform: [{
@@ -379,8 +380,8 @@ const ChatScreen = () => {
             <MessageInput onSendMessage={handleSendMessage} isLoading={isLoading} />
           </KeyboardAvoidingView>
         </View>
-        
-        <Sidebar 
+
+        <Sidebar
           visible={sidebarVisible}
           onClose={() => setSidebarVisible(false)}
           onNewChat={handleNewChat}

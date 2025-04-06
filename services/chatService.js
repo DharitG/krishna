@@ -10,22 +10,22 @@ export const createChat = async (title = 'New Chat') => {
   try {
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
+
     if (userError) {
       console.error('Error getting current user:', userError.message);
       throw userError;
     }
-    
+
     if (!user) {
       throw new Error('No authenticated user found');
     }
-    
+
     const { data, error } = await supabase
       .from('chats')
       .insert([
-        { 
+        {
           title,
-          user_id: user.id 
+          user_id: user.id
         }
       ])
       .select()
@@ -47,16 +47,16 @@ export const getChats = async () => {
   try {
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
+
     if (userError) {
       console.error('Error getting current user:', userError.message);
       throw userError;
     }
-    
+
     if (!user) {
       throw new Error('No authenticated user found');
     }
-    
+
     const { data, error } = await supabase
       .from('chats')
       .select('*')
@@ -67,6 +67,71 @@ export const getChats = async () => {
     return data || [];
   } catch (error) {
     console.error('Error getting chats:', error.message);
+    throw error;
+  }
+};
+
+/**
+ * Get all chats with their messages for search functionality
+ * @returns {Array} - List of chats with messages
+ */
+export const getChatsWithMessages = async () => {
+  try {
+    // Get the current user
+    const { data: { user }, error: userError } = await supabase.auth.getUser();
+
+    if (userError) {
+      console.error('Error getting current user:', userError.message);
+      throw userError;
+    }
+
+    if (!user) {
+      throw new Error('No authenticated user found');
+    }
+
+    // First get all chats
+    const { data: chats, error: chatsError } = await supabase
+      .from('chats')
+      .select('*')
+      .eq('user_id', user.id)
+      .order('updated_at', { ascending: false });
+
+    if (chatsError) throw chatsError;
+
+    // If no chats, return empty array
+    if (!chats || chats.length === 0) {
+      return [];
+    }
+
+    // Get all messages for all chats
+    const chatIds = chats.map(chat => chat.id);
+    const { data: messages, error: messagesError } = await supabase
+      .from('messages')
+      .select('*')
+      .in('chat_id', chatIds);
+
+    if (messagesError) throw messagesError;
+
+    // Group messages by chat_id
+    const messagesByChatId = {};
+    if (messages && messages.length > 0) {
+      messages.forEach(message => {
+        if (!messagesByChatId[message.chat_id]) {
+          messagesByChatId[message.chat_id] = [];
+        }
+        messagesByChatId[message.chat_id].push(message);
+      });
+    }
+
+    // Add messages to each chat
+    const chatsWithMessages = chats.map(chat => ({
+      ...chat,
+      messages: messagesByChatId[chat.id] || []
+    }));
+
+    return chatsWithMessages;
+  } catch (error) {
+    console.error('Error getting chats with messages:', error.message);
     throw error;
   }
 };
@@ -89,19 +154,19 @@ export const getChatById = async (chatId) => {
         messages: []
       };
     }
-    
+
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
+
     if (userError) {
       console.error('Error getting current user:', userError.message);
       throw userError;
     }
-    
+
     if (!user) {
       throw new Error('No authenticated user found');
     }
-    
+
     const { data: chat, error: chatError } = await supabase
       .from('chats')
       .select('*')
@@ -192,19 +257,19 @@ export const addMessage = async (chatId, role, content) => {
         created_at: new Date()
       };
     }
-    
+
     // Get the current user
     const { data: { user }, error: userError } = await supabase.auth.getUser();
-    
+
     if (userError) {
       console.error('Error getting current user:', userError.message);
       throw userError;
     }
-    
+
     if (!user) {
       throw new Error('No authenticated user found');
     }
-    
+
     // Verify the chat belongs to the user
     const { data: chatData, error: chatError } = await supabase
       .from('chats')
@@ -212,12 +277,12 @@ export const addMessage = async (chatId, role, content) => {
       .eq('id', chatId)
       .eq('user_id', user.id)
       .single();
-      
+
     if (chatError) {
       console.error('Error verifying chat ownership:', chatError.message);
       throw chatError;
     }
-    
+
     // Update chat updated_at timestamp
     await supabase
       .from('chats')
@@ -253,9 +318,9 @@ export const addMessage = async (chatId, role, content) => {
  * @returns {Object} - AI response message
  */
 export const sendMessageAndGetResponse = async (
-  chatId, 
-  message, 
-  enabledTools, 
+  chatId,
+  message,
+  enabledTools,
   useTools = true,
   authStatus = {},
   onStream = null
@@ -263,13 +328,13 @@ export const sendMessageAndGetResponse = async (
   try {
     // Check if this is a mock chat ID
     const isMockChat = chatId.startsWith('mock-chat-');
-    
+
     // Add user message to database
     await addMessage(chatId, 'user', message);
 
     // Get chat history
     let messages = [];
-    
+
     if (isMockChat) {
       // For mock chats, use the local messages array from chatStore
       // This will be handled by the caller
@@ -277,19 +342,19 @@ export const sendMessageAndGetResponse = async (
         role: 'assistant',
         content: `This is a mock response. In a real environment, I would process your message: "${message}"`
       };
-      
+
       // Add mock assistant response
       await addMessage(chatId, 'assistant', mockResponse.content);
-      
+
       return mockResponse;
     } else {
       // For real chats, get messages from the database
       const chat = await getChatById(chatId);
       messages = Array.isArray(chat.messages) ? chat.messages.map(({ role, content }) => ({ role, content })) : [];
-      
+
       // Create message object in database with empty content (will be updated)
       const initialAssistantMessage = await addMessage(chatId, 'assistant', '');
-      
+
       // Handler for streaming updates
       const handleStreamChunk = async (chunk) => {
         if (onStream) {
@@ -300,20 +365,20 @@ export const sendMessageAndGetResponse = async (
           });
         }
       };
-      
+
       // Get the current user ID for the backend
       const { data: { user } } = await supabase.auth.getUser();
       const userId = user?.id;
-      
+
       // Send to backend with streaming
       const response = await sendMessageToBackend(
-        messages, 
-        enabledTools, 
-        useTools, 
+        messages,
+        enabledTools,
+        useTools,
         authStatus,
         handleStreamChunk
       );
-      
+
       // Update the assistant message in database with final content
       // Use Supabase's update function to update the existing message
       const { data, error } = await supabase
@@ -322,17 +387,17 @@ export const sendMessageAndGetResponse = async (
         .eq('id', initialAssistantMessage.id)
         .select()
         .single();
-        
+
       if (error) {
         console.error('Error updating message content:', error);
       }
-      
+
       // Check if the response contains an auth redirect
       if (response.authRedirect) {
         console.log('Response contains auth redirect:', response.authRedirect);
         // We'll handle this in the UI
       }
-      
+
       // Return the final response with the database ID
       return {
         ...response,
@@ -341,14 +406,14 @@ export const sendMessageAndGetResponse = async (
     }
   } catch (error) {
     console.error('Error sending message and getting response:', error.message);
-    
+
     // Add error message to chat
     await addMessage(
-      chatId, 
-      'assistant', 
+      chatId,
+      'assistant',
       'Sorry, I encountered an error processing your request. Please try again later.'
     );
-    
+
     throw error;
   }
 };

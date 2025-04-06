@@ -1,26 +1,28 @@
 import React, { useRef, useEffect, useState } from 'react';
-import { 
-  View, 
-  Text, 
-  StyleSheet, 
-  TouchableOpacity, 
+import {
+  View,
+  Text,
+  StyleSheet,
+  TouchableOpacity,
   ScrollView,
   Dimensions,
   Modal,
   Animated,
   TextInput,
-  Platform
+  Platform,
+  ActivityIndicator
 } from 'react-native';
-import { 
-  PlusCircle, 
-  Gear, 
-  SignOut, 
+import {
+  PlusCircle,
+  Gear,
+  SignOut,
   X,
   User,
   MagnifyingGlass
 } from 'phosphor-react-native';
 import GlassCard from './GlassCard';
 import { colors, spacing, borderRadius, typography } from '../constants/Theme';
+import useZustandChatStore from '../services/chatStore';
 
 const { width } = Dimensions.get('window');
 const SIDEBAR_WIDTH = width * 0.85;
@@ -28,32 +30,35 @@ const SIDEBAR_WIDTH = width * 0.85;
 // Helper function to format the date
 const formatDate = (dateString) => {
   if (!dateString) return 'New';
-  
+
   const date = new Date(dateString);
   const now = new Date();
   const yesterday = new Date(now);
   yesterday.setDate(yesterday.getDate() - 1);
-  
+
   // Check if date is today
   if (date.toDateString() === now.toDateString()) {
     return 'Today';
   }
-  
+
   // Check if date is yesterday
   if (date.toDateString() === yesterday.toDateString()) {
     return 'Yesterday';
   }
-  
+
   // Return day of the month
   const options = { month: 'short', day: 'numeric' };
   return date.toLocaleDateString(undefined, options);
 };
 
 const Sidebar = ({ visible, onClose, onNewChat, onSelectChat, chats = [], activeChat }) => {
+  const loadChatsWithMessages = useZustandChatStore(state => state.loadChatsWithMessages);
   const [searchQuery, setSearchQuery] = useState('');
   const [filteredChats, setFilteredChats] = useState(chats);
+  const [isSearching, setIsSearching] = useState(false);
+  const [chatsWithMessages, setChatsWithMessages] = useState([]);
   const slideAnim = useRef(new Animated.Value(-SIDEBAR_WIDTH)).current;
-  
+
   useEffect(() => {
     if (visible) {
       Animated.timing(slideAnim, {
@@ -69,59 +74,89 @@ const Sidebar = ({ visible, onClose, onNewChat, onSelectChat, chats = [], active
       }).start();
     }
   }, [visible, slideAnim]);
-  
-  // Update filtered chats when search query changes or chats update
+
+  // Load chats with messages when search is initiated
   useEffect(() => {
-    if (searchQuery.trim() === '') {
-      // Filter out temporary chats
-      setFilteredChats(chats.filter(chat => !chat.isTemporary));
-      return;
-    }
-    
-    const query = searchQuery.toLowerCase().trim();
-    const filtered = chats
+    const loadSearchData = async () => {
+      if (searchQuery.trim() === '') {
+        // Filter out temporary chats from regular chats list
+        setFilteredChats(chats.filter(chat => !chat.isTemporary));
+        setIsSearching(false);
+        return;
+      }
+
+      // If we're searching and don't have chats with messages yet, load them
+      if (!chatsWithMessages.length) {
+        setIsSearching(true);
+        try {
+          const loadedChatsWithMessages = await loadChatsWithMessages();
+          setChatsWithMessages(loadedChatsWithMessages);
+
+          // Now filter these chats with the search query
+          filterChatsWithQuery(loadedChatsWithMessages, searchQuery);
+        } catch (error) {
+          console.error('Error loading chats with messages:', error);
+          // Fallback to regular chats if there's an error
+          filterChatsWithQuery(chats, searchQuery);
+        } finally {
+          setIsSearching(false);
+        }
+      } else {
+        // We already have chats with messages, just filter them
+        filterChatsWithQuery(chatsWithMessages, searchQuery);
+      }
+    };
+
+    loadSearchData();
+  }, [searchQuery, chats, chatsWithMessages.length]);
+
+  // Helper function to filter chats with a query
+  const filterChatsWithQuery = (chatsToFilter, query) => {
+    const normalizedQuery = query.toLowerCase().trim();
+
+    const filtered = chatsToFilter
       .filter(chat => !chat.isTemporary) // Filter out temporary chats
       .filter(chat => {
         // Check if chat.title exists before trying to use it
-        const titleMatch = chat.title && chat.title.toLowerCase().includes(query);
-        
+        const titleMatch = chat.title && chat.title.toLowerCase().includes(normalizedQuery);
+
         // Check if chat.messages is an array before trying to use .some()
-        const messageMatch = Array.isArray(chat.messages) && 
-          chat.messages.some(msg => msg && msg.content && msg.content.toLowerCase().includes(query));
-        
+        const messageMatch = Array.isArray(chat.messages) &&
+          chat.messages.some(msg => msg && msg.content && msg.content.toLowerCase().includes(normalizedQuery));
+
         return titleMatch || messageMatch;
       });
-    
+
     setFilteredChats(filtered);
-  }, [searchQuery, chats]);
-  
+  };
+
   const handleSearch = (text) => {
     setSearchQuery(text);
   };
-  
+
   const handleClearSearch = () => {
     setSearchQuery('');
   };
 
   const renderChatItem = (chat, index) => {
     const isActive = activeChat === chat.id;
-    
+
     // If we're searching and there are matching messages, highlight them
     let highlightCount = 0;
     if (searchQuery && Array.isArray(chat.messages)) {
       const query = searchQuery.toLowerCase();
-      highlightCount = chat.messages.filter(msg => 
+      highlightCount = chat.messages.filter(msg =>
         msg && msg.content && msg.content.toLowerCase().includes(query)
       ).length;
     }
-    
+
     // Get the date to display (use updated_at if available, or created_at)
     const dateToUse = chat.updated_at || chat.created_at;
     const formattedDate = formatDate(dateToUse);
-    
+
     return (
-      <TouchableOpacity 
-        key={chat.id} 
+      <TouchableOpacity
+        key={chat.id}
         style={[styles.chatItem, isActive && styles.activeChatItem]}
         onPress={() => onSelectChat(chat.id)}
       >
@@ -129,13 +164,13 @@ const Sidebar = ({ visible, onClose, onNewChat, onSelectChat, chats = [], active
           <Text style={[styles.chatTitle, isActive && styles.activeChatTitle]} numberOfLines={1}>
             {chat.title || `Chat ${index + 1}`}
           </Text>
-          
+
           <View style={[styles.dateIndicator, isActive && styles.activeDateIndicator]}>
             <Text style={[styles.dateText, isActive && styles.activeDateText]}>
               {formattedDate}
             </Text>
           </View>
-          
+
           {highlightCount > 0 && (
             <View style={styles.matchBadge}>
               <Text style={styles.matchBadgeText}>{highlightCount}</Text>
@@ -156,15 +191,15 @@ const Sidebar = ({ visible, onClose, onNewChat, onSelectChat, chats = [], active
       onRequestClose={onClose}
     >
       <View style={styles.modalContainer}>
-        <TouchableOpacity 
+        <TouchableOpacity
           style={styles.overlay}
           activeOpacity={1}
           onPress={onClose}
         />
-        
-        <Animated.View 
+
+        <Animated.View
           style={[
-            styles.container, 
+            styles.container,
             { transform: [{ translateX: slideAnim }] }
           ]}>
           <View style={styles.header}>
@@ -173,13 +208,13 @@ const Sidebar = ({ visible, onClose, onNewChat, onSelectChat, chats = [], active
               <X size={24} color={colors.white} weight="regular" />
             </TouchableOpacity>
           </View>
-          
+
           <View style={styles.searchContainer}>
             <View style={styles.searchInputContainer}>
-              <MagnifyingGlass 
-                size={18} 
-                color={colors.lightGray} 
-                weight="regular" 
+              <MagnifyingGlass
+                size={18}
+                color={colors.lightGray}
+                weight="regular"
                 style={styles.searchIcon}
               />
               <TextInput
@@ -199,14 +234,20 @@ const Sidebar = ({ visible, onClose, onNewChat, onSelectChat, chats = [], active
               <PlusCircle size={20} color={colors.white} weight="regular" />
             </TouchableOpacity>
           </View>
-          
+
           <View style={styles.divider} />
-          
+
           <ScrollView style={styles.chatsContainer}>
             <Text style={styles.sectionTitle}>
               {searchQuery ? 'Search Results' : 'Recent Chats'}
             </Text>
-            {filteredChats.length > 0 ? (
+
+            {isSearching ? (
+              <View style={styles.loadingContainer}>
+                <ActivityIndicator size="small" color={colors.emerald} />
+                <Text style={styles.loadingText}>Searching messages...</Text>
+              </View>
+            ) : filteredChats.length > 0 ? (
               filteredChats.map(renderChatItem)
             ) : (
               <Text style={styles.emptyText}>
@@ -214,9 +255,9 @@ const Sidebar = ({ visible, onClose, onNewChat, onSelectChat, chats = [], active
               </Text>
             )}
           </ScrollView>
-          
+
           <View style={styles.footer}>
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.footerButton}
               onPress={() => {
                 onClose();
@@ -226,8 +267,8 @@ const Sidebar = ({ visible, onClose, onNewChat, onSelectChat, chats = [], active
               <User size={22} color={colors.white} weight="regular" />
               <Text style={styles.footerButtonText}>Account</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.footerButton}
               onPress={() => {
                 onClose();
@@ -237,8 +278,8 @@ const Sidebar = ({ visible, onClose, onNewChat, onSelectChat, chats = [], active
               <Gear size={22} color={colors.white} weight="regular" />
               <Text style={styles.footerButtonText}>Settings</Text>
             </TouchableOpacity>
-            
-            <TouchableOpacity 
+
+            <TouchableOpacity
               style={styles.upgradeButton}
               onPress={() => {
                 onClose();
@@ -268,12 +309,12 @@ const styles = StyleSheet.create({
     left: 0,
     top: 0,
     width: SIDEBAR_WIDTH,
-    backgroundColor: '#0A1428', 
+    backgroundColor: '#0A1428',
     borderRightWidth: 1,
-    borderRightColor: 'rgba(48, 109, 255, 0.2)', 
+    borderRightColor: 'rgba(48, 109, 255, 0.2)',
     height: '100%',
-    paddingTop: Platform.OS === 'ios' ? 50 : 40, 
-    paddingBottom: Platform.OS === 'ios' ? 30 : 20, 
+    paddingTop: Platform.OS === 'ios' ? 50 : 40,
+    paddingBottom: Platform.OS === 'ios' ? 30 : 20,
   },
   header: {
     flexDirection: 'row',
@@ -307,7 +348,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     padding: spacing.sm,
-    backgroundColor: 'rgba(26, 44, 75, 0.9)', 
+    backgroundColor: 'rgba(26, 44, 75, 0.9)',
     borderRadius: borderRadius.md,
     marginRight: spacing.sm,
   },
@@ -325,7 +366,7 @@ const styles = StyleSheet.create({
   },
   newChatIcon: {
     padding: spacing.sm,
-    backgroundColor: 'rgba(26, 44, 75, 0.9)', 
+    backgroundColor: 'rgba(26, 44, 75, 0.9)',
     borderRadius: borderRadius.md,
     alignItems: 'center',
     justifyContent: 'center',
@@ -334,7 +375,7 @@ const styles = StyleSheet.create({
   },
   divider: {
     height: 1,
-    backgroundColor: 'rgba(48, 109, 255, 0.2)', 
+    backgroundColor: 'rgba(48, 109, 255, 0.2)',
     marginVertical: spacing.sm,
   },
   sectionTitle: {
@@ -360,7 +401,7 @@ const styles = StyleSheet.create({
     borderRadius: borderRadius.sm,
   },
   activeChatItem: {
-    backgroundColor: 'rgba(48, 109, 255, 0.25)', 
+    backgroundColor: 'rgba(48, 109, 255, 0.25)',
   },
   chatItemContent: {
     flex: 1,
@@ -376,7 +417,7 @@ const styles = StyleSheet.create({
   },
   activeChatTitle: {
     fontWeight: '600',
-    color: colors.primaryText, 
+    color: colors.primaryText,
   },
   matchBadge: {
     backgroundColor: colors.emerald,
@@ -399,12 +440,23 @@ const styles = StyleSheet.create({
     marginTop: spacing.xl,
     fontSize: typography.fontSize.md,
   },
+  loadingContainer: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.xl,
+    padding: spacing.md,
+  },
+  loadingText: {
+    color: colors.lightGray,
+    marginTop: spacing.sm,
+    fontSize: typography.fontSize.sm,
+  },
   footer: {
     padding: spacing.md,
     paddingBottom: spacing.md,
     borderTopWidth: 1,
-    borderTopColor: 'rgba(48, 109, 255, 0.2)', 
-    marginTop: 'auto', 
+    borderTopColor: 'rgba(48, 109, 255, 0.2)',
+    marginTop: 'auto',
   },
   footerButton: {
     flexDirection: 'row',
