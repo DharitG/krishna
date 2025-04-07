@@ -121,19 +121,25 @@ const MemorySettings = () => {
           style: 'destructive',
           onPress: async () => {
             try {
+              const { data: { user } } = await supabase.auth.getUser();
+              
+              if (!user) {
+                throw new Error('No authenticated user found');
+              }
+              
               const response = await fetch(`${process.env.BACKEND_URL}/api/memory`, {
                 method: 'DELETE',
                 headers: {
                   'Content-Type': 'application/json',
-                  'Authorization': `Bearer ${(await supabase.auth.getSession()).data.session?.access_token}`
+                  'Authorization': `Bearer ${user.id}`
                 }
               });
               
-              if (response.ok) {
-                Alert.alert('Success', 'Memory data has been reset successfully');
-              } else {
-                Alert.alert('Error', 'Failed to reset memory data');
+              if (!response.ok) {
+                throw new Error('Failed to reset memory data');
               }
+              
+              Alert.alert('Success', 'Your memory data has been reset successfully.');
             } catch (error) {
               console.error('Error resetting memory:', error);
               Alert.alert('Error', 'Failed to reset memory data');
