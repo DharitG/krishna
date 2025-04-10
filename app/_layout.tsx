@@ -10,6 +10,7 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import socketService from '../services/socket';
 import { Socket } from 'socket.io-client';
 import CustomSplashScreen from '../components/CustomSplashScreen';
+import { AuthConfirmationProvider } from '../components/AuthConfirmationManager';
 
 // Keep the splash screen visible while we fetch resources
 SplashScreen.preventAutoHideAsync();
@@ -85,14 +86,15 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <StatusBar style="light" />
         <AuthProvider>
-          <ProtectedRoute>
-            <Stack
-              screenOptions={{
-                headerShown: false,
-              }}
-            />
-
-          </ProtectedRoute>
+          <AuthConfirmationProvider>
+            <ProtectedRoute>
+              <Stack
+                screenOptions={{
+                  headerShown: false,
+                }}
+              />
+            </ProtectedRoute>
+          </AuthConfirmationProvider>
         </AuthProvider>
       </SafeAreaProvider>
       

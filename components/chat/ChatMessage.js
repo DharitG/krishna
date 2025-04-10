@@ -3,10 +3,8 @@ import { View, Text, StyleSheet, Linking, Alert, Animated } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import Constants from 'expo-constants';
 import AuthButton from './AuthButton';
-import AuthRedirect from './AuthRedirect';
-import DynamicAuthBlob from '../../components/chat/DynamicAuthBlob';
-import DynamicConfirmationBlob from '../../components/chat/DynamicConfirmationBlob';
 import useZustandChatStore from '../../services/chatStore';
+import { useAuthConfirmation } from '../AuthConfirmationManager';
 import {
   colors,
   spacing,
@@ -22,132 +20,123 @@ const AUTH_REQUEST_PATTERN = /\[AUTH_REQUEST:(\w+)\]/g;
 const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
   const isUser = message.role === 'user';
   const [authStates, setAuthStates] = useState({});
-  const [showAuthRedirect, setShowAuthRedirect] = useState(false);
-  const [serviceToAuth, setServiceToAuth] = useState(null);
-  const [redirectUrl, setRedirectUrl] = useState(null);
-
+  
   // Get store methods
   const authenticateService = useZustandChatStore(state => state.authenticateService);
   const checkToolAuth = useZustandChatStore(state => state.checkToolAuth);
-
-  // Check if the message contains an auth redirect
+  
+  // Get auth confirmation methods
+  const { requestAuthentication } = useAuthConfirmation();
+  
+  // Check if the message contains an auth request and handle it
   useEffect(() => {
-    if (message.authRedirect) {
-      setServiceToAuth(message.authRedirect.service);
-      setShowAuthRedirect(true);
+    if (message.content && message.content.includes('[AUTH_REQUEST:')) {
+      // Extract service name from the message
+      const match = AUTH_REQUEST_PATTERN.exec(message.content);
+      if (match && match[1]) {
+        const service = match[1];
+        handleAuthRequest(service);
+      }
     }
   }, [message]);
 
-  // Function to handle authentication
-  const handleAuthenticate = async (service) => {
-    console.log(`Starting authentication for service: ${service}`);
-    setAuthStates(prev => ({
-      ...prev,
-      [service]: { isLoading: true }
-    }));
-
+  // Function to handle authentication request from message
+  const handleAuthRequest = async (service) => {
+    console.log(`Handling authentication request for service: ${service}`);
+    
     try {
-      // Use a direct fetch approach to ensure the request is made
-      const backendUrl = Constants.expoConfig?.extra?.BACKEND_URL || 'http://localhost:3000';
-      console.log(`Using backend URL: ${backendUrl}`);
-
-      // Get the authentication token
-      const { getAuthToken } = require('../../services/api');
-      const token = await getAuthToken();
+      // First check if the service is already authenticated
+      const authStatus = await checkToolAuth(service);
       
-      // Check if we have a valid token
-      if (!token) {
-        throw new Error('Authentication required. Please log in again.');
+      if (authStatus.isAuthenticated) {
+        console.log(`${service} is already authenticated`);
+        // Update local state to reflect authenticated status
+        setAuthStates(prev => ({
+          ...prev,
+          [service]: { isAuthenticated: true, isLoading: false }
+        }));
+        
+        // Notify parent component that authentication is complete
+        if (onAuthSuccess) {
+          onAuthSuccess(service);
+        }
+        
+        return;
       }
-
-      const response = await fetch(`${backendUrl}/api/composio/auth/init/${service}`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`
+      
+      // Service needs authentication, use the bottom popup
+      await requestAuthentication({
+        service: service,
+        onAuthenticate: async () => {
+          // This will be called when the user clicks the Connect button in the popup
+          console.log(`Starting authentication for service: ${service}`);
+          
+          try {
+            // Get the authentication URL from the backend
+            const result = await authenticateService(service);
+            
+            if (result.error) {
+              throw new Error(result.message || result.error || 'Failed to connect to service');
+            }
+            
+            if (!result.redirectUrl) {
+              throw new Error('No redirect URL provided');
+            }
+            
+            // Open the authentication URL in a browser
+            await Linking.openURL(result.redirectUrl);
+            
+            // Start polling for authentication status
+            return new Promise((resolve, reject) => {
+              const pollInterval = setInterval(async () => {
+                try {
+                  const status = await checkToolAuth(service);
+                  console.log(`Auth status for ${service}:`, status);
+                  
+                  if (status.isAuthenticated) {
+                    clearInterval(pollInterval);
+                    
+                    // Update local state
+                    setAuthStates(prev => ({
+                      ...prev,
+                      [service]: { isAuthenticated: true, isLoading: false }
+                    }));
+                    
+                    // Notify parent component
+                    if (onAuthSuccess) {
+                      onAuthSuccess(service);
+                    }
+                    
+                    resolve();
+                  }
+                } catch (error) {
+                  console.error(`Error polling auth status for ${service}:`, error);
+                  clearInterval(pollInterval);
+                  reject(error);
+                }
+              }, 2000); // Poll every 2 seconds
+              
+              // Set a timeout to stop polling after 2 minutes
+              setTimeout(() => {
+                clearInterval(pollInterval);
+                reject(new Error('Authentication timed out'));
+              }, 120000); // 2 minutes
+            });
+          } catch (error) {
+            console.error(`Authentication error for ${service}:`, error);
+            Alert.alert('Authentication Error', error.message || 'An unexpected error occurred');
+            throw error;
+          }
         }
       });
-
-      if (!response.ok) {
-        throw new Error(`Server returned ${response.status}: ${response.statusText}`);
-      }
-
-      const result = await response.json();
-      console.log('Authentication response:', result);
-
-      if (result.error) {
-        setAuthStates(prev => ({
-          ...prev,
-          [service]: { isLoading: false, error: result.message || result.error }
-        }));
-        Alert.alert('Authentication Error', result.message || result.error || 'Failed to connect to service');
-      } else if (result.redirectUrl) {
-        console.log(`Got redirect URL: ${result.redirectUrl}`);
-        setServiceToAuth(service);
-        setRedirectUrl(result.redirectUrl);
-        setShowAuthRedirect(true);
-
-        if (result.mockMode) {
-          startPollingAuthStatus(service);
-        }
-      } else {
-        console.error('No redirect URL in response:', result);
-        setAuthStates(prev => ({
-          ...prev,
-          [service]: { isLoading: false, error: 'No redirect URL provided' }
-        }));
-        Alert.alert('Authentication Error', 'No redirect URL provided');
-      }
+      
+      console.log(`Authentication flow completed for ${service}`);
     } catch (error) {
-      console.error(`Authentication error for ${service}:`, error);
+      console.error(`Error handling auth request for ${service}:`, error);
+      // User cancelled or authentication failed
       setAuthStates(prev => ({
         ...prev,
         [service]: { isLoading: false, error: error.message }
-      }));
-      Alert.alert('Authentication Error', error.message || 'An unexpected error occurred');
-    }
-  };
-
-  // Poll for authentication status
-  const startPollingAuthStatus = (service) => {
-    const pollInterval = setInterval(async () => {
-      try {
-        const status = await checkToolAuth(service);
-        if (status.authenticated) {
-          clearInterval(pollInterval);
-          handleAuthComplete(service);
-        }
-      } catch (error) {
-        console.error('Error polling auth status:', error);
-      }
-    }, 2000);
-
-    setTimeout(() => {
-      clearInterval(pollInterval);
-    }, 60000);
-  };
-
-  // Handle authentication completion
-  const handleAuthComplete = (service) => {
-    setShowAuthRedirect(false);
-    setServiceToAuth(null);
-    setAuthStates(prev => ({
-      ...prev,
-      [service]: { isLoading: false, isAuthenticated: true }
-    }));
-    if (onAuthSuccess) {
-      onAuthSuccess(service);
-    }
-  };
-
-  // Handle authentication cancellation
-  const handleAuthCancel = () => {
-    setShowAuthRedirect(false);
-    setServiceToAuth(null);
-    if (serviceToAuth) {
-      setAuthStates(prev => ({
-        ...prev,
-        [serviceToAuth]: { isLoading: false, isAuthenticated: false }
       }));
     }
   };
@@ -235,31 +224,28 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
     },
   };
 
-  // Function to parse message content and render auth buttons
+  // Function to parse message content and render it with auth requests replaced
   const renderMessageContent = (content) => {
-    if (showAuthRedirect && serviceToAuth) {
-      return (
-        <AuthRedirect
-          serviceName={serviceToAuth}
-          redirectUrl={redirectUrl}
-          onAuthComplete={handleAuthComplete}
-          onCancel={handleAuthCancel}
-        />
-      );
-    }
-
-    if (!content || !content.includes('[AUTH_REQUEST:')) {
+    if (!content) return null;
+    
+    // If the message doesn't contain auth requests, render it as is
+    if (!content.includes('[AUTH_REQUEST:')) {
       return (
         <Markdown style={markdownStyles}>
           {content}
         </Markdown>
       );
     }
-
+    
+    // Replace auth request tags with a simple message
+    // The actual auth request is handled by the useEffect hook above
     const parts = [];
     let lastIndex = 0;
     let match;
-
+    
+    // Reset the regex index
+    AUTH_REQUEST_PATTERN.lastIndex = 0;
+    
     while ((match = AUTH_REQUEST_PATTERN.exec(content)) !== null) {
       if (match.index > lastIndex) {
         parts.push({
@@ -267,53 +253,44 @@ const ChatMessage = ({ message, onAuthSuccess, index, isStreaming }) => {
           content: content.substring(lastIndex, match.index)
         });
       }
-
+      
+      const service = match[1];
+      const authState = authStates[service] || {};
+      
+      // Add a message about the authentication status
+      let authMessage;
+      if (authState.isAuthenticated) {
+        authMessage = `✅ Connected to ${service}. You can now use this service.`;
+      } else if (authState.isLoading) {
+        authMessage = `⏳ Connecting to ${service}...`;
+      } else if (authState.error) {
+        authMessage = `❌ Error connecting to ${service}: ${authState.error}`;
+      } else {
+        authMessage = `🔄 Authentication with ${service} is in progress.`;
+      }
+      
       parts.push({
-        type: 'auth',
-        service: match[1]
+        type: 'text',
+        content: `*${authMessage}*`
       });
-
+      
       lastIndex = match.index + match[0].length;
     }
-
+    
     if (lastIndex < content.length) {
       parts.push({
         type: 'text',
         content: content.substring(lastIndex)
       });
     }
-
+    
     return (
       <View>
-        {parts.map((part, i) => {
-          if (part.type === 'text') {
-            return (
-              <Markdown key={i} style={markdownStyles}>
-                {part.content}
-              </Markdown>
-            );
-          } else if (part.type === 'auth') {
-            const service = part.service;
-            const authState = authStates[service] || {};
-
-            return (
-              <DynamicAuthBlob
-                key={i}
-                service={service}
-                isLoading={authState.isLoading}
-                isConnected={authState.isAuthenticated}
-                error={authState.error}
-                onAuthenticate={() => handleAuthenticate(service)}
-                onErrorDismiss={() => {
-                  setAuthStates(prev => ({
-                    ...prev,
-                    [service]: { ...prev[service], error: null }
-                  }));
-                }}
-              />
-            );
-          }
-        })}
+        {parts.map((part, i) => (
+          <Markdown key={i} style={markdownStyles}>
+            {part.content}
+          </Markdown>
+        ))}
       </View>
     );
   };
