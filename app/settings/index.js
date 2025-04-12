@@ -9,7 +9,6 @@ import Constants from 'expo-constants';
 import { signOut } from '../../services/supabase';
 import { useAuth } from '../../services/authContext';
 import subscriptionService from '../../services/subscriptionService';
-import MemorySettings from '../../components/settings/MemorySettings';
 
 const SettingsScreen = () => {
   const router = useRouter();
@@ -95,10 +94,7 @@ const SettingsScreen = () => {
         { label: 'Speech Output', icon: 'volume-high-outline', hasDetail: true, value: 'Off' },
       ]
     },
-    {
-      title: 'Memory',
-      component: <MemorySettings />
-    },
+    // Memory section removed
     {
       title: 'Notifications',
       items: [
