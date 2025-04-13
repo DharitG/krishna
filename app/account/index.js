@@ -62,16 +62,26 @@ const AccountScreen = () => {
   
   // List of all available services with their icons and display names
   const allServices = [
-    { id: 'github', name: 'GitHub', icon: 'logo-github', color: '#24292e' },
-    { id: 'slack', name: 'Slack', icon: 'logo-slack', color: '#4A154B' },
+    { id: 'google', name: 'Google', icon: 'logo-google', color: '#4285F4' },
     { id: 'gmail', name: 'Gmail', icon: 'mail-outline', color: '#D44638' },
+    { id: 'outlook', name: 'Outlook', icon: 'mail-outline', color: '#0078D4' },
+    { id: 'slack', name: 'Slack', icon: 'logo-slack', color: '#4A154B' },
     { id: 'discord', name: 'Discord', icon: 'logo-discord', color: '#5865F2' },
-    { id: 'zoom', name: 'Zoom', icon: 'videocam-outline', color: '#2D8CFF' },
-    { id: 'asana', name: 'Asana', icon: 'list-outline', color: '#FC636B' },
-    { id: 'dropbox', name: 'Dropbox', icon: 'cloud-outline', color: '#0061FF' },
     { id: 'notion', name: 'Notion', icon: 'document-text-outline', color: '#000000' },
-    { id: 'figma', name: 'Figma', icon: 'color-palette-outline', color: '#F24E1E' },
-    { id: 'stripe', name: 'Stripe', icon: 'card-outline', color: '#635BFF' }
+    { id: 'blackboard', name: 'Blackboard', icon: 'school-outline', color: '#333333' },
+    { id: 'trello', name: 'Trello', icon: 'grid-outline', color: '#0079BF' },
+    { id: 'twitter', name: 'Twitter', icon: 'logo-twitter', color: '#1DA1F2' },
+    { id: 'linkedin', name: 'LinkedIn', icon: 'logo-linkedin', color: '#0A66C2' },
+    { id: 'reddit', name: 'Reddit', icon: 'logo-reddit', color: '#FF4500' },
+    { id: 'weathermap', name: 'Weather Map', icon: 'partly-sunny-outline', color: '#F7B731' },
+    { id: 'canvas', name: 'Canvas', icon: 'school-outline', color: '#E11F26' },
+    { id: 'dropbox', name: 'Dropbox', icon: 'cloud-outline', color: '#0061FF' },
+    { id: 'onedrive', name: 'OneDrive', icon: 'cloud-outline', color: '#0078D4' },
+    { id: 'youtube', name: 'YouTube', icon: 'logo-youtube', color: '#FF0000' },
+    { id: 'zoom', name: 'Zoom', icon: 'videocam-outline', color: '#2D8CFF' },
+    { id: 'calendly', name: 'Calendly', icon: 'calendar-outline', color: '#006BFF' },
+    { id: 'github', name: 'GitHub', icon: 'logo-github', color: '#24292e' },
+    { id: 'perplexityai', name: 'Perplexity AI', icon: 'bulb-outline', color: '#5436DA' }
   ];
   
   useEffect(() => {
