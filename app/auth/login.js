@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  KeyboardAvoidingView, 
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  KeyboardAvoidingView,
   Platform,
   ScrollView,
   Image,
@@ -129,18 +129,18 @@ export default function LoginScreen() {
   };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
       <StatusBar style="light" />
-      
+
       {/* Top half with image and logo */}
       <View style={[styles.topSection, showEmailForm && styles.topSectionSmaller]}>
 
         {/* Background image with gradient overlay */}
-        <ImageBackground 
-          source={require('../../assets/images/backgrounds/utopia.jpeg')} 
+        <ImageBackground
+          source={require('../../assets/images/backgrounds/utopia.jpeg')}
           style={styles.backgroundImage}
           resizeMode="cover"
         >
@@ -161,8 +161,8 @@ export default function LoginScreen() {
 
           {/* Title */}
           <View style={styles.logoContainer}>
-            <Image 
-              source={require('../../assets/images/august.png')} 
+            <Image
+              source={require('../../assets/images/august.png')}
               style={styles.logoImage}
               resizeMode="contain"
             />
@@ -172,19 +172,19 @@ export default function LoginScreen() {
       </View>
 
       {/* Bottom half with login options */}
-      <Animated.View 
+      <Animated.View
         style={[
-          styles.bottomSection, 
+          styles.bottomSection,
           { paddingTop: buttonContainerPadding }
         ]}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.buttonContainer}>
             {/* Google login button */}
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.googleButton}
               activeOpacity={0.8}
             >
@@ -193,7 +193,7 @@ export default function LoginScreen() {
             </TouchableOpacity>
 
             {/* Apple login button */}
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.appleButton}
               activeOpacity={0.8}
             >
@@ -202,7 +202,7 @@ export default function LoginScreen() {
             </TouchableOpacity>
 
             {/* Email login button */}
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.emailButton, showEmailForm && styles.emailButtonActive]}
               activeOpacity={0.8}
               onPress={() => setShowEmailForm(!showEmailForm)}
@@ -211,7 +211,7 @@ export default function LoginScreen() {
             </TouchableOpacity>
 
             {/* Email and password fields - shown/hidden based on state */}
-            <Animated.View 
+            <Animated.View
               style={[
                 styles.formContainer,
                 {
@@ -238,7 +238,7 @@ export default function LoginScreen() {
                 />
                 {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
               </View>
-              
+
               <View style={styles.inputContainer}>
                 <View style={styles.passwordContainer}>
                   <TextInput
@@ -252,8 +252,8 @@ export default function LoginScreen() {
                     }}
                     secureTextEntry={!showPassword}
                   />
-                  <TouchableOpacity 
-                    style={styles.eyeIcon} 
+                  <TouchableOpacity
+                    style={styles.eyeIcon}
                     onPress={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? <EyeOffIcon /> : <EyeIcon />}
@@ -261,15 +261,15 @@ export default function LoginScreen() {
                 </View>
                 {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
               </View>
-              
-              <TouchableOpacity 
-                style={styles.forgotPassword} 
+
+              <TouchableOpacity
+                style={styles.forgotPassword}
                 onPress={navigateToForgotPassword}
               >
                 <Text style={styles.forgotPasswordText}>Forgot Password?</Text>
               </TouchableOpacity>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.loginButton}
                 onPress={handleLogin}
                 disabled={isLoading}
@@ -422,7 +422,7 @@ const styles = StyleSheet.create({
   appTitle: {
     fontSize: 48,
     color: 'white',
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Thick',
     letterSpacing: 1,
   },
   bottomSection: {

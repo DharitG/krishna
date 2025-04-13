@@ -1,11 +1,11 @@
 import React, { useState, useRef, useEffect } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  KeyboardAvoidingView, 
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  KeyboardAvoidingView,
   Platform,
   ScrollView,
   Image,
@@ -140,18 +140,18 @@ export default function SignupScreen() {
   };
 
   return (
-    <KeyboardAvoidingView 
+    <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
       style={styles.container}
     >
       <StatusBar style="light" />
-      
+
       {/* Top half with image and logo */}
       <View style={[styles.topSection, showEmailForm && styles.topSectionSmaller]}>
 
         {/* Background image with gradient overlay */}
-        <ImageBackground 
-          source={require('../../assets/images/backgrounds/utopia.jpeg')} 
+        <ImageBackground
+          source={require('../../assets/images/backgrounds/utopia.jpeg')}
           style={styles.backgroundImage}
           resizeMode="cover"
         >
@@ -172,8 +172,8 @@ export default function SignupScreen() {
 
           {/* Title */}
           <View style={styles.logoContainer}>
-            <Image 
-              source={require('../../assets/images/august.png')} 
+            <Image
+              source={require('../../assets/images/august.png')}
               style={styles.logoImage}
               resizeMode="contain"
             />
@@ -183,19 +183,19 @@ export default function SignupScreen() {
       </View>
 
       {/* Bottom half with signup options */}
-      <Animated.View 
+      <Animated.View
         style={[
-          styles.bottomSection, 
+          styles.bottomSection,
           { paddingTop: buttonContainerPadding }
         ]}
       >
-        <ScrollView 
+        <ScrollView
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
         >
           <View style={styles.buttonContainer}>
             {/* Google signup button */}
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.googleButton}
               activeOpacity={0.8}
             >
@@ -221,7 +221,7 @@ export default function SignupScreen() {
             </TouchableOpacity>
 
             {/* Apple signup button */}
-            <TouchableOpacity 
+            <TouchableOpacity
               style={styles.appleButton}
               activeOpacity={0.8}
             >
@@ -239,7 +239,7 @@ export default function SignupScreen() {
             </TouchableOpacity>
 
             {/* Email signup button */}
-            <TouchableOpacity 
+            <TouchableOpacity
               style={[styles.emailButton, showEmailForm && styles.emailButtonActive]}
               activeOpacity={0.8}
               onPress={() => setShowEmailForm(!showEmailForm)}
@@ -248,7 +248,7 @@ export default function SignupScreen() {
             </TouchableOpacity>
 
             {/* Email and password fields - shown/hidden based on state */}
-            <Animated.View 
+            <Animated.View
               style={[
                 styles.formContainer,
                 {
@@ -275,7 +275,7 @@ export default function SignupScreen() {
                 />
                 {emailError ? <Text style={styles.errorText}>{emailError}</Text> : null}
               </View>
-              
+
               <View style={styles.inputContainer}>
                 <View style={styles.passwordContainer}>
                   <TextInput
@@ -289,8 +289,8 @@ export default function SignupScreen() {
                     }}
                     secureTextEntry={!showPassword}
                   />
-                  <TouchableOpacity 
-                    style={styles.eyeIcon} 
+                  <TouchableOpacity
+                    style={styles.eyeIcon}
                     onPress={() => setShowPassword(!showPassword)}
                   >
                     {showPassword ? (
@@ -308,7 +308,7 @@ export default function SignupScreen() {
                 </View>
                 {passwordError ? <Text style={styles.errorText}>{passwordError}</Text> : null}
               </View>
-              
+
               <View style={styles.inputContainer}>
                 <View style={styles.passwordContainer}>
                   <TextInput
@@ -322,8 +322,8 @@ export default function SignupScreen() {
                     }}
                     secureTextEntry={!showConfirmPassword}
                   />
-                  <TouchableOpacity 
-                    style={styles.eyeIcon} 
+                  <TouchableOpacity
+                    style={styles.eyeIcon}
                     onPress={() => setShowConfirmPassword(!showConfirmPassword)}
                   >
                     {showConfirmPassword ? (
@@ -342,7 +342,7 @@ export default function SignupScreen() {
                 {confirmPasswordError ? <Text style={styles.errorText}>{confirmPasswordError}</Text> : null}
               </View>
 
-              <TouchableOpacity 
+              <TouchableOpacity
                 style={styles.signupButton}
                 onPress={handleSignup}
                 disabled={isLoading}
@@ -428,7 +428,7 @@ const styles = StyleSheet.create({
   appTitle: {
     fontSize: 48,
     color: 'white',
-    fontFamily: 'Inter-Medium',
+    fontFamily: 'Thick',
     letterSpacing: 1,
   },
   bottomSection: {

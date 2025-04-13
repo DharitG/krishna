@@ -9,7 +9,7 @@ const baseColors = {
   lightGray: '#8E8EA0',
   offWhite: '#F0F0F5',
   white: '#FFFFFF',
-  
+
   // Theme colors
   backgroundTop: '#020305',
   backgroundMid1: '#061022',
@@ -20,14 +20,14 @@ const baseColors = {
   secondaryText: '#9BB1DD',
   buttonBackground: 'rgba(26, 44, 75, 0.8)',
   inputBackground: 'rgba(20, 32, 61, 0.85)',
-  
+
   // Accent colors
   emerald: '#10B981',
   emeraldLight: '#34D399',
   emeraldTransparent: 'rgba(16, 185, 129, 0.25)',
   purple: '#8B5CF6',
   purpleDark: '#6D28D9',
-  
+
   // Status colors
   warning: '#F59E0B',
   error: '#EF4444',
@@ -38,7 +38,7 @@ const baseColors = {
 // Semantic color tokens
 export const colors = {
   ...baseColors,
-  
+
   // Background colors
   background: {
     primary: baseColors.backgroundStart,
@@ -48,7 +48,7 @@ export const colors = {
     input: baseColors.inputBackground,
     overlay: 'rgba(18, 18, 20, 0.8)',
   },
-  
+
   // Text colors
   text: {
     primary: baseColors.primaryText,
@@ -60,7 +60,7 @@ export const colors = {
     warning: baseColors.warning,
     info: baseColors.info,
   },
-  
+
   // Border colors
   border: {
     primary: 'rgba(255, 255, 255, 0.1)',
@@ -68,7 +68,7 @@ export const colors = {
     focus: baseColors.emerald,
     error: baseColors.error,
   },
-  
+
   // Interactive colors
   interactive: {
     primary: baseColors.emerald,
@@ -77,7 +77,7 @@ export const colors = {
     active: baseColors.purpleDark,
     disabled: baseColors.lightGray,
   },
-  
+
   // Gradient definitions
   gradients: {
     primary: [baseColors.backgroundTop, baseColors.backgroundMid, baseColors.backgroundBottom],
@@ -104,7 +104,7 @@ export const spacing = {
   lg: 24,
   xl: 32,
   xxl: 48,
-  
+
   // Component-specific spacing
   container: {
     padding: 16,
@@ -133,7 +133,7 @@ export const borderRadius = {
   lg: 24,
   xl: 32,
   round: 9999,
-  
+
   // Component-specific radius
   button: {
     sm: 8,
@@ -174,7 +174,7 @@ export const shadows = {
     shadowRadius: 16,
     elevation: 8
   },
-  
+
   // Component-specific shadows
   card: {
     default: {
@@ -258,9 +258,10 @@ export const typography = {
     black: 'Inter-Black',
     bold: 'InterDisplay-Bold',
     mono: 'InterVariable',
-    brand: 'InterDisplay-Bold'
+    brand: 'InterDisplay-Bold',
+    thick: 'Thick'
   },
-  
+
   // Font sizes
   fontSize: {
     xs: 12,
@@ -271,7 +272,7 @@ export const typography = {
     xxl: 32,
     xxxl: 40
   },
-  
+
   // Line heights
   lineHeight: {
     xs: 16,
@@ -281,7 +282,7 @@ export const typography = {
     xl: 32,
     xxl: 40
   },
-  
+
   // Font weights
   fontWeight: {
     regular: '400',
@@ -289,7 +290,7 @@ export const typography = {
     semibold: '600',
     bold: '700'
   },
-  
+
   // Component-specific typography
   heading: {
     h1: {
@@ -340,7 +341,7 @@ export const animation = {
     normal: 300,
     slow: 500
   },
-  
+
   // Timing functions
   easing: {
     easeInOut: 'cubic-bezier(0.4, 0, 0.2, 1)',
@@ -348,7 +349,7 @@ export const animation = {
     easeIn: 'cubic-bezier(0.4, 0, 1, 1)',
     sharp: 'cubic-bezier(0.4, 0, 0.6, 1)'
   },
-  
+
   // Component-specific animations
   button: {
     press: {

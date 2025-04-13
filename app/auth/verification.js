@@ -1,9 +1,9 @@
 import React from 'react';
-import { 
-  View, 
-  Text, 
-  TouchableOpacity, 
-  StyleSheet, 
+import {
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
   Image
 } from 'react-native';
 import { StatusBar } from 'expo-status-bar';
@@ -21,7 +21,7 @@ export default function VerificationScreen() {
   return (
     <View style={styles.container}>
       <StatusBar style="light" />
-      
+
       <LinearGradient
         colors={colors.gradients.secondary}
         start={{ x: 0, y: 0 }}
@@ -30,8 +30,8 @@ export default function VerificationScreen() {
       />
 
       <View style={styles.logoContainer}>
-        <Image 
-          source={require('../../assets/images/icon.png')} 
+        <Image
+          source={require('../../assets/images/icon.png')}
           style={styles.logo}
           resizeMode="contain"
         />
@@ -40,19 +40,19 @@ export default function VerificationScreen() {
 
       <View style={styles.contentContainer}>
         <Text style={styles.title}>Verify Your Email</Text>
-        
+
         <View style={styles.messageContainer}>
           <Text style={styles.message}>
             We've sent a verification email to your inbox. Please check your email and click the verification link to complete your registration.
           </Text>
-          
+
           <Text style={styles.note}>
             If you don't receive the email within a few minutes, please check your spam folder.
           </Text>
         </View>
 
-        <TouchableOpacity 
-          style={styles.loginButton} 
+        <TouchableOpacity
+          style={styles.loginButton}
           onPress={navigateToLogin}
         >
           <Text style={styles.loginButtonText}>Back to Login</Text>
@@ -86,7 +86,7 @@ const styles = StyleSheet.create({
   },
   appName: {
     fontSize: typography.fontSize.xxl,
-    fontFamily: typography.fontFamily.brand,
+    fontFamily: 'Thick',
     color: colors.white,
     marginBottom: spacing.xs,
   },

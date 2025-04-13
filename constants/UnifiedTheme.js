@@ -204,7 +204,8 @@ export const typography = {
     black: 'Inter-Black',
     bold: 'InterDisplay-Bold',
     mono: 'InterVariable',
-    brand: 'InterDisplay-Bold'
+    brand: 'InterDisplay-Bold',
+    thick: 'Thick'
   },
 
   // Font sizes

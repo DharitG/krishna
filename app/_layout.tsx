@@ -28,6 +28,7 @@ export default function RootLayout() {
           'Inter-Light': require('../assets/fonts/Inter-Light.otf'),
           'Inter-Black': require('../assets/fonts/Inter-Black.otf'),
           'InterDisplay-Bold': require('../assets/fonts/InterDisplay-Bold.otf'),
+          'Thick': require('../assets/fonts/thick.otf'),
         });
         setFontsLoaded(true);
       } catch (e) {
@@ -45,7 +46,7 @@ export default function RootLayout() {
       // Our custom splash screen will remain visible and animate out
     }
   }, [fontsLoaded]);
-  
+
   // Handler for when our custom splash animation completes
   const handleSplashAnimationComplete = () => {
     setShowCustomSplash(false);
@@ -60,9 +61,9 @@ export default function RootLayout() {
         console.error('Failed to initialize WebSocket:', error);
       }
     };
-    
+
     initSocket();
-    
+
     // Clean up WebSocket connection when app is closed
     return () => {
       const cleanupSocket = async () => {
@@ -76,7 +77,7 @@ export default function RootLayout() {
           console.error('Error disconnecting socket:', err);
         }
       };
-      
+
       cleanupSocket();
     };
   }, []);
@@ -97,7 +98,7 @@ export default function RootLayout() {
           </AuthConfirmationProvider>
         </AuthProvider>
       </SafeAreaProvider>
-      
+
       {/* Show our custom animated splash screen */}
       {showCustomSplash && (
         <CustomSplashScreen onAnimationComplete={handleSplashAnimationComplete} />

@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { 
-  View, 
-  Text, 
-  TextInput, 
-  TouchableOpacity, 
-  StyleSheet, 
-  KeyboardAvoidingView, 
+import {
+  View,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  StyleSheet,
+  KeyboardAvoidingView,
   Platform,
   Image,
   Alert,
@@ -48,12 +48,12 @@ export default function ForgotPasswordScreen() {
   };
 
   return (
-    <KeyboardAvoidingView 
-      style={styles.container} 
+    <KeyboardAvoidingView
+      style={styles.container}
       behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
     >
       <StatusBar style="light" />
-      
+
       <LinearGradient
         colors={colors.gradients.primary}
         start={{ x: 0, y: 0 }}
@@ -62,8 +62,8 @@ export default function ForgotPasswordScreen() {
       />
 
       <View style={styles.logoContainer}>
-        <Image 
-          source={require('../../assets/images/icon.png')} 
+        <Image
+          source={require('../../assets/images/icon.png')}
           style={styles.logo}
           resizeMode="contain"
         />
@@ -73,16 +73,16 @@ export default function ForgotPasswordScreen() {
 
       <View style={styles.formContainer}>
         <Text style={styles.title}>Forgot Password</Text>
-        
+
         {submitted ? (
           <View style={styles.successContainer}>
             <Text style={styles.successTitle}>Check your email</Text>
             <Text style={styles.successMessage}>
-              We've sent a password reset link to {email}. 
+              We've sent a password reset link to {email}.
               Please check your inbox and follow the instructions to reset your password.
             </Text>
-            <TouchableOpacity 
-              style={styles.backButton} 
+            <TouchableOpacity
+              style={styles.backButton}
               onPress={navigateToLogin}
             >
               <Text style={styles.backButtonText}>Back to Login</Text>
@@ -107,8 +107,8 @@ export default function ForgotPasswordScreen() {
               />
             </View>
 
-            <TouchableOpacity 
-              style={styles.resetButton} 
+            <TouchableOpacity
+              style={styles.resetButton}
               onPress={handleResetPassword}
               disabled={isLoading}
             >
@@ -119,8 +119,8 @@ export default function ForgotPasswordScreen() {
               )}
             </TouchableOpacity>
 
-            <TouchableOpacity 
-              style={styles.backToLogin} 
+            <TouchableOpacity
+              style={styles.backToLogin}
               onPress={navigateToLogin}
             >
               <Text style={styles.backToLoginText}>Back to Login</Text>
@@ -156,7 +156,7 @@ const styles = StyleSheet.create({
   },
   appName: {
     fontSize: typography.fontSize.xl,
-    fontFamily: typography.fontFamily.brand,
+    fontFamily: 'Thick',
     color: colors.white,
     marginBottom: spacing.xs,
   },
