@@ -1,67 +1,33 @@
-# August - AI Super Agent
+# August - AI Super Agent (Frontend)
 
-August is a React Native mobile app that provides a clean, interactive chat interface with Azure OpenAI service integration.
+This directory contains the React Native mobile application for the August AI Super Agent.
 
-## Features
+## Overview
 
-- Modern, intuitive chat interface
-- Multiple chat conversations
-- Integration with Azure OpenAI service
-- Easy to extend with agentic capabilities
+August provides a clean, interactive chat interface designed to work with the project's backend API and leverage AI capabilities, including tool use via Composio.
 
-## Prerequisites
+## Documentation
 
-- Node.js and npm
-- Expo CLI: `npm install -g expo-cli`
-- An Azure account with access to Azure OpenAI Service
+**For detailed setup instructions, architecture information, feature guides, and more, please refer to the main project documentation located in the `/docs` directory at the root of the repository.**
 
-## Setup
+Key relevant documents include:
 
-1. Clone the repository
-2. Install dependencies:
-   ```bash
-   npm install
-   ```
-3. Create a `.env` file in the root directory (copy from `.env.example`)
-4. Configure Azure OpenAI:
-   - Follow the instructions in `AZURE_SETUP.md`
-   - Add your Azure OpenAI API key, endpoint, and deployment name to the `.env` file
+*   **[Frontend Setup Guide](../../docs/getting-started/frontend-setup.md)**
+*   **[Main Project Documentation](../../docs/README.md)**
 
 ## Running the App
 
+Once setup is complete (following the guides in `/docs`), you can run the app from this directory:
+
 ```bash
-npm start
+# Ensure dependencies are installed
+# npm install or yarn install
+
+# Start the Expo development server
+npx expo start 
 ```
 
-This will start the Expo development server. You can then run the app on:
-- iOS simulator (requires macOS and Xcode)
-- Android emulator (requires Android Studio)
-- Physical device using the Expo Go app (scan the QR code)
-
-## Using August
-
-- Start a new chat by pressing the "+" button
-- Navigate between chats using the sidebar
-- Type your messages in the input field at the bottom
-- If Azure OpenAI is configured, you'll see an "Azure" badge in the header
-
-## Environment Configuration
-
-August supports the following environment variables:
-
-- `AZURE_OPENAI_API_KEY`: Your Azure OpenAI API key
-- `AZURE_OPENAI_ENDPOINT`: Your Azure OpenAI endpoint URL
-- `AZURE_OPENAI_DEPLOYMENT_NAME`: Your model deployment name
-- `MODEL_TEMPERATURE`: Temperature parameter for responses (default: 0.7)
-- `MODEL_MAX_TOKENS`: Maximum tokens for responses (default: 800)
-
-## Future Extensions
-
-August is designed to be extended with:
-- Multi-modal capabilities (image, voice)
-- Function calling and tool use
-- Agentic behavior with different personas
-- Integration with external systems
+This will allow you to run the app on a simulator, emulator, or physical device via the Expo Go app.
 
 ## License
 
